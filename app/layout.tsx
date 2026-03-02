@@ -7,6 +7,7 @@ import "./globals.css";
 export const metadata = { 
   title: "LaserCraft - Precision Engraving",
   description: "Premium Laser Engraving Services",
+  
 };
 
 export default function RootLayout({
@@ -19,7 +20,7 @@ export default function RootLayout({
       <body className="bg-black text-white">
         <Navbar />
         {children}
-      
+      <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       </body>
     </html>
   );
@@ -27,4 +28,4 @@ export default function RootLayout({
 
 //Pymenth Method 
 
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
