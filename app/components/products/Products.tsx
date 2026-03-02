@@ -18,8 +18,8 @@ interface CartItem {
 }
 
 const productData: Product[] = [
-  { id: 1, name: "Custom Wooden Keychain", price: 200, image: "/products/wood.jpg", category: "Wood" },
-  { id: 2, name: "Metal Business Card", price: 999, image: "/products/metal.jpg", category: "Metal" },
+  { id: 1, name: "Custom Wooden Keychain", price: 2, image: "/products/wood.jpg", category: "Wood" },
+  { id: 2, name: "Metal Business Card", price: 100, image: "/products/metal.jpg", category: "Metal" },
   { id: 3, name: "Glass Trophy Engraving", price: 2499, image: "/products/glass.jpg", category: "Glass" },
   { id: 4, name: "Acrylic LED Logo", price: 3999, image: "/products/acrylic.jpg", category: "Acrylic" },
 ];
