@@ -1,26 +1,240 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ================================================================
+   DESIGN TOKENS — Dark (default) & Light
+   ================================================================ */
+:root,
+html.dark {
+  --bg-primary: #000000;
+  --bg-secondary: #09090b;
+  --bg-tertiary: #18181b;
+  --bg-card: rgba(39, 39, 42, 0.80);
+  --bg-nav: rgba(0, 0, 0, 0.85);
+  --bg-input: rgba(0, 0, 0, 0.60);
+  --bg-drawer: #09090b;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-inverted: #000000;
+  --gradient-from: #0f0f0f;
+  --gradient-via: #000000;
+  --gradient-to: #0f0f0f;
+  --shadow-card: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html.light {
+  --bg-primary: #f8f8f8;
+  --bg-secondary: #f0f0f0;
+  --bg-tertiary: #e4e4e7;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-nav: rgba(255, 255, 255, 0.90);
+  --bg-input: rgba(255, 255, 255, 0.90);
+  --bg-drawer: #ffffff;
+  --border: rgba(0, 0, 0, 0.09);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --text-primary: #09090b;
+  --text-secondary: #52525b;
+  --text-muted: #a1a1aa;
+  --text-inverted: #ffffff;
+  --gradient-from: #f0f0f0;
+  --gradient-via: #f8f8f8;
+  --gradient-to: #f0f0f0;
+  --shadow-card: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ================================================================
+   BASE
+   ================================================================ */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.35s ease, color 0.25s ease;
+}
+
+/* Smooth transition on theme switch for every element */
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.25s ease,
+    box-shadow 0.35s ease;
+}
+
+/* ================================================================
+   GLOBAL LIGHT-MODE OVERRIDES
+   These target the most-used Tailwind hardcoded classes so we
+   don't have to touch every component individually.
+   ================================================================ */
+
+/* ── Backgrounds ── */
+html.light .bg-black {
+  background-color: var(--bg-primary) !important;
+}
+
+html.light .bg-zinc-950 {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.light .bg-zinc-900 {
+  background-color: var(--bg-card) !important;
+}
+
+html.light .bg-zinc-900\/70 {
+  background-color: var(--bg-card) !important;
+}
+
+html.light .bg-zinc-900\/50 {
+  background-color: var(--bg-card) !important;
+}
+
+html.light .bg-zinc-800 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+html.light .bg-gray-900 {
+  background-color: var(--bg-card) !important;
+}
+
+html.light .bg-gray-900\/70 {
+  background-color: var(--bg-card) !important;
+}
+
+html.light .bg-gray-950 {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.light .bg-black\/40 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light .bg-black\/60 {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* ── Text ── */
+html.light .text-white {
+  color: var(--text-primary) !important;
+}
+
+html.light .text-gray-300 {
+  color: var(--text-secondary) !important;
+}
+
+html.light .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+html.light .text-gray-500 {
+  color: var(--text-muted) !important;
+}
+
+html.light .text-zinc-400 {
+  color: var(--text-secondary) !important;
+}
+
+html.light .text-zinc-500 {
+  color: var(--text-muted) !important;
+}
+
+html.light .text-zinc-600 {
+  color: var(--text-muted) !important;
+}
+
+/* ── Borders ── */
+html.light .border-white\/5 {
+  border-color: var(--border) !important;
+}
+
+html.light .border-white\/10 {
+  border-color: var(--border) !important;
+}
+
+html.light .border-gray-700 {
+  border-color: var(--border-strong) !important;
+}
+
+html.light .border-gray-800 {
+  border-color: var(--border) !important;
+}
+
+html.light .border-white\/10 {
+  border-color: var(--border) !important;
+}
+
+/* ── Navbar ── */
+html.light nav {
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Inputs ── */
+html.light input,
+html.light textarea {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-strong) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* ── Search modal ── */
+html.light .bg-zinc-900.border.border-white\/10.rounded-2xl {
+  background-color: #ffffff !important;
+  border-color: var(--border-strong) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ── Cart drawer text ── */
+html.light .text-zinc-700 {
+  color: var(--text-secondary) !important;
+}
+
+/* ── Gradient sections ── */
+html.light .from-black.via-gray-950.to-black,
+html.light .from-gray-950.via-black.to-gray-950,
+html.light .from-black.to-gray-950 {
+  background: linear-gradient(to bottom, var(--gradient-from), var(--gradient-via), var(--gradient-to)) !important;
+}
+
+/* ── Hero overlay in light mode — keep it subtle ── */
+html.light #home .absolute.inset-0.from-black\/80 {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.60)) !important;
+}
+
+/* ── Scrollbar ── */
+html.dark ::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
 }

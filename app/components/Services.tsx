@@ -1,124 +1,142 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import Image from "next/image";
 
 interface Service {
   title: string;
   desc: string;
-  keyword: string;
-  image?: string;
+  icon: string;
+  image: string;
+  tag: string;
 }
 
+const services: Service[] = [
+  {
+    title: "Wood Engraving",
+    desc: "Custom wood cutting & engraving with premium finishing and precision detailing.",
+    icon: "🪵",
+    tag: "Wood",
+    image: "https://images.unsplash.com/photo-1582652509080-4c0e9e37e83d?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    title: "Metal Engraving",
+    desc: "High-precision laser marking on stainless steel & aluminum for lasting results.",
+    icon: "⚙️",
+    tag: "Metal",
+    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    title: "Glass Engraving",
+    desc: "Premium glass etching for gifts, awards & brand identity with crystal clarity.",
+    icon: "🔮",
+    tag: "Glass",
+    image: "https://images.unsplash.com/photo-1614203611861-9e2e4ddb1168?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    title: "Acrylic Cutting",
+    desc: "Sharp & clean acrylic cutting with smooth polished edges and vibrant colors.",
+    icon: "✂️",
+    tag: "Acrylic",
+    image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    title: "Custom Logo Engraving",
+    desc: "Professional business branding & logo engraving on any surface, any material.",
+    icon: "🎨",
+    tag: "Branding",
+    image: "https://images.unsplash.com/photo-1542744094-24638eff58bb?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    title: "Industrial CNC Cutting",
+    desc: "Heavy-duty CNC laser cutting for industrial & commercial scale projects.",
+    icon: "🏭",
+    tag: "CNC",
+    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=800&auto=format&fit=crop",
+  },
+];
+
 export default function Services() {
-  const [services, setServices] = useState<Service[]>([
-    {
-      title: "Wood Engraving",
-      desc: "Custom wood cutting & engraving with premium finishing.",
-      keyword: "wood,laser,engraving",
-    },
-    {
-      title: "Metal Engraving",
-      desc: "High-precision laser marking on stainless steel & aluminum.",
-      keyword: "metal,laser,cutting",
-    },
-    {
-      title: "Glass Engraving",
-      desc: "Premium glass etching for gifts & branding.",
-      keyword: "glass,laser,design",
-    },
-    {
-      title: "Acrylic Cutting",
-      desc: "Sharp & clean acrylic cutting with smooth edges.",
-      keyword: "acrylic,laser,cutting",
-    },
-    {
-      title: "Custom Logo Engraving",
-      desc: "Professional business branding & logo engraving.",
-      keyword: "logo,laser,engraving",
-    },
-    {
-      title: "Industrial CNC Cutting",
-      desc: "Heavy-duty CNC laser cutting for industrial projects.",
-      keyword: "cnc,laser,machine",
-    },
-  ]);
-
-  // 🔥 Fetch Images from API
-  useEffect(() => {
-    const fetchImages = async () => {
-      const updatedServices = await Promise.all(
-        services.map(async (service) => {
-          try {
-            const res = await fetch(
-              `https://source.unsplash.com/600x400/?${service.keyword}`
-            );
-            return { ...service, image: res.url };
-          } catch {
-            return service;
-          }
-        })
-      );
-      setServices(updatedServices);
-    };
-
-    fetchImages();
-  }, []);
-
   return (
     <section
       id="services"
-      className="py-24 bg-gradient-to-b from-gray-950 via-black to-gray-950"
+      style={{ background: "linear-gradient(to bottom, var(--gradient-from), var(--gradient-via), var(--gradient-to))" }}
+      className="py-24"
     >
       <div className="max-w-7xl mx-auto px-6 text-center">
         <motion.h2
           initial={{ opacity: 0, y: -40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="text-4xl md:text-5xl font-bold text-white"
+          viewport={{ once: true }}
+          className="text-4xl md:text-5xl font-bold"
+          style={{ color: "var(--text-primary)" }}
         >
           Our <span className="text-orange-500">Services</span>
         </motion.h2>
 
-        <p className="mt-6 text-gray-400 max-w-2xl mx-auto">
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.2 }}
+          viewport={{ once: true }}
+          style={{ color: "var(--text-secondary)" }}
+          className="mt-6 max-w-2xl mx-auto text-base"
+        >
           We provide high-quality laser engraving & cutting services
           with precision and perfection for all materials.
-        </p>
+        </motion.p>
 
         {/* 🔥 Service Cards */}
-        <div className="grid md:grid-cols-3 gap-10 mt-16">
+        <div className="grid md:grid-cols-3 gap-8 mt-16">
           {services.map((service, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
-              className="relative bg-gray-900 rounded-2xl overflow-hidden shadow-xl border border-orange-500/10 hover:scale-105 transition duration-300"
+              transition={{ duration: 0.6, delay: index * 0.15 }}
+              viewport={{ once: true }}
+              className="relative rounded-2xl overflow-hidden shadow-xl transition-all duration-500 group border hover:border-orange-500/40"
+              style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-color)" }}
             >
               {/* Image */}
-              {service.image && (
-                <div
-                  className="h-52 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${service.image})` }}
+              <div className="relative h-52 overflow-hidden">
+                <Image
+                  src={service.image}
+                  alt={service.title}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-700"
+                  unoptimized
                 />
-              )}
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition duration-500" />
+
+                {/* Tag badge */}
+                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-orange-400 font-bold uppercase tracking-widest">
+                  {service.tag}
+                </div>
+
+                {/* Icon */}
+                <div className="absolute bottom-3 right-3 text-3xl">
+                  {service.icon}
+                </div>
+              </div>
 
               {/* Content */}
-              <div className="p-8">
-                <h3 className="text-2xl font-semibold text-white">
+              <div className="p-6 text-left">
+                <h3 className="text-xl font-bold group-hover:text-orange-400 transition duration-300" style={{ color: "var(--text-primary)" }}>
                   {service.title}
                 </h3>
-                <p className="mt-4 text-gray-400 text-sm">
+                <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                   {service.desc}
                 </p>
-
-                <button className="mt-6 px-6 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-full transition">
+                <button className="mt-5 px-5 py-2 text-sm bg-orange-600 hover:bg-orange-500 text-white rounded-full transition-colors duration-300 font-semibold">
                   Learn More
                 </button>
               </div>
 
               {/* Glow Effect */}
-              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-orange-500/20 blur-3xl rounded-full"></div>
+              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full" />
             </motion.div>
           ))}
         </div>

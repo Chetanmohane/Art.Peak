@@ -7,7 +7,8 @@ export default function About() {
   return (
     <section
       id="about"
-      className="relative py-16 sm:py-20 lg:py-28 bg-gradient-to-b from-black via-gray-950 to-black overflow-hidden"
+      className="relative py-16 sm:py-20 lg:py-28 overflow-hidden"
+      style={{ background: "linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary), var(--bg-primary))" }}
     >
       {/* 🔥 Background Glow Effect */}
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[350px] sm:w-[500px] h-[350px] sm:h-[500px] bg-orange-600/10 blur-3xl rounded-full"></div>
@@ -25,7 +26,7 @@ export default function About() {
           <div className="relative rounded-2xl overflow-hidden border border-orange-500/20 shadow-2xl shadow-orange-500/10 group">
 
             <Image
-              src="/about.jpg"
+              src="/images/about-new.png"
               alt="Laser Engraving Machine"
               width={1200}
               height={800}
@@ -48,17 +49,17 @@ export default function About() {
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
             About <span className="text-orange-500">LaserCraft</span>
           </h2>
 
-          <p className="mt-6 text-gray-300 text-base sm:text-lg leading-relaxed">
+          <p className="mt-6 text-base sm:text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             LaserCraft provides high-precision laser engraving and CNC cutting
             services using advanced laser technology. We specialize in custom
             designs for wood, metal, glass, acrylic, and industrial materials.
           </p>
 
-          <p className="mt-4 text-gray-400 text-sm sm:text-base">
+          <p className="mt-4 text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>
             Our mission is to transform ideas into reality with precision,
             creativity, and modern engineering excellence.
           </p>
