@@ -572,14 +572,16 @@ export default function Navbar() {
                           borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)",
                         }}
                       >
-                        <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0">
                           <Image src={item.product.image} alt={item.product.name} fill className="object-cover" unoptimized />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate" style={{ color: isLight ? "#18181b" : "#ffffff" }}>
-                            {item.product.name}
-                          </p>
-                          <p className="text-orange-500 text-xs mt-0.5 uppercase tracking-wider">{item.product.category}</p>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
+                            <p className="font-semibold text-xs sm:text-sm truncate" style={{ color: isLight ? "#18181b" : "#ffffff" }}>
+                              {item.product.name}
+                            </p>
+                            <p className="text-orange-500 text-[10px] sm:text-xs mt-0.5 uppercase tracking-wider">{item.product.category}</p>
+                          </div>
 
                           {/* Customization Details */}
                           {(item.customText || item.customImage) && (
@@ -597,8 +599,8 @@ export default function Navbar() {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 mt-1">
-                            <p className="text-orange-600 font-bold">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+                            <p className="text-orange-600 font-bold text-sm sm:text-base">
                               ₹{(
                                 (item.product.bulkPricing 
                                   ? (item.product.bulkPricing.find(t => item.qty >= t.qty)?.price || item.product.price) 
@@ -607,44 +609,46 @@ export default function Navbar() {
                               ).toLocaleString()}
                             </p>
                             {item.product.bulkPricing && item.product.bulkPricing.find(t => item.qty >= t.qty) && (
-                              <span className="text-[10px] text-green-600 font-bold bg-green-500/10 px-1.5 py-0.5 rounded">Bulk Applied</span>
+                              <span className="text-[9px] sm:text-[10px] text-green-600 font-bold bg-green-500/10 px-1 sm:px-1.5 py-0.5 rounded">Bulk Applied</span>
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-2 mt-2">
-                            <button
-                              onClick={() => decreaseQty(item.id)}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center transition"
-                              style={{ backgroundColor: isLight ? "#e4e4e7" : "#27272a", color: isLight ? "#52525b" : "#d4d4d8" }}
-                            >
-                              <Minus size={14} />
-                            </button>
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.qty}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                if (!isNaN(val)) updateQty(item.id, val);
-                              }}
-                              onBlur={(e) => {
-                                if (e.target.value === "" || parseInt(e.target.value) <= 0) {
-                                  updateQty(item.id, 1);
-                                }
-                              }}
-                              className="font-bold text-sm w-10 text-center bg-transparent outline-none border-none hide-number-spinners"
-                              style={{ color: isLight ? "#18181b" : "#ffffff" }}
-                            />
-                            <button
-                              onClick={() => increaseQty(item.id)}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center transition"
-                              style={{ backgroundColor: isLight ? "#e4e4e7" : "#27272a", color: isLight ? "#52525b" : "#d4d4d8" }}
-                            >
-                              <Plus size={14} />
-                            </button>
+                          <div className="flex items-center gap-2 mt-2 justify-between">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <button
+                                onClick={() => decreaseQty(item.id)}
+                                className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition"
+                                style={{ backgroundColor: isLight ? "#e4e4e7" : "#27272a", color: isLight ? "#52525b" : "#d4d4d8" }}
+                              >
+                                <Minus size={12} />
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.qty}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value);
+                                  if (!isNaN(val)) updateQty(item.id, val);
+                                }}
+                                onBlur={(e) => {
+                                  if (e.target.value === "" || parseInt(e.target.value) <= 0) {
+                                    updateQty(item.id, 1);
+                                  }
+                                }}
+                                className="font-bold text-xs sm:text-sm w-7 sm:w-10 text-center bg-transparent outline-none border-none hide-number-spinners"
+                                style={{ color: isLight ? "#18181b" : "#ffffff" }}
+                              />
+                              <button
+                                onClick={() => increaseQty(item.id)}
+                                className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition"
+                                style={{ backgroundColor: isLight ? "#e4e4e7" : "#27272a", color: isLight ? "#52525b" : "#d4d4d8" }}
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
                             <button
                               onClick={() => removeItem(item.id)}
-                              className="ml-auto p-1.5 hover:text-red-500 transition"
+                              className="p-1.5 hover:text-red-500 transition"
                               style={{ color: isLight ? "#a1a1aa" : "#71717a" }}
                             >
                               <Trash2 size={16} />

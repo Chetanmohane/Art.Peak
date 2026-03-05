@@ -374,7 +374,7 @@ export default function Products() {
 
         {/* CART DRAWER / SECTION */}
         {cart.length > 0 && (
-          <div className="mt-20 bg-zinc-900 border border-orange-500/20 p-8 rounded-3xl shadow-2xl max-w-3xl mx-auto relative overflow-hidden">
+          <div className="mt-20 bg-zinc-900 border border-orange-500/20 p-4 sm:p-8 rounded-3xl shadow-2xl max-w-3xl mx-auto relative overflow-hidden">
             {/* Background Decoration */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full -mr-16 -mt-16"></div>
             
