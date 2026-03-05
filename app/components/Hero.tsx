@@ -10,7 +10,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-[100dvh] pt-24 pb-12 flex flex-col items-center justify-center overflow-hidden"
     >
       {/* ── DARK MODE: Photo background ── */}
       {!isLight && (
@@ -107,7 +107,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1 }}
-          className="mt-10 flex flex-col md:flex-row justify-center gap-6"
+          className="mt-10 flex flex-col sm:flex-row justify-center gap-4 sm:gap-6"
         >
           <button
             className="px-8 py-3.5 rounded-full font-semibold transition duration-300 shadow-lg"

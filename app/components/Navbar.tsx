@@ -174,11 +174,11 @@ export default function Navbar() {
           borderBottom: scrolled ? (isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)") : (isLight ? "1px solid rgba(0, 0, 0, 0)" : "1px solid rgba(255, 255, 255, 0)"),
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            {logo && <Image src={logo} alt="logo" width={56} height={56} className="w-14 h-14 rounded-full bg-white object-cover shadow-sm" unoptimized />}
-            <h1 className="text-2xl font-bold text-orange-500 tracking-tight">Art.Peak</h1>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {logo && <Image src={logo} alt="logo" width={48} height={48} className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-white object-cover shadow-sm" unoptimized />}
+            <h1 className="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">Art.Peak</h1>
           </div>
 
           {/* Desktop Menu */}
@@ -303,26 +303,26 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Icons */}
-          <div className="md:hidden flex items-center gap-3">
+          <div className="md:hidden flex items-center gap-2 sm:gap-3">
             <button onClick={() => setSearchOpen(true)} className="hover:text-orange-400 transition" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
-              <Search size={22} />
+              <Search size={20} />
             </button>
             <button onClick={toggleTheme} className="hover:text-orange-400 transition" aria-label="Toggle Theme">
-              {isLight ? <Moon size={22} className="text-zinc-700" /> : <Sun size={22} className="text-orange-400" />}
+              {isLight ? <Moon size={20} className="text-zinc-700" /> : <Sun size={20} className="text-orange-400" />}
             </button>
             
             {session ? (
               <Link href="/profile" className="hover:text-orange-400 transition text-orange-500">
-                <UserIcon size={24} />
+                <UserIcon size={22} />
               </Link>
             ) : (
-              <button onClick={() => setAuthOpen(true)} className="text-sm font-bold text-orange-500 uppercase">
+              <button onClick={() => setAuthOpen(true)} className="text-xs font-bold text-orange-500 uppercase">
                 Login
               </button>
             )}
 
             <button onClick={() => setCartOpen(true)} className="relative">
-              <ShoppingCart className="text-orange-500 w-6 h-6" />
+              <ShoppingCart className="text-orange-500 w-5 h-5 sm:w-6 sm:h-6" />
               {totalItems > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-full">
                   {totalItems}
@@ -330,9 +330,9 @@ export default function Navbar() {
               )}
             </button>
             {open ? (
-              <X size={28} onClick={() => setOpen(false)} style={{ color: isLight ? (scrolled ? "#18181b" : "#3f3f46") : "#ffffff" }} />
+              <X size={26} onClick={() => setOpen(false)} style={{ color: isLight ? (scrolled ? "#18181b" : "#3f3f46") : "#ffffff" }} />
             ) : (
-              <Menu size={28} onClick={() => setOpen(true)} style={{ color: isLight ? (scrolled ? "#18181b" : "#3f3f46") : "#ffffff" }} />
+              <Menu size={26} onClick={() => setOpen(true)} style={{ color: isLight ? (scrolled ? "#18181b" : "#3f3f46") : "#ffffff" }} />
             )}
           </div>
         </div>

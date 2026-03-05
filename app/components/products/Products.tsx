@@ -258,7 +258,7 @@ export default function Products() {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-zinc-900 border border-white/10 p-6 rounded-3xl shadow-2xl z-[110]"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto bg-zinc-900 border border-white/10 p-5 sm:p-6 rounded-3xl shadow-2xl z-[110] hide-scrollbar"
               >
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-bold text-white">Customize Order</h3>
@@ -383,11 +383,11 @@ export default function Products() {
               Shopping Cart
             </h3>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {cart.map((item) => (
-                <div key={item.id} className="flex justify-between items-center bg-black/40 p-4 rounded-2xl border border-white/5">
-                  <div className="flex items-center gap-4">
-                    <div className="relative w-20 h-20 rounded-xl overflow-hidden">
+                <div key={item.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-black/40 p-4 sm:p-5 rounded-2xl border border-white/5 gap-4 sm:gap-0">
+                  <div className="flex items-start sm:items-center gap-4 w-full sm:w-auto">
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0">
                        <Image src={item.product.image} alt={item.product.name} fill className="object-cover" unoptimized={true} />
                     </div>
                     <div>
@@ -416,7 +416,7 @@ export default function Products() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
                     <div className="flex items-center bg-zinc-800 rounded-xl px-2 py-1">
                       <button onClick={() => decreaseQty(item.id)} className="p-2 text-gray-400 hover:text-white transition">
                         <Minus size={18} />
@@ -440,7 +440,7 @@ export default function Products() {
                         <Plus size={18} />
                       </button>
                     </div>
-                    <button onClick={() => removeItem(item.id)} className="p-3 text-zinc-500 hover:text-red-500 transition">
+                    <button onClick={() => removeItem(item.id)} className="p-3 text-zinc-500 hover:text-red-500 transition bg-red-500/10 sm:bg-transparent rounded-xl">
                       <Trash2 size={20} />
                     </button>
                   </div>
