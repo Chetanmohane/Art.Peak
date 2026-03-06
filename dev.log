@@ -61,3 +61,4 @@ Cashfree Payment Session Error: {
  GET / 200 in 33ms (compile: 5ms, render: 28ms)
  GET / 200 in 87ms (compile: 69ms, render: 18ms)
  GET /api/auth/session 200 in 70ms (compile: 53ms, render: 18ms)
+ GET /api/auth/session 200 in 19ms (compile: 7ms, render: 12ms)
