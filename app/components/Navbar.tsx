@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Menu, X, ShoppingCart, Plus, Minus, Trash2, ShoppingBag, Search, Sun, Moon } from "lucide-react";
+import { Menu, X, ShoppingCart, Plus, Minus, Trash2, ShoppingBag, Search, Sun, Moon, ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
@@ -11,6 +11,7 @@ import { searchContent, type SearchItem } from "../data/searchData";
 import { useSession } from "next-auth/react";
 import AuthModal from "./AuthModal";
 import { User as UserIcon } from "lucide-react";
+import QRCode from "react-qr-code";
 
 const navLinks = [
   { name: "Home", href: "#home" },
@@ -45,7 +46,40 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [logo, setLogo] = useState("/images/logo/logo.png");
   const [paying, setPaying] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState<"cart" | "address" | "method" | "qr" | "upi" | "upi_id" | "success">("cart");
+  const [paymentMethod, setPaymentMethod] = useState<"qr" | "upi" | "upi_id" | null>(null);
+  const [enteredUpiId, setEnteredUpiId] = useState("");
+  const [upiRequestSent, setUpiRequestSent] = useState(false);
+  const [shippingDetails, setShippingDetails] = useState({
+    name: "", phone: "", email: "", address: "", city: "", state: "", pincode: ""
+  });
+  const [utr, setUtr] = useState("");
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [dynamicQrCode, setDynamicQrCode] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Poll for Cashfree Order Status
+  useEffect(() => {
+    if ((!upiRequestSent && checkoutStep !== "qr") || !currentOrderId) return;
+
+    
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/orders/status?orderId=${currentOrderId}`);
+        if (res.ok) {
+           const data = await res.json();
+           if (data.status === "processing" || data.status === "success" || data.status === "completed") {
+              setCheckoutStep("success");
+              setCartOpen(false); // Wait to show success briefly before closing or just show success page
+           }
+        }
+      } catch (err) {
+        console.error("Polling error", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [upiRequestSent, currentOrderId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -101,6 +135,17 @@ export default function Navbar() {
     window.addEventListener('open-auth-modal', openAuth);
     return () => window.removeEventListener('open-auth-modal', openAuth);
   }, []);
+
+  useEffect(() => {
+    if (!cartOpen) {
+      setTimeout(() => {
+        setCheckoutStep("cart");
+        setPaymentMethod(null);
+        setUtr("");
+        setShippingDetails({ name: "", phone: "", email: "", address: "", city: "", state: "", pincode: "" });
+      }, 300);
+    }
+  }, [cartOpen]);
 
   const navigateTo = useCallback((href: string) => {
     setSearchOpen(false);
@@ -160,6 +205,46 @@ export default function Navbar() {
       alert("Something went wrong. Please try again.");
       setPaying(false);
     }
+  };
+
+  const handleQrOrder = async () => {
+    const utrRegex = /^\d{12}$/;
+    if (!utrRegex.test(utr.trim())) {
+      alert("Invalid UTR ID. Please enter a valid 12-digit UTR number.");
+      return;
+    }
+    setPaying(true);
+    try {
+      const res = await fetch("/api/orders/qr-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: JSON.stringify(cart),
+          totalAmount: totalPrice,
+          transactionId: utr,
+          shipping: shippingDetails
+        }),
+      });
+      if (res.ok) {
+        setCheckoutStep("success");
+      } else {
+        alert(await res.text());
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to record order.");
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const isAddressValid = () => {
+    return shippingDetails.name.trim() !== "" && 
+           shippingDetails.phone.trim() !== "" && 
+           shippingDetails.address.trim() !== "" && 
+           shippingDetails.city.trim() !== "" && 
+           shippingDetails.state.trim() !== "" && 
+           shippingDetails.pincode.trim() !== "";
   };
 
   return (
@@ -539,158 +624,473 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                {cart.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                    <ShoppingBag className="w-20 h-20" style={{ color: isLight ? "#e4e4e7" : "#27272a" }} />
-                    <p className="text-lg font-medium" style={{ color: isLight ? "#71717a" : "#a1a1aa" }}>
-                      Your cart is empty
-                    </p>
-                    <button
-                      onClick={() => {
-                        setCartOpen(false);
-                        document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      className="mt-2 px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition"
-                    >
-                      Browse Products
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {cart.map((item) => (
-                      <motion.div
-                        key={item.id}
-                        layout
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 30 }}
-                        className="flex gap-4 rounded-2xl p-4 border"
-                        style={{
-                          backgroundColor: isLight ? "#fafafa" : "#18181b",
-                          borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)",
-                        }}
-                      >
-                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0">
-                          <Image src={item.product.image} alt={item.product.name} fill className="object-cover" unoptimized />
+              {/* Drawer Content */}
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                <AnimatePresence mode="wait">
+                  {checkoutStep === "cart" && (
+                    <motion.div key="cart" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                      {cart.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                          <ShoppingBag className="w-20 h-20" style={{ color: isLight ? "#e4e4e7" : "#27272a" }} />
+                          <p className="text-lg font-medium" style={{ color: isLight ? "#71717a" : "#a1a1aa" }}>Your cart is empty</p>
+                          <button onClick={() => setCartOpen(false)} className="mt-2 px-6 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-semibold text-sm transition">Browse Products</button>
                         </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-between">
-                          <div>
-                            <p className="font-semibold text-xs sm:text-sm truncate" style={{ color: isLight ? "#18181b" : "#ffffff" }}>
-                              {item.product.name}
-                            </p>
-                            <p className="text-orange-500 text-[10px] sm:text-xs mt-0.5 uppercase tracking-wider">{item.product.category}</p>
-                          </div>
-
-                          {/* Customization Details */}
-                          {(item.customText || item.customImage) && (
-                            <div className="mt-1.5 flex flex-col gap-1.5">
-                              {item.customText && (
-                                <p className="text-[11px] px-1.5 py-0.5 rounded-md inline-flex w-fit max-w-full truncate" style={{ backgroundColor: isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)", color: isLight ? "#52525b" : "#a1a1aa" }}>
-                                  &quot;{item.customText}&quot;
-                                </p>
-                              )}
-                              {item.customImage && (
-                                <div className="w-8 h-8 relative rounded-md overflow-hidden border" style={{ borderColor: isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)" }}>
-                                  <Image src={item.customImage} alt="Custom" fill className="object-cover" unoptimized />
+                      ) : (
+                        cart.map((item) => (
+                          <div key={item.id} className="flex gap-4 rounded-2xl p-4 border" style={{ backgroundColor: isLight ? "#fafafa" : "#18181b", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)" }}>
+                            <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
+                              <Image src={item.product.image} alt={item.product.name} fill className="object-cover" unoptimized />
+                            </div>
+                            <div className="flex-1 min-w-0 flex flex-col justify-between">
+                              <div>
+                                <p className="font-semibold text-xs truncate" style={{ color: isLight ? "#18181b" : "#ffffff" }}>{item.product.name}</p>
+                                <p className="text-orange-500 text-[10px] mt-0.5 uppercase tracking-wider">{item.product.category}</p>
+                              </div>
+                              <div className="flex items-center justify-between mt-2">
+                                <div className="flex flex-col gap-2 flex-1">
+                                  <div className="flex items-center gap-2">
+                                     <button onClick={() => decreaseQty(item.id)} className={`w-6 h-6 rounded-lg flex items-center justify-center transition ${isLight ? "bg-zinc-100 text-zinc-600 hover:bg-zinc-200" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"}`}><Minus size={12} /></button>
+                                     <input 
+                                       type="number" 
+                                       min="1"
+                                       value={item.qty}
+                                       onChange={(e) => {
+                                         const val = parseInt(e.target.value);
+                                         if (!isNaN(val)) updateQty(item.id, val);
+                                       }}
+                                       onBlur={(e) => {
+                                         if (e.target.value === "" || parseInt(e.target.value) <= 0) {
+                                           updateQty(item.id, 1);
+                                         }
+                                       }}
+                                       className={`w-10 text-center font-bold text-xs bg-transparent outline-none border-none hide-number-spinners ${isLight ? "text-zinc-900" : "text-white"}`}
+                                     />
+                                     <button onClick={() => increaseQty(item.id)} className={`w-6 h-6 rounded-lg flex items-center justify-center transition ${isLight ? "bg-zinc-100 text-zinc-600 hover:bg-zinc-200" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"}`}><Plus size={12} /></button>
+                                  </div>
+                                  
+                                  {/* Customization Details */}
+                                  {(item.customText || item.customImage) && (
+                                    <div className={`mt-1 p-2 rounded-xl border flex gap-3 items-center ${isLight ? "bg-white border-zinc-100" : "bg-black/20 border-white/5"}`}>
+                                      {item.customImage && (
+                                        <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/10 shrink-0">
+                                          <Image src={item.customImage} alt="Custom" fill className="object-cover" unoptimized />
+                                        </div>
+                                      )}
+                                      {item.customText && (
+                                        <p className="text-[10px] text-zinc-500 italic truncate max-w-[120px]">
+                                          "{item.customText}"
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                                <button onClick={() => removeItem(item.id)} className="text-zinc-500 hover:text-red-500 transition p-2"><Trash2 size={14} /></button>
+                              </div>
                             </div>
-                          )}
+                            <div className="text-right flex flex-col justify-center shrink-0">
+                               <p className="font-bold text-sm text-orange-500">₹{( (item.product.bulkPricing ? (item.product.bulkPricing.find(t => item.qty >= t.qty)?.price || item.product.price) : item.product.price ) * item.qty).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </motion.div>
+                  )}
 
-                          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
-                            <p className="text-orange-600 font-bold text-sm sm:text-base">
-                              ₹{(
-                                (item.product.bulkPricing 
-                                  ? (item.product.bulkPricing.find(t => item.qty >= t.qty)?.price || item.product.price) 
-                                  : item.product.price
-                                ) * item.qty
-                              ).toLocaleString()}
-                            </p>
-                            {item.product.bulkPricing && item.product.bulkPricing.find(t => item.qty >= t.qty) && (
-                              <span className="text-[9px] sm:text-[10px] text-green-600 font-bold bg-green-500/10 px-1 sm:px-1.5 py-0.5 rounded">Bulk Applied</span>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2 mt-2 justify-between">
-                            <div className="flex items-center gap-1 sm:gap-2">
-                              <button
-                                onClick={() => decreaseQty(item.id)}
-                                className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition"
-                                style={{ backgroundColor: isLight ? "#e4e4e7" : "#27272a", color: isLight ? "#52525b" : "#d4d4d8" }}
-                              >
-                                <Minus size={12} />
-                              </button>
-                              <input
-                                type="number"
-                                min="1"
-                                value={item.qty}
-                                onChange={(e) => {
-                                  const val = parseInt(e.target.value);
-                                  if (!isNaN(val)) updateQty(item.id, val);
-                                }}
-                                onBlur={(e) => {
-                                  if (e.target.value === "" || parseInt(e.target.value) <= 0) {
-                                    updateQty(item.id, 1);
-                                  }
-                                }}
-                                className="font-bold text-xs sm:text-sm w-7 sm:w-10 text-center bg-transparent outline-none border-none hide-number-spinners"
-                                style={{ color: isLight ? "#18181b" : "#ffffff" }}
-                              />
-                              <button
-                                onClick={() => increaseQty(item.id)}
-                                className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition"
-                                style={{ backgroundColor: isLight ? "#e4e4e7" : "#27272a", color: isLight ? "#52525b" : "#d4d4d8" }}
-                              >
-                                <Plus size={12} />
-                              </button>
-                            </div>
-                            <button
-                              onClick={() => removeItem(item.id)}
-                              className="p-1.5 hover:text-red-500 transition"
-                              style={{ color: isLight ? "#a1a1aa" : "#71717a" }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+                  {checkoutStep === "address" && (
+                    <motion.div key="address" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="py-2">
+                      {/* Header */}
+                      <button onClick={() => setCheckoutStep("cart")} className="flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-orange-400 mb-5 transition group">
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 group-hover:bg-orange-500/20 transition"><ArrowLeft size={12}/></span>
+                        Back to Cart
+                      </button>
+
+                      {/* Step Pill */}
+                      <div className="flex items-center gap-2 mb-5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white text-[11px] font-black flex items-center justify-center shadow-lg shadow-orange-500/30">1</span>
+                          <span className="text-[11px] font-black text-orange-400 uppercase tracking-widest">Address</span>
                         </div>
-                      </motion.div>
-                    ))}
-                  </>
-                )}
+                        <div className="flex-1 h-[2px] bg-gradient-to-r from-orange-500/30 to-zinc-700/30 rounded-full" />
+                        <div className="flex items-center gap-2 opacity-35">
+                          <span className="w-7 h-7 rounded-full border-2 border-zinc-600 text-zinc-400 text-[11px] font-black flex items-center justify-center">2</span>
+                          <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Payment</span>
+                        </div>
+                      </div>
+
+                      <h3 className="text-lg font-black mb-0.5" style={{ color: isLight ? "#111827" : "#f4f4f5" }}>Shipping Details</h3>
+                      <p className="text-xs font-medium text-zinc-400 mb-5">Enter your delivery address to continue.</p>
+
+                      <div className="space-y-3">
+                        {/* Name */}
+                        <div className={`rounded-xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-800/80 border-zinc-700"}`}>
+                          <label className="block text-[10px] font-black uppercase tracking-widest px-4 pt-3 pb-0.5 text-orange-400">Full Name <span className="text-red-400">*</span></label>
+                          <input
+                            required
+                            value={shippingDetails.name}
+                            onChange={e => setShippingDetails({...shippingDetails, name: e.target.value})}
+                            className={`w-full px-4 pb-3 pt-1 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
+                            placeholder="e.g. Rahul Sharma"
+                          />
+                        </div>
+
+                        {/* Phone */}
+                        <div className={`rounded-xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-800/80 border-zinc-700"}`}>
+                          <label className="block text-[10px] font-black uppercase tracking-widest px-4 pt-3 pb-0.5 text-orange-400">Phone Number <span className="text-red-400">*</span></label>
+                          <input
+                            required
+                            type="tel"
+                            value={shippingDetails.phone}
+                            onChange={e => setShippingDetails({...shippingDetails, phone: e.target.value})}
+                            className={`w-full px-4 pb-3 pt-1 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
+                            placeholder="e.g. 9876543210"
+                          />
+                        </div>
+
+                        {/* Email */}
+                        <div className={`rounded-xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-800/80 border-zinc-700"}`}>
+                          <label className="block text-[10px] font-black uppercase tracking-widest px-4 pt-3 pb-0.5 text-orange-400">Email <span className="text-[9px] normal-case tracking-normal font-medium text-zinc-400">(optional)</span></label>
+                          <input
+                            type="email"
+                            value={shippingDetails.email}
+                            onChange={e => setShippingDetails({...shippingDetails, email: e.target.value})}
+                            className={`w-full px-4 pb-3 pt-1 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
+                            placeholder="e.g. rahul@email.com"
+                          />
+                        </div>
+
+                        {/* Address */}
+                        <div className={`rounded-xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-800/80 border-zinc-700"}`}>
+                          <label className="block text-[10px] font-black uppercase tracking-widest px-4 pt-3 pb-0.5 text-orange-400">Street Address <span className="text-red-400">*</span></label>
+                          <textarea
+                            required
+                            rows={2}
+                            value={shippingDetails.address}
+                            onChange={e => setShippingDetails({...shippingDetails, address: e.target.value})}
+                            className={`w-full px-4 pb-3 pt-1 text-sm font-semibold bg-transparent outline-none resize-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
+                            placeholder="Flat / House No., Street, Area..."
+                          />
+                        </div>
+
+                        {/* City + State + Pincode */}
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: "City", key: "city", placeholder: "Mumbai" },
+                            { label: "State", key: "state", placeholder: "MH" },
+                            { label: "Pincode", key: "pincode", placeholder: "400001" },
+                          ].map(({ label, key, placeholder }) => (
+                            <div key={key} className={`rounded-xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-800/80 border-zinc-700"}`}>
+                              <label className="block text-[9px] font-black uppercase tracking-widest px-3 pt-3 pb-0.5 text-orange-400">{label} <span className="text-red-400">*</span></label>
+                              <input
+                                required
+                                value={(shippingDetails as Record<string, string>)[key]}
+                                onChange={e => setShippingDetails({...shippingDetails, [key]: e.target.value})}
+                                className={`w-full px-3 pb-3 pt-1 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
+                                placeholder={placeholder}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="text-[9px] font-medium text-zinc-500 mt-4 ml-1"><span className="text-red-400">*</span> Required fields</p>
+                    </motion.div>
+                  )}
+
+
+
+                  {checkoutStep === "method" && (
+                    <motion.div key="method" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 py-4">
+                       <button onClick={() => setCheckoutStep("address")} className="flex items-center gap-2 text-sm text-zinc-500 hover:text-orange-500 mb-4 transition"><ArrowLeft size={16}/> Back to Address</button>
+                       <h3 className="text-lg font-bold" style={{ color: isLight ? "#18181b" : "#ffffff" }}>Select Payment Method</h3>
+                       <div className="space-y-3">
+                          <button onClick={() => setPaymentMethod("upi")} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${paymentMethod === 'upi' ? 'bg-orange-500/10 border-orange-500' : 'bg-black/20 border-white/5'}`}>
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">⚡</div>
+                                <div className="text-left">
+                                   <p className="font-bold text-sm">Pay via UPI App</p>
+                                   <p className="text-[10px] text-zinc-500">Google Pay, PhonePe, Paytm, etc.</p>
+                                </div>
+                             </div>
+                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'upi' ? 'border-orange-500 bg-orange-500' : 'border-zinc-700'}`}>{paymentMethod === 'upi' && <div className="w-2 h-2 rounded-full bg-white"/>}</div>
+                          </button>
+                          
+                          <button onClick={() => setPaymentMethod("qr")} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${paymentMethod === 'qr' ? 'bg-orange-500/10 border-orange-500' : 'bg-black/20 border-white/5'}`}>
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400"><Search size={18}/></div>
+                                <div className="text-left">
+                                   <p className="font-bold text-sm">Scan QR Code</p>
+                                   <p className="text-[10px] text-zinc-500">Scan using any UPI App</p>
+                                </div>
+                             </div>
+                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'qr' ? 'border-orange-500 bg-orange-500' : 'border-zinc-700'}`}>{paymentMethod === 'qr' && <div className="w-2 h-2 rounded-full bg-white"/>}</div>
+                          </button>
+
+                          <button onClick={() => setPaymentMethod("upi_id")} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${paymentMethod === 'upi_id' ? 'bg-orange-500/10 border-orange-500' : 'bg-black/20 border-white/5'}`}>
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold">@</div>
+                                <div className="text-left">
+                                   <p className="font-bold text-sm">Enter UPI ID</p>
+                                   <p className="text-[10px] text-zinc-500">Receive a payment request on your App</p>
+                                </div>
+                             </div>
+                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'upi_id' ? 'border-orange-500 bg-orange-500' : 'border-zinc-700'}`}>{paymentMethod === 'upi_id' && <div className="w-2 h-2 rounded-full bg-white"/>}</div>
+                          </button>
+                       </div>
+                    </motion.div>
+                  )}
+
+                  {(checkoutStep === "qr" || checkoutStep === "upi" || checkoutStep === "upi_id") && (
+                    <motion.div key="qr-upi" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="py-4 space-y-4">
+                     {/* Back + Step indicator */}
+                       <button onClick={() => { setCheckoutStep("method"); setPaymentMethod(null); setUpiRequestSent(false); }} className="flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-orange-400 mb-1 transition group">
+                         <span className="w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 group-hover:bg-orange-500/20 transition"><ArrowLeft size={12}/></span>
+                         Back to Payment Methods
+                       </button>
+
+                       {/* Amount Badge */}
+                       <div className="flex items-center justify-center">
+                         <div className="inline-flex flex-col items-center gap-1 px-6 py-3 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">Amount to Pay</span>
+                           <span className="text-3xl font-black text-white">₹{totalPrice.toLocaleString()}</span>
+                         </div>
+                       </div>
+
+                       {/* Contextual UI: Either QR or Direct UPI Link */}
+                       <div className={`rounded-3xl border-2 overflow-hidden ${isLight ? "bg-white border-zinc-200" : "bg-zinc-900 border-zinc-700"}`}>
+                          <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)" }}>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                              <p className="text-xs font-black text-orange-400 uppercase tracking-widest">{checkoutStep === 'qr' ? 'Scan & Pay via UPI' : checkoutStep === 'upi' ? 'Pay Directly via UPI App' : 'UPI Payment Request'}</p>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isLight ? "bg-green-100 text-green-700" : "bg-green-500/15 text-green-400"}`}>Secure</span>
+                          </div>
+
+                          <div className="p-5 flex flex-col items-center gap-4">
+                            {checkoutStep === 'qr' ? (
+                                <div className="relative">
+                                  {/* Animated Ring */}
+                                  <div className="absolute inset-0 rounded-2xl border-2 border-orange-500/40 animate-ping opacity-30" />
+                                  <div className="relative w-[200px] h-[200px] rounded-2xl overflow-hidden border-2 border-orange-500/30 bg-white p-3 flex items-center justify-center shadow-2xl shadow-orange-500/10">
+                                    <QRCode
+                                      value={dynamicQrCode || `upi://pay?pa=2729mohane2729@fam&pn=Art.Peak&cu=INR&am=${totalPrice}`}
+                                      size={170}
+                                      style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                      viewBox="0 0 256 256"
+                                    />
+                                  </div>
+                                </div>
+                            ) : checkoutStep === 'upi' ? (
+                                 <div className="w-full flex-col items-center flex">
+                                    <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-500 text-4xl mb-4">⚡</div>
+                                   <a 
+                                      href={`upi://pay?pa=2729mohane2729@fam&pn=Art.Peak&am=${totalPrice}&cu=INR&tn=Art.Peak%20Payment&mc=0000`}
+                                      className="w-full py-4 px-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-base tracking-wide uppercase rounded-xl shadow-lg shadow-orange-500/20 transition-all flex justify-center items-center gap-2 active:scale-95"
+                                   >
+                                      Open UPI App to Pay
+                                   </a>
+                                   <p className={`text-xs mt-3 ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>This will open your default UPI app (GPay, PhonePe, Paytm)</p>
+                                 </div>
+                             ) : (
+                                 <div className="w-full flex-col items-center flex">
+                                   <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center text-purple-500 text-4xl mb-4">@</div>
+                                   {!upiRequestSent ? (
+                                     <>
+                                       <div className={`w-full rounded-xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-zinc-800/80 border-zinc-700"} mb-3`}>
+                                         <input
+                                           value={enteredUpiId}
+                                           onChange={(e) => setEnteredUpiId(e.target.value)}
+                                           className={`w-full px-4 py-3 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
+                                           placeholder="Enter your UPI ID (e.g. 9876543210@ybl)"
+                                           disabled={paying}
+                                         />
+                                       </div>
+                                       <button 
+                                          onClick={async () => {
+                                            if (enteredUpiId.trim() === "") {
+                                              alert("Please enter a valid UPI ID (e.g. name@bank)");
+                                              return;
+                                            }
+                                            
+                                            setPaying(true);
+                                            try {
+                                              const res = await fetch("/api/cashfree", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({
+                                                  amount: totalPrice,
+                                                  customer_phone: shippingDetails.phone || "9999999999",
+                                                  customer_email: shippingDetails.email || "test@test.com",
+                                                  uph_id: enteredUpiId.trim(),
+                                                  items: JSON.stringify(cart),
+                                                  shipping: shippingDetails
+                                                })
+                                              });
+                                              const data = await res.json();
+                                              if (res.ok && data.success) {
+                                                setCurrentOrderId(data.orderId);
+                                                setUpiRequestSent(true);
+                                              } else {
+                                                alert(`Payment Error: ${data.error || "Failed to initiate payment"}`);
+                                              }
+                                            } catch (e: any) {
+                                              alert("Something went wrong requesting payment.");
+                                            } finally {
+                                              setPaying(false);
+                                            }
+                                          }}
+                                          disabled={paying}
+                                          className="w-full py-3 px-6 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm tracking-wide uppercase rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center justify-center"
+                                       >
+                                          {paying ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : "Send Official Payment Request"}
+                                       </button>
+                                       <p className={`text-xs mt-3 text-center ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Enter the UPI ID from which you will make the payment.</p>
+                                     </>
+                                   ) : (
+                                     <div className="text-center w-full">
+                                       <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                                          <ShieldCheck className="text-emerald-500" size={32} />
+                                       </div>
+                                       <p className="text-xl font-bold text-emerald-500 mb-2">Request Sent Successfully!</p>
+                                       <p className={`text-sm mb-4 ${isLight ? "text-zinc-600" : "text-zinc-300"}`}>A payment request of <span className="font-bold text-orange-500">₹{totalPrice.toLocaleString()}</span> has been sent directly to <span className="font-bold text-zinc-900 dark:text-white">{enteredUpiId}</span>.</p>
+                                       <div className={`p-4 rounded-xl ${isLight ? 'bg-orange-50 text-orange-800' : 'bg-orange-500/10 text-orange-200'} text-xs mb-4 text-left leading-relaxed`}>
+                                          <span className="font-bold block mb-1">Next Steps:</span>
+                                          1. Open the {enteredUpiId.includes("@") ? enteredUpiId.split("@")[1]?.toUpperCase() : "UPI"} app on your phone.<br/>
+                                          2. Check notifications or pending requests.<br/>
+                                          3. Approve the payment of ₹{totalPrice.toLocaleString()}.<br/>
+                                          4. Wait a moment, this page will update automatically!
+                                       </div>
+                                       
+                                       <button onClick={() => { setUpiRequestSent(false); setCurrentOrderId(null); }} className="text-xs text-orange-500 hover:underline">Cancel & Change Method</button>
+                                     </div>
+                                   )}
+                                 </div>
+                             )}
+
+                            {/* UPI Details - Only for QR and direct UPI */}
+                             {checkoutStep !== 'upi_id' && (
+                               <div className={`w-full rounded-2xl p-4 text-center space-y-1.5 ${isLight ? "bg-orange-50 border border-orange-100" : "bg-orange-500/5 border border-orange-500/20"}`}>
+                              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Target UPI ID</p>
+                              <p className="text-sm font-black text-orange-500 tracking-wide">2729mohane2729@fam</p>
+                              <p className={`text-[10px] font-medium ${isLight ? "text-zinc-500" : "text-zinc-400"} mt-2`}>
+                                Please enter the exact amount <span className="font-bold text-orange-500">₹{totalPrice.toLocaleString()}</span> manually after scanning.
+                               </p>
+                             </div>
+                             )}
+                           </div>
+                        </div>
+
+                        {/* UTR Field */}
+                       {(checkoutStep !== 'upi_id') && (
+                         <>
+                           <div className={`rounded-2xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-800/80 border-zinc-700"}`}>
+                             <label className="block text-[10px] font-black uppercase tracking-widest px-4 pt-3 pb-1 text-orange-400">
+                               Transaction / UTR ID <span className="text-red-400">*</span>
+                             </label>
+                             <input
+                               value={utr}
+                               onChange={e => setUtr(e.target.value)}
+                               className={`w-full px-4 pb-3 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
+                               placeholder="12-digit UTR number e.g. 432156789012"
+                               maxLength={12}
+                             />
+                           </div>
+                           <p className={`text-[10px] font-medium -mt-2 ml-1 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>
+                             📋 Find your 12-digit UTR/Ref ID in your payment app after paying.
+                           </p>
+                         </>
+                       )}
+                    </motion.div>
+                  )}
+
+
+                  {checkoutStep === "success" && (
+                    <motion.div key="success" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center py-10 text-center space-y-4">
+                       <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10 }}>
+                             <ShieldCheck size={48} />
+                          </motion.div>
+                       </div>
+                       <h3 className="text-2xl font-bold">Order Recorded!</h3>
+                       <p className="text-zinc-500 text-sm max-w-[240px]">Hooray! Aapka order record ho gaya hai. Admin verification ke baad ye process hoga.</p>
+                       <button onClick={() => setCartOpen(false)} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition shadow-lg shadow-emerald-900/20">Great!</button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Drawer Footer */}
-              {cart.length > 0 && (
-                <div
-                  className="px-6 py-5 border-t space-y-4"
-                  style={{ backgroundColor: isLight ? "#fafafa" : "#09090b", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}
-                >
+              {cart.length > 0 && checkoutStep !== "success" && (
+                <div className="px-6 py-5 border-t space-y-4" style={{ backgroundColor: isLight ? "#fafafa" : "#09090b", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
                       <span>Subtotal ({totalItems} items)</span>
                       <span>₹{totalPrice.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between text-sm" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
-                      <span>Shipping</span>
-                      <span className="text-green-500 font-medium">FREE</span>
-                    </div>
-                    <div
-                      className="flex justify-between font-bold text-lg pt-2 border-t"
-                      style={{ color: isLight ? "#18181b" : "#ffffff", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}
-                    >
+                    <div className="flex justify-between font-bold text-lg pt-2 border-t" style={{ color: isLight ? "#18181b" : "#ffffff", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}>
                       <span>Total</span>
                       <span className="text-orange-600">₹{totalPrice.toLocaleString()}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={handlePayment}
-                    disabled={paying}
-                    className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-60 disabled:cursor-not-allowed py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
-                  >
-                    {paying ? "Processing..." : <><ShoppingBag size={18} /> Pay ₹{totalPrice.toLocaleString()}</>}
-                  </button>
+                  
+                  {checkoutStep === "cart" && (
+                    <button onClick={() => setCheckoutStep("address")} className="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                       Proceed to Address <ArrowLeft className="rotate-180" size={18} />
+                    </button>
+                  )}
+
+                  {checkoutStep === "address" && (
+                    <button onClick={() => setCheckoutStep("method")} disabled={!isAddressValid()} className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                       Continue to Payment <ArrowLeft className="rotate-180" size={18} />
+                    </button>
+                  )}
+
+                  {checkoutStep === "method" && (
+                    <button 
+                       onClick={async () => {
+                          if (paymentMethod === "qr") {
+                             setPaying(true);
+                             try {
+                                const res = await fetch("/api/cashfree", {
+                                   method: "POST",
+                                   headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                      amount: totalPrice,
+                                      customer_phone: shippingDetails.phone || "9999999999",
+                                      customer_email: shippingDetails.email || "test@example.com",
+                                      paymentMethod: "qr",
+                                      items: JSON.stringify(cart),
+                                      shipping: shippingDetails
+                                   })
+                                });
+                                const data = await res.json();
+                                if (res.ok && data.success && data.qrPayload) {
+                                   setDynamicQrCode(data.qrPayload);
+                                   setCurrentOrderId(data.orderId);
+                                   setCheckoutStep("qr");
+                                } else {
+                                   alert(`Payment Error: ${data.error || "Failed to generate QR Code"}`);
+                                }
+                             } catch (e) {
+                                alert("Something went wrong generating QR code.");
+                             } finally {
+                                setPaying(false);
+                             }
+                          } else {
+                             setCheckoutStep(paymentMethod === "upi" || paymentMethod === "upi_id" ? paymentMethod : "method");
+                          }
+                       }} 
+                       disabled={!paymentMethod || paying} 
+                       className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                    >
+                       {paying && paymentMethod === "qr" ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : "Continue to Pay"}
+                    </button>
+                  )}
+
+                  {(checkoutStep === "qr" || checkoutStep === "upi" || checkoutStep === "upi_id") && (
+                    <button onClick={handleQrOrder} disabled={!utr || paying || (checkoutStep === 'upi_id' && !upiRequestSent)} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                       {paying ? "Recording..." : "I have Paid (Submit Order)"}
+                    </button>
+                  )}
                 </div>
               )}
             </motion.div>

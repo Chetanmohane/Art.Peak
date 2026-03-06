@@ -6,7 +6,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import AuthContext from "./context/AuthContext";
 
 export const metadata = { 
-  title: "LaserCraft - Precision Engraving",
+  title: "Art.Peak - Precision Engraving",
   description: "Premium Laser Engraving Services",
 };
 

@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Minus, Trash2, ShoppingCart, Star, ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingCart, Star, ChevronLeft, ChevronRight, Upload, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../context/CartContext";
 import { useSession } from "next-auth/react";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -16,82 +16,6 @@ interface Product {
   images?: string[];
   bulkPricing?: { qty: number; price: number }[];
 }
-
-// ✅ Product-matched High-Quality Images from Unsplash
-const productData: Product[] = [
-  { 
-    id: 1, 
-    name: "Custom Wooden Keychain", 
-    price: 200, 
-    // Wooden keychain / wood craft
-    image: "/images/keychain.jpg", 
-    images: [
-      "/images/keychain.jpg",
-      "https://images.unsplash.com/photo-1611077544795-c94e0c4f1c3b?q=80&w=800&auto=format&fit=crop", 
-      "https://images.unsplash.com/photo-1605342790938-23223011400a?q=80&w=800&auto=format&fit=crop"
-    ],
-    category: "Wood",
-    bulkPricing: [
-      { qty: 500, price: 20 },
-      { qty: 100, price: 30 },
-      { qty: 1, price: 200 }
-    ]
-  },
-  { 
-    id: 2, 
-    name: "Metal Business Card", 
-    price: 999, 
-    // Sleek metal / steel business card
-    image: "https://images.unsplash.com/photo-1572021335469-31706a17aaef?q=80&w=800&auto=format&fit=crop", 
-    images: [
-      "https://images.unsplash.com/photo-1572021335469-31706a17aaef?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=800&auto=format&fit=crop"
-    ],
-    category: "Metal",
-    bulkPricing: [
-      { qty: 500, price: 50 },
-      { qty: 100, price: 150 },
-      { qty: 1, price: 999 }
-    ]
-  },
-  { 
-    id: 3, 
-    name: "Glass Trophy Engraving", 
-    price: 2499, 
-    // Glass trophy / crystal award
-    image: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?q=80&w=800&auto=format&fit=crop", 
-    images: [
-      "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1622037022824-0c71d511ef3c?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1506544777-64cfbea77c88?q=80&w=800&auto=format&fit=crop"
-    ],
-    category: "Glass",
-    bulkPricing: [
-      { qty: 50, price: 500 },
-      { qty: 10, price: 1500 },
-      { qty: 1, price: 2499 }
-    ]
-  },
-  { 
-    id: 4, 
-    name: "Acrylic LED Logo", 
-    price: 3999, 
-    // Glowing neon / LED acrylic sign
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop", 
-    images: [
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1563203369-26f2e8a5b285?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1550684376-efcbd6e3f031?q=80&w=800&auto=format&fit=crop"
-    ],
-    category: "Acrylic",
-    bulkPricing: [
-      { qty: 50, price: 1000 },
-      { qty: 10, price: 2500 },
-      { qty: 1, price: 3999 }
-    ]
-  },
-];
 
 function ProductCard({ product, onCustomize }: { product: Product, onCustomize: (product: Product) => void }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -181,11 +105,31 @@ function ProductCard({ product, onCustomize }: { product: Product, onCustomize: 
 export default function Products() {
   const { cart, addToCart, increaseQty, decreaseQty, updateQty, removeItem, totalPrice } = useCart();
   const { data: session } = useSession();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading ] = useState(true);
   const [customizingProduct, setCustomizingProduct] = useState<Product | null>(null);
   const [customText, setCustomText] = useState("");
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [customQty, setCustomQty] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("/api/products");
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch products", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -237,11 +181,22 @@ export default function Products() {
         </div>
 
         {/* PRODUCT GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          {productData.map((product) => (
-            <ProductCard key={product.id} product={product} onCustomize={setCustomizingProduct} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+             <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+             <p className="text-zinc-500 font-medium">Loading masterpieces...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-zinc-500 text-lg">No products found. Stay tuned!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} onCustomize={setCustomizingProduct} />
+            ))}
+          </div>
+        )}
 
         {/* CUSTOMIZATION MODAL */}
         <AnimatePresence>
@@ -372,97 +327,6 @@ export default function Products() {
           )}
         </AnimatePresence>
 
-        {/* CART DRAWER / SECTION */}
-        {cart.length > 0 && (
-          <div className="mt-20 bg-zinc-900 border border-orange-500/20 p-4 sm:p-8 rounded-3xl shadow-2xl max-w-3xl mx-auto relative overflow-hidden">
-            {/* Background Decoration */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full -mr-16 -mt-16"></div>
-            
-            <h3 className="text-white text-2xl font-bold mb-8 flex items-center gap-3">
-              <ShoppingCart size={28} className="text-orange-500" /> 
-              Shopping Cart
-            </h3>
-
-            <div className="space-y-4 sm:space-y-6">
-              {cart.map((item) => (
-                <div key={item.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-black/40 p-4 sm:p-5 rounded-2xl border border-white/5 gap-4 sm:gap-0">
-                  <div className="flex items-start sm:items-center gap-4 w-full sm:w-auto">
-                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0">
-                       <Image src={item.product.image} alt={item.product.name} fill className="object-cover" unoptimized={true} />
-                    </div>
-                    <div>
-                      <p className="text-white font-medium text-lg">{item.product.name}</p>
-                      <p className="text-orange-500 font-bold flex items-center gap-2">
-                        ₹
-                        {item.product.bulkPricing 
-                          ? (item.product.bulkPricing.find(t => item.qty >= t.qty)?.price || item.product.price) 
-                          : item.product.price} 
-                        <span className="text-gray-500 font-normal text-sm ml-1">x {item.qty}</span>
-                        {item.product.bulkPricing && item.product.bulkPricing.find(t => item.qty >= t.qty) && (
-                          <span className="text-xs text-green-400 font-medium bg-green-400/10 px-2 py-0.5 rounded ml-1">Bulk Price</span>
-                        )}
-                      </p>
-                      
-                      {item.customText && (
-                        <p className="text-gray-300 text-sm mt-1.5 bg-black/40 px-2.5 py-1 rounded inline-block max-w-[200px] truncate">
-                          &quot;{item.customText}&quot;
-                        </p>
-                      )}
-                      {item.customImage && (
-                        <div className="mt-2 w-10 h-10 relative rounded-md overflow-hidden border border-white/10">
-                          <Image src={item.customImage} alt="Custom" fill className="object-cover" unoptimized />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start pt-2 sm:pt-0 border-t sm:border-0 border-white/5">
-                    <div className="flex items-center bg-zinc-800 rounded-xl px-2 py-1">
-                      <button onClick={() => decreaseQty(item.id)} className="p-2 text-gray-400 hover:text-white transition">
-                        <Minus size={18} />
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.qty}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (!isNaN(val)) updateQty(item.id, val);
-                        }}
-                        onBlur={(e) => {
-                          if (e.target.value === "" || parseInt(e.target.value) <= 0) {
-                            updateQty(item.id, 1);
-                          }
-                        }}
-                        className="text-white w-10 text-center font-bold bg-transparent outline-none border-none hide-number-spinners"
-                      />
-                      <button onClick={() => increaseQty(item.id)} className="p-2 text-gray-400 hover:text-white transition">
-                        <Plus size={18} />
-                      </button>
-                    </div>
-                    <button onClick={() => removeItem(item.id)} className="p-3 text-zinc-500 hover:text-red-500 transition bg-red-500/10 sm:bg-transparent rounded-xl">
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-10 pt-6 border-t border-white/10">
-              <div className="flex justify-between items-center mb-8">
-                <span className="text-gray-400 text-xl">Grand Total</span>
-                <span className="text-white text-4xl font-black italic">₹{totalPrice}</span>
-              </div>
-
-              <button
-                onClick={handlePayment}
-                className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 py-5 rounded-2xl text-white font-black text-xl shadow-xl shadow-orange-900/20 transition-all active:scale-95 uppercase tracking-widest"
-              >
-                Proceed to Checkout
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

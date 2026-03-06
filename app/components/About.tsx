@@ -50,11 +50,11 @@ export default function About() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
-            About <span className="text-orange-500">LaserCraft</span>
+            About <span className="text-orange-500">Art.Peak</span>
           </h2>
 
           <p className="mt-6 text-base sm:text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            LaserCraft provides high-precision laser engraving and CNC cutting
+            Art.Peak provides high-precision laser engraving and CNC cutting
             services using advanced laser technology. We specialize in custom
             designs for wood, metal, glass, acrylic, and industrial materials.
           </p>
@@ -62,6 +62,10 @@ export default function About() {
           <p className="mt-4 text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>
             Our mission is to transform ideas into reality with precision,
             creativity, and modern engineering excellence.
+          </p>
+
+          <p className="mt-6 text-[15px] sm:text-[17px] font-medium" style={{ color: "var(--text-primary)" }}>
+            Founded and owned by <span className="text-orange-500 font-bold">Chetan Mohane</span>.
           </p>
 
           {/* ================= STATS ================= */}

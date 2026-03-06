@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;

@@ -7,6 +7,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,11 +16,24 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      alert("Message Sent Successfully 🚀");
-      setForm({ name: "", email: "", message: "" });
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setSuccess(true);
+        setForm({ name: "", email: "", message: "" });
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        alert("Failed to send message. Please try again.");
+      }
+    } catch {
+      alert("An error occurred. Please try again.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const inputStyle = {
@@ -47,7 +61,7 @@ export default function Contact() {
           viewport={{ once: true }}
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
-            Contact <span className="text-orange-500">LaserCraft</span>
+            Contact <span className="text-orange-500">Art.Peak</span>
           </h2>
 
           <p className="mt-6 text-base sm:text-lg" style={{ color: "var(--text-secondary)" }}>
@@ -57,9 +71,9 @@ export default function Contact() {
 
           <div className="mt-10 space-y-6" style={{ color: "var(--text-secondary)" }}>
             {[
-              { Icon: MapPin,  text: "Huzurganj, India" },
-              { Icon: Phone,   text: "+91 9876543210" },
-              { Icon: Mail,    text: "info@lasercraft.com" },
+              { Icon: MapPin,  text: "Madhya Pradesh , India" },
+              { Icon: Phone,   text: "+91 8839034632" },
+              { Icon: Mail,    text: "art.peak@gmail.com" },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-center gap-4 hover:text-orange-500 transition cursor-pointer">
                 <Icon className="text-orange-500 flex-shrink-0" />
@@ -119,12 +133,48 @@ export default function Contact() {
             </div>
 
             {/* Button */}
-            <button
-              type="submit" disabled={loading}
-              className="w-full py-3 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 transition rounded-lg text-white font-semibold shadow-lg shadow-orange-600/30"
-            >
-              {loading ? "Sending..." : "Send Message"}
-            </button>
+            <div className="pt-2">
+              {success ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-full py-3.5 bg-green-500 text-white font-semibold rounded-lg shadow-lg shadow-green-500/40 flex items-center justify-center gap-2"
+                >
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                  >
+                    🎉
+                  </motion.span>
+                  Message Sent Successfully!
+                </motion.div>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit" disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-75 transition-all duration-300 rounded-lg text-white font-semibold shadow-lg shadow-orange-600/30 relative overflow-hidden group border border-orange-500/50 hover:border-orange-400"
+                >
+                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform duration-300" />
+                      Send Message
+                    </>
+                  )}
+                </motion.button>
+              )}
+            </div>
           </div>
         </motion.form>
       </div>

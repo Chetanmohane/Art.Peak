@@ -1,0 +1,63 @@
+
+> my-app@0.1.0 dev
+> next dev --webpack
+
+▲ Next.js 16.1.6 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://10.241.190.228:3000
+- Environments: .env
+
+✓ Starting...
+✓ Ready in 2.2s
+Attempting to generate Cashfree Order... order_1772778489149_ig0ei
+ GET /profile 200 in 1316ms (compile: 1122ms, render: 195ms)
+ POST /api/cashfree 200 in 1356ms (compile: 1153ms, render: 203ms)
+Order Created. Session: session_itOV-fq8kqVfdQKOYTHOrElTxH0QpZFHBPuoxGbQME_hzapklj0plYvP5jzMMnQf9LnT3ArY3vO4etRZxn2CmZZZwkKWziVdvtcwWy9CoI6XW-T-3XqCLp8rzwzL. Initiating UPI Collect to 272927292005@ibl
+Cashfree Payment Session Error: {
+  code: 's2s_enabled_not_approved',
+  message: 'POST/orders/pay is not enabled or approved. Please reach out to care@cashfree.com.',
+  type: 'feature_not_enabled'
+}
+ GET /api/auth/session 200 in 548ms (compile: 533ms, render: 15ms)
+ GET /api/admin/check 200 in 156ms (compile: 149ms, render: 7ms)
+ GET / 200 in 448ms (compile: 429ms, render: 20ms)
+ GET /api/products 200 in 153ms (compile: 146ms, render: 7ms)
+ GET /api/products 200 in 4ms (compile: 1113µs, render: 3ms)
+ GET / 200 in 181ms (compile: 45ms, render: 136ms)
+ GET /api/products 200 in 5ms (compile: 2ms, render: 3ms)
+ GET /api/auth/session 200 in 62ms (compile: 50ms, render: 12ms)
+ GET /profile 200 in 28ms (compile: 18ms, render: 10ms)
+ GET /api/admin/check 200 in 11ms (compile: 4ms, render: 7ms)
+ GET /api/admin/check 200 in 7ms (compile: 1175µs, render: 5ms)
+Attempting to generate Cashfree Order... order_1772778569325_velv3t
+Order Created. Session: session_fMjkzmRF_kXhz8Ttfx6lBxJa2FrtqqjO1-6-fbtY1KPN2K9EKVriIWCEHCsZqKpa3Q8YpkcwrDrXgGEdWZpGkfwXHb_2hMVhjh44U9J8uowoCt55RfehyN3w30DD. Initiating dynamic QR Code request.
+Cashfree Payment Session Error: {
+  code: 's2s_enabled_not_approved',
+  message: 'POST/orders/pay is not enabled or approved. Please reach out to care@cashfree.com.',
+  type: 'feature_not_enabled'
+}
+ POST /api/cashfree 400 in 584ms (compile: 7ms, render: 577ms)
+Attempting to generate Cashfree Order... order_1772778587342_75th1b
+Order Created. Session: session_dkve-yV-XYMY1ZgbWey3PgjhmTnM1skorm8qidYAlfJClIjBYRArCXa-7YqkkFcavdvqMet3RPEMMSpWRz8CUY0PSkcLeMBVvb1QPGul5ZJusy4Ucck1HhWrbPIR. Initiating UPI Collect to 272927292005@ibl
+Cashfree Payment Session Error: {
+  code: 's2s_enabled_not_approved',
+  message: 'POST/orders/pay is not enabled or approved. Please reach out to care@cashfree.com.',
+  type: 'feature_not_enabled'
+}
+ POST /api/cashfree 400 in 421ms (compile: 4ms, render: 417ms)
+ GET /api/auth/session 200 in 25ms (compile: 9ms, render: 16ms)
+Attempting to generate Cashfree Order... order_1772778822855_swkk76
+Order Created. Session: session_OsAhYqh4xOsJp1uSHlolRbrbFrFeNbtpALO6-_6Q_Yrg8nnjDbW6CFfx4vdgyZXnA85HWHW1j5ExWlkAcw0tSKox2bDPGuf2ZQca7Era6gS19nVoh6OgUitTxxKa. Initiating UPI Collect to 272927292005@ibl
+Cashfree Payment Session Error: {
+  code: 's2s_enabled_not_approved',
+  message: 'POST/orders/pay is not enabled or approved. Please reach out to care@cashfree.com.',
+  type: 'feature_not_enabled'
+}
+ POST /api/cashfree 400 in 577ms (compile: 4ms, render: 573ms)
+ GET /api/auth/session 200 in 17ms (compile: 7ms, render: 11ms)
+ GET / 200 in 10ms (compile: 2ms, render: 8ms)
+ GET /api/products 200 in 5ms (compile: 1615µs, render: 3ms)
+ GET /api/products 200 in 3ms (compile: 744µs, render: 2ms)
+ GET / 200 in 33ms (compile: 5ms, render: 28ms)
+ GET / 200 in 87ms (compile: 69ms, render: 18ms)
+ GET /api/auth/session 200 in 70ms (compile: 53ms, render: 18ms)

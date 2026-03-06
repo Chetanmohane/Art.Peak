@@ -46,12 +46,12 @@ export const searchData: SearchItem[] = [
     {
         id: "about",
         title: "About Us",
-        description: "LaserCraft – 5+ years, 500+ projects, 100% quality commitment",
+        description: "Art.Peak – 5+ years, 500+ projects, 100% quality commitment",
         section: "Page",
         sectionLabel: "Page",
         href: "#about",
         icon: "ℹ️",
-        tags: ["about", "about us", "company", "lasercraft", "team", "experience", "page"],
+        tags: ["about", "about us", "company", "artpeak", "team", "experience", "page"],
     },
     {
         id: "contact",
