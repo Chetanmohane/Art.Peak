@@ -3,8 +3,9 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { User, Package, Settings, LogOut, Loader2, KeyRound, ArrowLeft, MessageSquare, ShieldCheck } from "lucide-react";
+import { User, Package, Settings, LogOut, Loader2, KeyRound, ArrowLeft, MessageSquare, ShieldCheck, Mail, Calendar } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Order {
   id: string;
@@ -150,338 +151,417 @@ export default function ProfilePage() {
     return null; // Will redirect in useEffect
   }
 
-  const tabClass = (tab: string) => `
-    flex items-center gap-3 px-5 py-3 rounded-xl transition-all font-medium text-sm
-    ${activeTab === tab 
-      ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20" 
-      : (isLight ? "text-zinc-600 hover:bg-zinc-100" : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white")}
-  `;
+  const tabClass = (tab: string) => {
+    const isActive = activeTab === tab;
+    return `
+      relative flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all duration-300 group
+      ${isActive 
+        ? "bg-orange-500 text-white shadow-xl shadow-orange-500/30 font-bold" 
+        : (isLight 
+            ? "text-zinc-500 hover:bg-zinc-100/80 hover:text-zinc-900" 
+            : "text-zinc-500 hover:bg-white/5 hover:text-white")}
+    `;
+  };
 
   return (
-    <div className={`min-h-screen pt-28 pb-20 ${isLight ? "bg-zinc-50" : "bg-black"}`}>
-      <div className="max-w-6xl mx-auto px-6">
+    <div className={`min-h-screen py-24 sm:py-32 ${isLight ? "bg-[#f8fafc]" : "bg-[#050505]"} transition-colors duration-500`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="flex flex-col md:flex-row gap-8">
+        {/* Header Section */}
+        <div className="mb-10 sm:mb-16">
+          <motion.button 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => router.push('/')} 
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-bold text-xs uppercase tracking-widest mb-6 ${
+              isLight ? "text-zinc-400 hover:text-orange-500 bg-white shadow-sm" : "text-zinc-500 hover:text-orange-400 bg-white/5"
+            }`}
+          >
+            <ArrowLeft size={14} /> Back to Web
+          </motion.button>
           
-          {/* Sidebar */}
-          <div className="w-full md:w-64 shrink-0 space-y-2">
-            <div className={`p-6 rounded-3xl mb-6 border ${isLight ? "bg-white border-zinc-200" : "bg-zinc-900 border-white/5"}`}>
-              <div className="w-16 h-16 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center text-2xl font-bold mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h1 className={`text-4xl sm:text-5xl font-black tracking-tighter ${isLight ? "text-zinc-900" : "text-white"}`}>
+                Account <span className="text-orange-500">Settings</span>
+              </h1>
+              <p className={`mt-2 text-sm font-medium ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>
+                Manage your profile, orders and security preferences.
+              </p>
+            </motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`flex items-center gap-4 p-2 rounded-2xl border ${
+                isLight ? "bg-white border-zinc-200" : "bg-white/5 border-white/10"
+              }`}
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-orange-500/20">
                 {session?.user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
-              <h2 className={`font-bold text-lg truncate ${isLight ? "text-zinc-900" : "text-white"}`}>
-                {session?.user?.name}
-              </h2>
-              <p className={`text-sm truncate ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>
-                {session?.user?.email}
-              </p>
-            </div>
-
-            <nav className="flex flex-col gap-2">
-              <button onClick={() => router.push('/')} className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all font-medium text-sm mb-2 ${isLight ? "text-zinc-600 hover:bg-zinc-100" : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"}`}>
-                <ArrowLeft size={18} /> Back to Home
-              </button>
+              <div className="pr-4">
+                <p className={`font-black text-sm truncate max-w-[150px] ${isLight ? "text-zinc-900" : "text-white"}`}>
+                  {session?.user?.name}
+                </p>
+                <div className="flex items-center gap-1">
+                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                   <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Online</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+        
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          
+          {/* Sidebar Navigation */}
+          <aside className="w-full lg:w-72 shrink-0">
+            <nav className={`flex flex-col gap-2 p-2 rounded-3xl border bg-opacity-50 backdrop-blur-xl sticky top-24 transition-all duration-300 ${
+              isLight ? "bg-white border-zinc-200/80 shadow-xl shadow-black/5" : "bg-zinc-950/50 border-white/5 shadow-2xl"
+            }`}>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-5 pt-4 pb-2">Navigation</p>
+              
               <button onClick={() => setActiveTab("profile")} className={tabClass("profile")}>
-                <User size={18} /> My Profile
+                <User size={18} className={activeTab === "profile" ? "text-white" : "text-zinc-500"} /> 
+                <span className="flex-1 text-left">My Profile</span>
+                {activeTab === "profile" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
               </button>
+              
               <button onClick={() => setActiveTab("orders")} className={tabClass("orders")}>
-                <Package size={18} /> Order History
+                <Package size={18} className={activeTab === "orders" ? "text-white" : "text-zinc-500"} /> 
+                <span className="flex-1 text-left">Order History</span>
+                {activeTab === "orders" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
               </button>
-              <button onClick={() => setActiveTab("security")} className={tabClass("security")}>
-                <Settings size={18} /> Security
-              </button>
+              
               <button onClick={() => setActiveTab("messages")} className={tabClass("messages")}>
-                <MessageSquare size={18} /> My Messages
+                <MessageSquare size={18} className={activeTab === "messages" ? "text-white" : "text-zinc-500"} /> 
+                <span className="flex-1 text-left">My Messages</span>
+                {activeTab === "messages" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
               </button>
-              {/* Admin Panel link — only for admins */}
+              
+              <button onClick={() => setActiveTab("security")} className={tabClass("security")}>
+                <Settings size={18} className={activeTab === "security" ? "text-white" : "text-zinc-500"} /> 
+                <span className="flex-1 text-left">Account Settings</span>
+                {activeTab === "security" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
+              </button>
+
+              <div className="h-px bg-current opacity-10 mx-4 my-2"></div>
+
               {isAdmin && (
                 <button
                   onClick={() => router.push("/admin")}
-                  className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all font-bold text-sm mt-2 
+                  className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-black text-[10px] uppercase tracking-[0.15em] relative group
                     ${isLight 
-                      ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100" 
-                      : "bg-indigo-500 text-white hover:bg-indigo-600 shadow-lg shadow-indigo-500/20"}`}
+                      ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/30 hover:-translate-y-0.5" 
+                      : "bg-indigo-500 text-white hover:bg-indigo-600 shadow-2xl shadow-indigo-500/40"}`}
                 >
-                  <ShieldCheck size={18} /> Admin Panel
+                  <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> 
+                  Admin Console
+                  <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
               )}
+
               <button 
                 onClick={() => signOut({ callbackUrl: '/' })} 
-                className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all font-medium text-sm mt-4 text-red-500 ${isLight ? "hover:bg-red-50" : "hover:bg-red-500/10"}`}
+                className={`mt-2 flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-bold text-sm text-red-500 group
+                  ${isLight ? "hover:bg-red-50" : "hover:bg-red-500/10"}`}
               >
-                <LogOut size={18} /> Sign Out
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all">
+                  <LogOut size={16} />
+                </div>
+                Sign Out
               </button>
             </nav>
-          </div>
+          </aside>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            <div className={`min-h-[500px] p-8 rounded-3xl border ${isLight ? "bg-white border-zinc-200" : "bg-zinc-900 border-white/5 shadow-xl"}`}>
+          {/* Main Content Viewport */}
+          <div className="flex-1 min-w-0">
+            <div className={`min-h-[600px] p-6 sm:p-10 rounded-[2.5rem] border backdrop-blur-3xl relative overflow-hidden transition-all duration-500 ${
+              isLight ? "bg-white border-zinc-200/80 shadow-xl" : "bg-zinc-950/40 border-white/5 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]"
+            }`}>
               
-              {/* Profile Tab */}
-              {activeTab === "profile" && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h3 className={`text-2xl font-bold mb-6 ${isLight ? "text-zinc-900" : "text-white"}`}>Personal Information</h3>
-                  
-                  <div className="space-y-6 max-w-xl">
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Full Name</label>
-                      <div className={`w-full px-4 py-3 rounded-xl border ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-black/50 border-white/10 text-white"}`}>
-                        {session?.user?.name}
-                      </div>
-                    </div>
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Email Address</label>
-                      <div className={`w-full px-4 py-3 rounded-xl border ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-black/50 border-white/10 text-white"}`}>
-                        {session?.user?.email}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Animated Background Element */}
+              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-orange-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-              {/* Orders Tab */}
-              {activeTab === "orders" && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h3 className={`text-2xl font-bold mb-6 ${isLight ? "text-zinc-900" : "text-white"}`}>Order History</h3>
-                  
-                  {loadingOrders ? (
-                    <div className="flex justify-center py-12">
-                      <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
-                    </div>
-                  ) : orders.length === 0 ? (
-                    <div className="text-center py-16">
-                      <Package className={`w-16 h-16 mx-auto mb-4 ${isLight ? "text-zinc-300" : "text-zinc-700"}`} />
-                      <p className={`text-lg font-medium ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>No orders found</p>
-                      <p className={`text-sm mt-2 ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Looks like you haven't made any purchases yet.</p>
-                      <button 
-                        onClick={() => router.push('/')} 
-                        className="mt-6 px-6 py-2 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition"
-                      >
-                        Start Shopping
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((order) => {
-                        let parsedItems = [];
-                        try {
-                          parsedItems = JSON.parse(order.items || "[]");
-                        } catch(e) {}
-                        return (
-                        <div key={order.id} className={`p-5 rounded-2xl border flex flex-col gap-4 ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/30 border-white/5"}`}>
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98, y: -10 }}
+                  transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  {/* Profile Tab */}
+                  {activeTab === "profile" && (
+                    <div>
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className={`p-3 rounded-2xl ${isLight ? "bg-orange-50 text-orange-600" : "bg-orange-500/10 text-orange-500"}`}>
+                          <User size={24} />
+                        </div>
+                        <h3 className={`text-2xl sm:text-3xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Personal Profile</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <ProfileField label="Full Name" value={session?.user?.name || "User"} isLight={isLight} icon={<User size={16}/>} />
+                        <ProfileField label="Email Address" value={session?.user?.email || "Email"} isLight={isLight} icon={<Mail size={16}/>} />
+                        <ProfileField label="Last Login" value="Recently" isLight={isLight} icon={<Calendar size={16}/>} />
+                        <ProfileField label="Account Status" value="Active / Premium" isLight={isLight} icon={<ShieldCheck size={16}/>} />
+                      </div>
+
+                      <div className={`mt-12 p-8 rounded-3xl border border-dashed ${isLight ? "border-zinc-200 bg-zinc-50/50" : "border-zinc-800 bg-white/[0.01]"}`}>
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full border-2 border-orange-500/20 flex items-center justify-center text-orange-500">
+                               <Settings className="animate-spin-slow" />
+                            </div>
                             <div>
-                              <p className={`text-xs font-mono mb-1 ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>ORDER #{order.id.slice(-8).toUpperCase()}</p>
-                              <p className={`font-semibold ${isLight ? "text-zinc-900" : "text-white"}`}>
-                                {new Date(order.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
-                              </p>
-                              <span className={`inline-block mt-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                order.status === 'pending' || order.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500' : 
-                                order.status === 'failed' ? 'bg-red-500/10 text-red-500' :
-                                order.status === 'completed' || order.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' : 
-                                'bg-zinc-500/10 text-zinc-500'
-                              }`}>
-                                {order.status.replace('_', ' ')}
-                              </span>
+                               <p className={`font-bold ${isLight ? "text-zinc-900" : "text-white"}`}>Auto-save enabled</p>
+                               <p className="text-[11px] text-zinc-500 font-medium">Your profile changes are synchronized across devices automatically.</p>
                             </div>
-                            <div className="text-left sm:text-right">
-                              <p className={`text-sm ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Total Amount</p>
-                              <p className={`text-xl font-bold text-orange-500`}>₹{order.totalAmount.toLocaleString()}</p>
-                            </div>
-                          </div>
-                          
-                          {/* Items Section */}
-                          <div className={`mt-2 p-4 rounded-xl ${isLight ? "bg-black/5" : "bg-white/5"}`}>
-                            <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Items Ordered</p>
-                            <div className="space-y-3">
-                              {parsedItems.map((item: any, idx: number) => (
-                                <div key={item.id || idx} className="flex gap-3 items-center">
-                                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-200 shrink-0">
-                                    <img src={item.product?.image} alt={item.product?.name} className="w-full h-full object-cover" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`text-sm font-semibold truncate ${isLight ? "text-zinc-900" : "text-white"}`}>
-                                      {item.product?.name} <span className="text-zinc-500 text-xs font-normal">x{item.qty}</span>
-                                    </p>
-                                    {(item.customText || item.customImage) && (
-                                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-                                        {item.customText && (
-                                          <p className="text-xs text-orange-500 truncate"><span className="text-zinc-500">Text:</span> "{item.customText}"</p>
-                                        )}
-                                        {item.customImage && (
-                                          <div className="w-full mt-2 flex flex-col gap-1.5">
-                                            <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>Custom Image:</p>
-                                            <div className="flex gap-3 items-center">
-                                              <a href={item.customImage} target="_blank" rel="noreferrer" className={`block shrink-0 w-16 h-16 rounded-xl overflow-hidden border transition relative ${isLight ? "border-zinc-300 shadow-sm" : "border-white/20 shadow-md"}`}>
-                                                 <img src={item.customImage} alt="Custom" className="w-full h-full object-cover" />
-                                              </a>
-                                              <div className="flex flex-col gap-1.5 flex-1 max-w-[120px]">
-                                                <button type="button" onClick={async () => {
-                                                    try {
-                                                      if (item.customImage.startsWith('data:')) {
-                                                        const res = await fetch(item.customImage);
-                                                        const blob = await res.blob();
-                                                        const url = window.URL.createObjectURL(blob);
-                                                        window.open(url, '_blank');
-                                                      } else {
-                                                        window.open(item.customImage, '_blank');
-                                                      }
-                                                    } catch(e) {
-                                                      window.open(item.customImage, '_blank');
-                                                    }
-                                                }} className="text-[10px] w-full bg-blue-500/10 text-blue-500 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500/20 transition text-center border-none cursor-pointer">
-                                                   Open Link
-                                                </button>
-                                                <button type="button" onClick={async () => {
-                                                    try {
-                                                      const res = await fetch(item.customImage);
-                                                      const blob = await res.blob();
-                                                      const url = window.URL.createObjectURL(blob);
-                                                      const a = document.createElement("a");
-                                                      a.href = url;
-                                                      a.download = `artpeak_custom_${item.id || idx}.jpg`;
-                                                      a.click();
-                                                      window.URL.revokeObjectURL(url);
-                                                    } catch(e) {
-                                                      window.open(item.customImage, '_blank');
-                                                    }
-                                                }} className="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-500/20 transition border-none cursor-pointer">
-                                                   Download Img
-                                                </button>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
+                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Orders Tab — Redesigned for premium look */}
+                  {activeTab === "orders" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className={`p-3 rounded-2xl ${isLight ? "bg-blue-50 text-blue-600" : "bg-blue-500/10 text-blue-500"}`}>
+                          <Package size={24} />
+                        </div>
+                        <h3 className={`text-2xl sm:text-3xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Purchase History</h3>
+                      </div>
+                      
+                      {loadingOrders ? (
+                        <div className="flex justify-center py-12">
+                          <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                        </div>
+                      ) : orders.length === 0 ? (
+                        <div className="text-center py-20 px-6 rounded-[2rem] border border-dashed border-zinc-200/50">
+                          <Package className={`w-16 h-16 mx-auto mb-4 ${isLight ? "text-zinc-200" : "text-zinc-800"}`} />
+                          <p className={`text-lg font-bold ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>No orders found</p>
+                          <p className="text-sm mt-1 text-zinc-500">Looks like you haven't made any purchases yet.</p>
+                          <button 
+                            onClick={() => router.push('/')} 
+                            className="mt-8 px-8 py-3 bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition shadow-lg shadow-orange-500/20"
+                          >
+                            Explore Products
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {orders.map((order) => {
+                            let parsedItems = [];
+                            try {
+                              parsedItems = JSON.parse(order.items || "[]");
+                            } catch(e) {}
+                            return (
+                            <div key={order.id} className={`p-6 sm:p-8 rounded-[2rem] border transition-all duration-300 hover:shadow-2xl ${
+                              isLight ? "bg-zinc-50/50 border-zinc-100 hover:bg-white" : "bg-black/40 border-white/5 hover:bg-black/60"
+                            }`}>
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 pb-6 border-b border-zinc-500/10">
+                                <div>
+                                  <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${isLight ? "text-zinc-400" : "text-zinc-500"}`}>ID: {order.id.slice(-8).toUpperCase()}</p>
+                                  <p className={`text-xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>
+                                    {new Date(order.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                  </p>
+                                  <div className="flex gap-2 mt-3">
+                                    <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                                      order.status === 'pending' || order.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500' : 
+                                      order.status === 'failed' ? 'bg-red-500/10 text-red-500' :
+                                      order.status === 'completed' || order.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500' : 
+                                      'bg-zinc-500/10 text-zinc-500'
+                                    }`}>
+                                      {order.status.replace('_', ' ')}
+                                    </span>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )})}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Messages Tab */}
-              {activeTab === "messages" && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h3 className={`text-2xl font-bold mb-6 ${isLight ? "text-zinc-900" : "text-white"}`}>My Contact Messages</h3>
-
-                  {loadingMessages ? (
-                    <div className="flex justify-center py-12">
-                      <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="text-center py-16">
-                      <MessageSquare className={`w-16 h-16 mx-auto mb-4 ${isLight ? "text-zinc-300" : "text-zinc-700"}`} />
-                      <p className={`text-lg font-medium ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>No messages yet</p>
-                      <p className={`text-sm mt-2 ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Messages you send via the contact form will appear here.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {messages.map((msg) => (
-                        <div key={msg.id} className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/30 border-white/5"}`}>
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center text-sm font-bold">
-                                {msg.name.charAt(0).toUpperCase()}
+                                <div className="p-4 rounded-3xl bg-orange-500/5 border border-orange-500/10 text-left sm:text-right">
+                                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Total Pay</p>
+                                  <p className="text-2xl font-black text-orange-500 leading-none">₹{order.totalAmount.toLocaleString()}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className={`font-semibold text-sm ${isLight ? "text-zinc-900" : "text-white"}`}>{msg.name}</p>
-                                <p className={`text-xs ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>{msg.email}</p>
+                              
+                              <div className="space-y-4">
+                                {parsedItems.map((item: any, idx: number) => (
+                                  <div key={item.id || idx} className={`flex gap-4 p-4 rounded-2xl ${isLight ? "bg-white shadow-sm" : "bg-zinc-900/50"}`}>
+                                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-zinc-200 shrink-0 border border-white/10 shadow-lg">
+                                      <img src={item.product?.image} alt={item.product?.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                      <div className="flex justify-between items-start gap-2">
+                                        <p className={`text-sm font-black truncate ${isLight ? "text-zinc-900" : "text-white"}`}>
+                                          {item.product?.name}
+                                        </p>
+                                        <p className="text-xs font-black text-orange-500 shrink-0">x{item.qty}</p>
+                                      </div>
+                                      {(item.customText || item.customImage) && (
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {item.customText && (
+                                            <p className="text-[10px] bg-orange-500/5 text-orange-400 px-2 py-1 rounded-md font-bold italic truncate max-w-[150px]">"{item.customText}"</p>
+                                          )}
+                                          {item.customImage && <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded-md font-bold">Image Attached</span>}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                            <p className={`text-xs font-mono ${isLight ? "text-zinc-400" : "text-zinc-600"}`}>
-                              {new Date(msg.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
-                          <p className={`text-sm leading-relaxed pl-10 ${isLight ? "text-zinc-700" : "text-zinc-300"}`}>{msg.message}</p>
+                          )})}
                         </div>
-                      ))}
+                      )}
+                </div>
+              )}
+
+                  {/* Messages Tab — Redesigned for premium look */}
+                  {activeTab === "messages" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className={`p-3 rounded-2xl ${isLight ? "bg-emerald-50 text-emerald-600" : "bg-emerald-500/10 text-emerald-500"}`}>
+                          <MessageSquare size={24} />
+                        </div>
+                        <h3 className={`text-2xl sm:text-3xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Support Inquiries</h3>
+                      </div>
+
+                      {loadingMessages ? (
+                        <div className="flex justify-center py-12">
+                          <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                        </div>
+                      ) : messages.length === 0 ? (
+                        <div className="text-center py-20 px-6 rounded-[2rem] border border-dashed border-zinc-200/50">
+                          <MessageSquare className={`w-16 h-16 mx-auto mb-4 ${isLight ? "text-zinc-200" : "text-zinc-800"}`} />
+                          <p className={`text-lg font-bold ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>No messages yet</p>
+                          <p className="text-sm mt-1 text-zinc-500">Inquiries sent via the contact form will appear here.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {messages.map((msg) => (
+                            <div key={msg.id} className={`p-6 sm:p-8 rounded-[2rem] border transition-all duration-300 ${
+                              isLight ? "bg-zinc-50/50 border-zinc-100 hover:bg-white" : "bg-black/40 border-white/5 hover:bg-black/60"
+                            }`}>
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center text-lg font-black shadow-inner">
+                                    {msg.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className={`font-black text-sm uppercase tracking-widest ${isLight ? "text-zinc-900" : "text-white"}`}>{msg.name}</p>
+                                    <p className={`text-xs font-bold text-zinc-500`}>{msg.email}</p>
+                                  </div>
+                                </div>
+                                <p className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl ${isLight ? "bg-white text-zinc-400 shadow-sm" : "bg-white/5 text-zinc-500"}`}>
+                                  {new Date(msg.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                              <div className={`p-5 rounded-2xl leading-relaxed text-sm font-medium ${isLight ? "bg-white/50 text-zinc-700" : "bg-zinc-950/40 text-zinc-300"}`}>
+                                {msg.message}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
 
-              {/* Security Tab */}
-              {activeTab === "security" && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <h3 className={`text-2xl font-bold mb-6 ${isLight ? "text-zinc-900" : "text-white"}`}>Security Settings</h3>
-                  
-                  <form onSubmit={handlePasswordChange} className="max-w-xl space-y-5">
-                    {passwordMessage.text && (
-                      <div className={`p-4 rounded-xl text-sm font-medium ${
-                        passwordMessage.type === 'error' 
-                          ? 'bg-red-500/10 text-red-500 border border-red-500/20' 
-                          : 'bg-green-500/10 text-green-500 border border-green-500/20'
-                      }`}>
-                        {passwordMessage.text}
+                  {/* Account Settings Tab */}
+                  {activeTab === "security" && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex items-center gap-4 mb-10">
+                        <div className={`p-4 rounded-[1.25rem] ${isLight ? "bg-indigo-50 text-indigo-600" : "bg-indigo-500/10 text-indigo-500"}`}>
+                          <Settings size={28} />
+                        </div>
+                        <div>
+                          <h3 className={`text-2xl sm:text-3xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Account Settings</h3>
+                          <p className="text-xs text-zinc-500 font-bold mt-1 uppercase tracking-widest">Manage your security and preferences</p>
+                        </div>
                       </div>
-                    )}
+                      
+                      <div className="max-w-3xl">
+                        <form onSubmit={handlePasswordChange} className="space-y-10">
+                          <div className={`p-8 rounded-[2.5rem] border ${isLight ? "bg-white border-zinc-100 shadow-sm" : "bg-white/[0.02] border-white/5 shadow-2xl"}`}>
+                            <div className="flex items-center gap-3 mb-8">
+                               <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+                                  <KeyRound size={16} />
+                               </div>
+                               <h4 className={`text-sm font-black uppercase tracking-widest ${isLight ? "text-zinc-900" : "text-white"}`}>Password & Security</h4>
+                            </div>
 
-                    <div>
-                      <label className={`block text-sm font-medium mb-2 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Current Password</label>
-                      <input 
-                        type="password"
-                        required
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all ${
-                          isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-black/50 border-white/10 text-white"
-                        }`}
-                      />
+                            {passwordMessage.text && (
+                              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`p-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.1em] mb-8 border ${
+                                passwordMessage.type === 'error' 
+                                  ? 'bg-red-500/10 text-red-500 border-red-500/20' 
+                                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                              }`}>
+                                {passwordMessage.text}
+                              </motion.div>
+                            )}
+
+                            <div className="space-y-8">
+                              <FormInput label="Current Password" type="password" value={currentPassword} onChange={setCurrentPassword} isLight={isLight} icon={<KeyRound size={14}/>} />
+                              
+                              <div className="h-px bg-zinc-500/10"></div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormInput label="New Password" type="password" value={newPassword} onChange={setNewPassword} isLight={isLight} icon={<KeyRound size={14}/>} />
+                                <FormInput label="Confirm New Password" type="password" value={confirmPassword} onChange={setConfirmPassword} isLight={isLight} icon={<KeyRound size={14}/>} />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 px-4">
+                             <p className="text-xs text-zinc-500 font-medium max-w-[300px] text-center sm:text-left">
+                                Ensure your password is at least 8 characters long and contains unique symbols for better safety.
+                             </p>
+                             <button
+                               type="submit"
+                               disabled={passwordLoading}
+                               className="w-full sm:w-auto px-12 py-4.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-70 disabled:grayscale uppercase tracking-widest text-xs"
+                             >
+                               {passwordLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck size={20} />}
+                               Update Settings
+                             </button>
+                          </div>
+                        </form>
+                      </div>
                     </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div>
-                        <label className={`block text-sm font-medium mb-2 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>New Password</label>
-                        <input 
-                          type="password"
-                          required
-                          minLength={6}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all ${
-                            isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-black/50 border-white/10 text-white"
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <label className={`block text-sm font-medium mb-2 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Confirm New Password</label>
-                        <input 
-                          type="password"
-                          required
-                          minLength={6}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all ${
-                            isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-black/50 border-white/10 text-white"
-                          }`}
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={passwordLoading}
-                      className="mt-4 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl flex items-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {passwordLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <KeyRound className="w-5 h-5" />}
-                      Update Password
-                    </button>
-                  </form>
-                </div>
-              )}
-
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProfileField({ label, value, isLight, icon }: { label: string, value: string, isLight: boolean, icon: React.ReactNode }) {
+  return (
+    <div className={`p-5 rounded-3xl border transition-all hover:scale-[1.02] ${isLight ? "bg-white border-zinc-200 shadow-sm" : "bg-zinc-900 border-white/5 shadow-xl"}`}>
+       <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5 mb-2">{icon} {label}</p>
+       <p className={`font-black text-lg ${isLight ? "text-zinc-900" : "text-white"}`}>{value}</p>
+    </div>
+  );
+}
+
+function FormInput({ label, type, value, onChange, isLight, icon }: { label: string, type: string, value: string, onChange: (v: string) => void, isLight: boolean, icon: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+       <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5 ml-1">{icon} {label}</label>
+       <div className={`px-4 rounded-xl border transition-all focus-within:border-orange-500 ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-black/30 border-white/10 text-white"}`}>
+          <input 
+            type={type}
+            required
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full py-3 bg-transparent outline-none text-sm font-bold"
+          />
+       </div>
     </div>
   );
 }

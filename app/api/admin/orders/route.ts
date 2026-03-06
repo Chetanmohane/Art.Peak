@@ -54,3 +54,28 @@ export async function PUT(req: Request) {
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }
+
+export async function DELETE(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user?.email || !(await isAdmin(session.user.email))) {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id");
+
+        if (!id) {
+            return new NextResponse("Order ID is required", { status: 400 });
+        }
+
+        await prisma.order.delete({
+            where: { id },
+        });
+
+        return new NextResponse("Order deleted successfully", { status: 200 });
+    } catch (error) {
+        console.error("Admin Order DELETE error:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
+}

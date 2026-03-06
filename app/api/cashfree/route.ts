@@ -90,59 +90,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, error: cashfreeOrderData.message || 'Failed to create Cashfree Order', details: cashfreeOrderData }, { status: orderResponse.status });
         }
 
-        // 2. Initiate Payment Session
-        const paymentSessionId = cashfreeOrderData.payment_session_id;
-
-        let payPayload: any;
-
-        if (paymentMethod === 'qr') {
-            console.log(`Order Created. Session: ${paymentSessionId}. Initiating dynamic QR Code request.`);
-            payPayload = {
-                payment_method: {
-                    upi: {
-                        channel: 'qrcode'
-                    }
-                },
-                payment_session_id: paymentSessionId
-            };
-        } else {
-            console.log(`Order Created. Session: ${paymentSessionId}. Initiating UPI Collect to ${uph_id}`);
-            payPayload = {
-                payment_method: {
-                    upi: {
-                        channel: 'collect',
-                        upi_id: uph_id
-                    }
-                },
-                payment_session_id: paymentSessionId
-            };
-        }
-
-        const payResponse = await fetch(`${baseUrl}/orders/sessions`, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'x-api-version': '2023-08-01',
-                'x-client-id': appId,
-                'x-client-secret': secretKey
-            },
-            body: JSON.stringify(payPayload)
-        });
-
-        const payData = await payResponse.json();
-
-        if (!payResponse.ok) {
-            console.error("Cashfree Payment Session Error:", payData);
-            return NextResponse.json({ success: false, error: payData.message || 'Failed to trigger payment session', details: payData }, { status: payResponse.status });
-        }
-
+        // 2. Return Payment Session ID for Frontend SDK Drop-in
         return NextResponse.json({
             success: true,
-            message: paymentMethod === 'qr' ? 'QR Code generated successfully' : 'UPI Collect Request Sent successfully',
             orderId: createdOrder.id,
-            qrPayload: paymentMethod === 'qr' ? payData?.data?.payload : null,
-            cashfreeResponse: payData
+            paymentSessionId: cashfreeOrderData.payment_session_id,
+            environment: env
         });
 
     } catch (error: any) {

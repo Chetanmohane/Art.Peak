@@ -9,6 +9,7 @@ import { useTheme } from "../context/ThemeContext";
 import Image from "next/image";
 import { searchContent, type SearchItem } from "../data/searchData";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import AuthModal from "./AuthModal";
 import { User as UserIcon } from "lucide-react";
 import QRCode from "react-qr-code";
@@ -30,6 +31,9 @@ const sectionColors: Record<string, string> = {
 export default function Navbar() {
   const { cart, totalItems, totalPrice, increaseQty, decreaseQty, updateQty, removeItem } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const pathname = usePathname();
+  
+  if (pathname?.startsWith("/admin")) return null;
   
   // Guard the component early rendering sync (it prevents hydration mismatches)
   const isLight = theme === "light";
@@ -798,210 +802,6 @@ export default function Navbar() {
 
 
 
-                  {checkoutStep === "method" && (
-                    <motion.div key="method" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 py-4">
-                       <button onClick={() => setCheckoutStep("address")} className="flex items-center gap-2 text-sm text-zinc-500 hover:text-orange-500 mb-4 transition"><ArrowLeft size={16}/> Back to Address</button>
-                       <h3 className="text-lg font-bold" style={{ color: isLight ? "#18181b" : "#ffffff" }}>Select Payment Method</h3>
-                       <div className="space-y-3">
-                          <button onClick={() => setPaymentMethod("upi")} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${paymentMethod === 'upi' ? 'bg-orange-500/10 border-orange-500' : 'bg-black/20 border-white/5'}`}>
-                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">⚡</div>
-                                <div className="text-left">
-                                   <p className="font-bold text-sm">Pay via UPI App</p>
-                                   <p className="text-[10px] text-zinc-500">Google Pay, PhonePe, Paytm, etc.</p>
-                                </div>
-                             </div>
-                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'upi' ? 'border-orange-500 bg-orange-500' : 'border-zinc-700'}`}>{paymentMethod === 'upi' && <div className="w-2 h-2 rounded-full bg-white"/>}</div>
-                          </button>
-                          
-                          <button onClick={() => setPaymentMethod("qr")} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${paymentMethod === 'qr' ? 'bg-orange-500/10 border-orange-500' : 'bg-black/20 border-white/5'}`}>
-                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400"><Search size={18}/></div>
-                                <div className="text-left">
-                                   <p className="font-bold text-sm">Scan QR Code</p>
-                                   <p className="text-[10px] text-zinc-500">Scan using any UPI App</p>
-                                </div>
-                             </div>
-                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'qr' ? 'border-orange-500 bg-orange-500' : 'border-zinc-700'}`}>{paymentMethod === 'qr' && <div className="w-2 h-2 rounded-full bg-white"/>}</div>
-                          </button>
-
-                          <button onClick={() => setPaymentMethod("upi_id")} className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${paymentMethod === 'upi_id' ? 'bg-orange-500/10 border-orange-500' : 'bg-black/20 border-white/5'}`}>
-                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold">@</div>
-                                <div className="text-left">
-                                   <p className="font-bold text-sm">Enter UPI ID</p>
-                                   <p className="text-[10px] text-zinc-500">Receive a payment request on your App</p>
-                                </div>
-                             </div>
-                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'upi_id' ? 'border-orange-500 bg-orange-500' : 'border-zinc-700'}`}>{paymentMethod === 'upi_id' && <div className="w-2 h-2 rounded-full bg-white"/>}</div>
-                          </button>
-                       </div>
-                    </motion.div>
-                  )}
-
-                  {(checkoutStep === "qr" || checkoutStep === "upi" || checkoutStep === "upi_id") && (
-                    <motion.div key="qr-upi" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="py-4 space-y-4">
-                     {/* Back + Step indicator */}
-                       <button onClick={() => { setCheckoutStep("method"); setPaymentMethod(null); setUpiRequestSent(false); }} className="flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-orange-400 mb-1 transition group">
-                         <span className="w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 group-hover:bg-orange-500/20 transition"><ArrowLeft size={12}/></span>
-                         Back to Payment Methods
-                       </button>
-
-                       {/* Amount Badge */}
-                       <div className="flex items-center justify-center">
-                         <div className="inline-flex flex-col items-center gap-1 px-6 py-3 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30">
-                           <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">Amount to Pay</span>
-                           <span className="text-3xl font-black text-white">₹{totalPrice.toLocaleString()}</span>
-                         </div>
-                       </div>
-
-                       {/* Contextual UI: Either QR or Direct UPI Link */}
-                       <div className={`rounded-3xl border-2 overflow-hidden ${isLight ? "bg-white border-zinc-200" : "bg-zinc-900 border-zinc-700"}`}>
-                          <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)" }}>
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                              <p className="text-xs font-black text-orange-400 uppercase tracking-widest">{checkoutStep === 'qr' ? 'Scan & Pay via UPI' : checkoutStep === 'upi' ? 'Pay Directly via UPI App' : 'UPI Payment Request'}</p>
-                            </div>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isLight ? "bg-green-100 text-green-700" : "bg-green-500/15 text-green-400"}`}>Secure</span>
-                          </div>
-
-                          <div className="p-5 flex flex-col items-center gap-4">
-                            {checkoutStep === 'qr' ? (
-                                <div className="relative">
-                                  {/* Animated Ring */}
-                                  <div className="absolute inset-0 rounded-2xl border-2 border-orange-500/40 animate-ping opacity-30" />
-                                  <div className="relative w-[200px] h-[200px] rounded-2xl overflow-hidden border-2 border-orange-500/30 bg-white p-3 flex items-center justify-center shadow-2xl shadow-orange-500/10">
-                                    <QRCode
-                                      value={dynamicQrCode || `upi://pay?pa=2729mohane2729@fam&pn=Art.Peak&cu=INR&am=${totalPrice}`}
-                                      size={170}
-                                      style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                      viewBox="0 0 256 256"
-                                    />
-                                  </div>
-                                </div>
-                            ) : checkoutStep === 'upi' ? (
-                                 <div className="w-full flex-col items-center flex">
-                                    <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-500 text-4xl mb-4">⚡</div>
-                                   <a 
-                                      href={`upi://pay?pa=2729mohane2729@fam&pn=Art.Peak&am=${totalPrice}&cu=INR&tn=Art.Peak%20Payment&mc=0000`}
-                                      className="w-full py-4 px-6 bg-orange-600 hover:bg-orange-500 text-white font-bold text-base tracking-wide uppercase rounded-xl shadow-lg shadow-orange-500/20 transition-all flex justify-center items-center gap-2 active:scale-95"
-                                   >
-                                      Open UPI App to Pay
-                                   </a>
-                                   <p className={`text-xs mt-3 ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>This will open your default UPI app (GPay, PhonePe, Paytm)</p>
-                                 </div>
-                             ) : (
-                                 <div className="w-full flex-col items-center flex">
-                                   <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center text-purple-500 text-4xl mb-4">@</div>
-                                   {!upiRequestSent ? (
-                                     <>
-                                       <div className={`w-full rounded-xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-zinc-800/80 border-zinc-700"} mb-3`}>
-                                         <input
-                                           value={enteredUpiId}
-                                           onChange={(e) => setEnteredUpiId(e.target.value)}
-                                           className={`w-full px-4 py-3 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
-                                           placeholder="Enter your UPI ID (e.g. 9876543210@ybl)"
-                                           disabled={paying}
-                                         />
-                                       </div>
-                                       <button 
-                                          onClick={async () => {
-                                            if (enteredUpiId.trim() === "") {
-                                              alert("Please enter a valid UPI ID (e.g. name@bank)");
-                                              return;
-                                            }
-                                            
-                                            setPaying(true);
-                                            try {
-                                              const res = await fetch("/api/cashfree", {
-                                                method: "POST",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({
-                                                  amount: totalPrice,
-                                                  customer_phone: shippingDetails.phone || "9999999999",
-                                                  customer_email: shippingDetails.email || "test@test.com",
-                                                  uph_id: enteredUpiId.trim(),
-                                                  items: JSON.stringify(cart),
-                                                  shipping: shippingDetails
-                                                })
-                                              });
-                                              const data = await res.json();
-                                              if (res.ok && data.success) {
-                                                setCurrentOrderId(data.orderId);
-                                                setUpiRequestSent(true);
-                                              } else {
-                                                alert(`Payment Error: ${data.error || "Failed to initiate payment"}`);
-                                              }
-                                            } catch (e: any) {
-                                              alert("Something went wrong requesting payment.");
-                                            } finally {
-                                              setPaying(false);
-                                            }
-                                          }}
-                                          disabled={paying}
-                                          className="w-full py-3 px-6 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm tracking-wide uppercase rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 flex items-center justify-center"
-                                       >
-                                          {paying ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : "Send Official Payment Request"}
-                                       </button>
-                                       <p className={`text-xs mt-3 text-center ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Enter the UPI ID from which you will make the payment.</p>
-                                     </>
-                                   ) : (
-                                     <div className="text-center w-full">
-                                       <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-                                          <ShieldCheck className="text-emerald-500" size={32} />
-                                       </div>
-                                       <p className="text-xl font-bold text-emerald-500 mb-2">Request Sent Successfully!</p>
-                                       <p className={`text-sm mb-4 ${isLight ? "text-zinc-600" : "text-zinc-300"}`}>A payment request of <span className="font-bold text-orange-500">₹{totalPrice.toLocaleString()}</span> has been sent directly to <span className="font-bold text-zinc-900 dark:text-white">{enteredUpiId}</span>.</p>
-                                       <div className={`p-4 rounded-xl ${isLight ? 'bg-orange-50 text-orange-800' : 'bg-orange-500/10 text-orange-200'} text-xs mb-4 text-left leading-relaxed`}>
-                                          <span className="font-bold block mb-1">Next Steps:</span>
-                                          1. Open the {enteredUpiId.includes("@") ? enteredUpiId.split("@")[1]?.toUpperCase() : "UPI"} app on your phone.<br/>
-                                          2. Check notifications or pending requests.<br/>
-                                          3. Approve the payment of ₹{totalPrice.toLocaleString()}.<br/>
-                                          4. Wait a moment, this page will update automatically!
-                                       </div>
-                                       
-                                       <button onClick={() => { setUpiRequestSent(false); setCurrentOrderId(null); }} className="text-xs text-orange-500 hover:underline">Cancel & Change Method</button>
-                                     </div>
-                                   )}
-                                 </div>
-                             )}
-
-                            {/* UPI Details - Only for QR and direct UPI */}
-                             {checkoutStep !== 'upi_id' && (
-                               <div className={`w-full rounded-2xl p-4 text-center space-y-1.5 ${isLight ? "bg-orange-50 border border-orange-100" : "bg-orange-500/5 border border-orange-500/20"}`}>
-                              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Target UPI ID</p>
-                              <p className="text-sm font-black text-orange-500 tracking-wide">2729mohane2729@fam</p>
-                              <p className={`text-[10px] font-medium ${isLight ? "text-zinc-500" : "text-zinc-400"} mt-2`}>
-                                Please enter the exact amount <span className="font-bold text-orange-500">₹{totalPrice.toLocaleString()}</span> manually after scanning.
-                               </p>
-                             </div>
-                             )}
-                           </div>
-                        </div>
-
-                        {/* UTR Field */}
-                       {(checkoutStep !== 'upi_id') && (
-                         <>
-                           <div className={`rounded-2xl border-2 overflow-hidden transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-800/80 border-zinc-700"}`}>
-                             <label className="block text-[10px] font-black uppercase tracking-widest px-4 pt-3 pb-1 text-orange-400">
-                               Transaction / UTR ID <span className="text-red-400">*</span>
-                             </label>
-                             <input
-                               value={utr}
-                               onChange={e => setUtr(e.target.value)}
-                               className={`w-full px-4 pb-3 text-sm font-semibold bg-transparent outline-none ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-500"}`}
-                               placeholder="12-digit UTR number e.g. 432156789012"
-                               maxLength={12}
-                             />
-                           </div>
-                           <p className={`text-[10px] font-medium -mt-2 ml-1 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>
-                             📋 Find your 12-digit UTR/Ref ID in your payment app after paying.
-                           </p>
-                         </>
-                       )}
-                    </motion.div>
-                  )}
-
 
                   {checkoutStep === "success" && (
                     <motion.div key="success" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center py-10 text-center space-y-4">
@@ -1039,57 +839,42 @@ export default function Navbar() {
                   )}
 
                   {checkoutStep === "address" && (
-                    <button onClick={() => setCheckoutStep("method")} disabled={!isAddressValid()} className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
-                       Continue to Payment <ArrowLeft className="rotate-180" size={18} />
-                    </button>
-                  )}
-
-                  {checkoutStep === "method" && (
-                    <button 
-                       onClick={async () => {
-                          if (paymentMethod === "qr") {
-                             setPaying(true);
-                             try {
-                                const res = await fetch("/api/cashfree", {
-                                   method: "POST",
-                                   headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({
-                                      amount: totalPrice,
-                                      customer_phone: shippingDetails.phone || "9999999999",
-                                      customer_email: shippingDetails.email || "test@example.com",
-                                      paymentMethod: "qr",
-                                      items: JSON.stringify(cart),
-                                      shipping: shippingDetails
-                                   })
-                                });
-                                const data = await res.json();
-                                if (res.ok && data.success && data.qrPayload) {
-                                   setDynamicQrCode(data.qrPayload);
-                                   setCurrentOrderId(data.orderId);
-                                   setCheckoutStep("qr");
-                                } else {
-                                   alert(`Payment Error: ${data.error || "Failed to generate QR Code"}`);
-                                }
-                             } catch (e) {
-                                alert("Something went wrong generating QR code.");
-                             } finally {
-                                setPaying(false);
-                             }
-                          } else {
-                             setCheckoutStep(paymentMethod === "upi" || paymentMethod === "upi_id" ? paymentMethod : "method");
-                          }
-                       }} 
-                       disabled={!paymentMethod || paying} 
-                       className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
-                    >
-                       {paying && paymentMethod === "qr" ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : "Continue to Pay"}
-                    </button>
-                  )}
-
-                  {(checkoutStep === "qr" || checkoutStep === "upi" || checkoutStep === "upi_id") && (
-                    <button onClick={handleQrOrder} disabled={!utr || paying || (checkoutStep === 'upi_id' && !upiRequestSent)} className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
-                       {paying ? "Recording..." : "I have Paid (Submit Order)"}
-                    </button>
+                     <button 
+                        onClick={async () => {
+                           setPaying(true);
+                           try {
+                              const res = await fetch("/api/cashfree", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                    amount: totalPrice,
+                                    customer_phone: shippingDetails.phone || "9999999999",
+                                    customer_email: shippingDetails.email || "test@example.com",
+                                    items: JSON.stringify(cart),
+                                    shipping: shippingDetails
+                                    })
+                              });
+                              const data = await res.json();
+                              if (res.ok && data.success && data.paymentSessionId) {
+                                    setCurrentOrderId(data.orderId);
+                                    // @ts-ignore
+                                    const { load } = await import('@cashfreepayments/cashfree-js');
+                                    const cashfree = await load({ mode: data.environment === "PRODUCTION" ? "production" : "sandbox" });
+                                    cashfree.checkout({ paymentSessionId: data.paymentSessionId, redirectTarget: "_self" });
+                              } else {
+                                    alert(`Payment Error: ${data.error || "Failed to initialize payment"}`);
+                                    setPaying(false);
+                              }
+                           } catch (e) {
+                              alert("Something went wrong initializing Cashfree Checkout.");
+                              setPaying(false);
+                           }
+                        }} 
+                        disabled={!isAddressValid() || paying} 
+                        className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                     >
+                        {paying ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : "Pay Securely with Cashfree"}
+                     </button>
                   )}
                 </div>
               )}

@@ -1,181 +1,126 @@
-// import { NextResponse } from "next/server";
-// import { getServerSession } from "next-auth/next";
-// import { authOptions } from "../../auth/[...nextauth]/options";
-// import { prisma } from "../../../lib/prisma";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]/options";
+import { prisma } from "../../../lib/prisma";
 
-// // Helper: verify caller is admin by checking DB
-// async function isAdmin(session: any) {
-//     if (!session?.user?.email) return false;
-//     const user = await prisma.user.findUnique({
-//         where: { email: session.user.email },
-//         select: { role: true },
-//     });
-//     return user?.role === "admin";
-// }
-
-// // GET /api/admin/products — fetch ALL products (admin only)
-// export async function GET() {
-//     try {
-//         const session = await getServerSession(authOptions);
-
-//         if (!session || !(await isAdmin(session))) {
-//             return new NextResponse("Forbidden — Admins only", { status: 403 });
-//         }
-
-//         const products = await prisma.product.findMany({
-//             orderBy: { createdAt: "desc" },
-//         });
-
-//         // Parse JSON strings back to objects
-//         const parsedProducts = products.map(p => ({
-//             ...p,
-//             images: JSON.parse(p.images || "[]"),
-//             bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : []
-//         }));
-
-//         return NextResponse.json(parsedProducts);
-//     } catch (error) {
-//         console.error("Admin products GET error:", error);
-//         return new NextResponse("Internal Server Error", { status: 500 });
-//     }
-// }
-
-// // POST /api/admin/products — create a new product (admin only)
-// export async function POST(req: Request) {
-//     try {
-//         const session = await getServerSession(authOptions);
-
-//         if (!session || !(await isAdmin(session))) {
-//             return new NextResponse("Forbidden", { status: 403 });
-//         }
-
-//         const body = await req.json();
-//         const { name, price, image, category, images, bulkPricing } = body;
-
-//         const product = await prisma.product.create({
-//             data: {
-//                 name,
-//                 price: parseFloat(price),
-//                 image,
-//                 category,
-//                 images: JSON.stringify(images || []),
-//                 bulkPricing: JSON.stringify(bulkPricing || []),
-//             },
-//         });
-
-//         return NextResponse.json(product);
-//     } catch (error) {
-//         console.error("Admin products POST error:", error);
-//         return new NextResponse("Internal Server Error", { status: 500 });
-//     }
-// }
-
-// // PUT /api/admin/products — update an existing product (admin only)
-// export async function PUT(req: Request) {
-//     try {
-//         const session = await getServerSession(authOptions);
-
-//         if (!session || !(await isAdmin(session))) {
-//             return new NextResponse("Forbidden", { status: 403 });
-//         }
-
-//         const body = await req.json();
-//         const { id, name, price, image, category, images, bulkPricing } = body;
-
-//         const product = await prisma.product.update({
-//             where: { id },
-//             data: {
-//                 name,
-//                 price: parseFloat(price),
-//                 image,
-//                 category,
-//                 images: JSON.stringify(images || []),
-//                 bulkPricing: JSON.stringify(bulkPricing || []),
-//             },
-//         });
-
-//         return NextResponse.json(product);
-//     } catch (error) {
-//         console.error("Admin products PUT error:", error);
-//         return new NextResponse("Internal Server Error", { status: 500 });
-//     }
-// }
-
-// // DELETE /api/admin/products?id=xxx — delete a product (admin only)
-// export async function DELETE(req: Request) {
-//     try {
-//         const session = await getServerSession(authOptions);
-
-//         if (!session || !(await isAdmin(session))) {
-//             return new NextResponse("Forbidden", { status: 403 });
-//         }
-
-//         const { searchParams } = new URL(req.url);
-//         const id = searchParams.get("id");
-
-//         if (!id) {
-//             return new NextResponse("Missing id", { status: 400 });
-//         }
-
-//         await prisma.product.delete({ where: { id } });
-//         return new NextResponse("Product Deleted", { status: 200 });
-//     } catch (error) {
-//         console.error("Admin products DELETE error:", error);
-//         return new NextResponse("Internal Server Error", { status: 500 });
-//     }
-// }
-import { NextResponse } from "next/server"
-
-/* Product type */
-type Product = {
-  id: number
-  name: string
-  price: number
-  images: string
-  bulkPricing?: string | null
+// Helper: verify caller is admin by checking DB
+async function isAdmin(session: any) {
+    if (!session?.user?.email) return false;
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { role: true },
+    });
+    return user?.role === "admin";
 }
 
-/* Example data source (replace with DB query) */
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Laser Engraved Name Plate",
-    price: 499,
-    images: '["/img/product1.jpg","/img/product2.jpg"]',
-    bulkPricing: '[{"qty":10,"price":450},{"qty":50,"price":400}]'
-  },
-  {
-    id: 2,
-    name: "Custom Wooden Frame",
-    price: 799,
-    images: '["/img/frame1.jpg"]',
-    bulkPricing: null
-  }
-]
-
+// GET /api/admin/products — fetch ALL products (admin only)
 export async function GET() {
-  try {
+    try {
+        const session = await getServerSession(authOptions);
 
-    /* Parse JSON strings back to objects */
-    const parsedProducts = products.map((p: Product) => ({
-      ...p,
-      images: JSON.parse(p.images || "[]"),
-      bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : []
-    }))
+        if (!session || !(await isAdmin(session))) {
+            return new NextResponse("Forbidden — Admins only", { status: 403 });
+        }
 
-    return NextResponse.json({
-      success: true,
-      data: parsedProducts
-    })
+        const products = await prisma.product.findMany({
+            orderBy: { createdAt: "desc" },
+        });
 
-  } catch (error) {
+        // Parse JSON strings back to objects
+        const parsedProducts = products.map(p => ({
+            ...p,
+            images: JSON.parse(p.images || "[]"),
+            bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : []
+        }));
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch products"
-      },
-      { status: 500 }
-    )
-  }
+        return NextResponse.json(parsedProducts);
+    } catch (error) {
+        console.error("Admin products GET error:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
+}
+
+// POST /api/admin/products — create a new product (admin only)
+export async function POST(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session || !(await isAdmin(session))) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
+        const body = await req.json();
+        const { name, price, image, category, images, bulkPricing } = body;
+
+        const product = await prisma.product.create({
+            data: {
+                name,
+                price: parseFloat(price),
+                image,
+                category,
+                images: JSON.stringify(images || []),
+                bulkPricing: JSON.stringify(bulkPricing || []),
+            },
+        });
+
+        return NextResponse.json(product);
+    } catch (error) {
+        console.error("Admin products POST error:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
+}
+
+// PUT /api/admin/products — update an existing product (admin only)
+export async function PUT(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session || !(await isAdmin(session))) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
+        const body = await req.json();
+        const { id, name, price, image, category, images, bulkPricing } = body;
+
+        const product = await prisma.product.update({
+            where: { id },
+            data: {
+                name,
+                price: parseFloat(price),
+                image,
+                category,
+                images: JSON.stringify(images || []),
+                bulkPricing: JSON.stringify(bulkPricing || []),
+            },
+        });
+
+        return NextResponse.json(product);
+    } catch (error) {
+        console.error("Admin products PUT error:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
+}
+
+// DELETE /api/admin/products?id=xxx — delete a product (admin only)
+export async function DELETE(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session || !(await isAdmin(session))) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id");
+
+        if (!id) {
+            return new NextResponse("Missing id", { status: 400 });
+        }
+
+        await prisma.product.delete({ where: { id } });
+        return new NextResponse("Product Deleted", { status: 200 });
+    } catch (error) {
+        console.error("Admin products DELETE error:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
 }

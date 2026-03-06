@@ -235,6 +235,24 @@ export default function AdminPage() {
       if (res.ok) await fetchOrders();
     } catch (e) { console.error(e); }
   };
+  
+  const handleDeleteOrder = async (id: string) => {
+    if (!confirm("Is order ko delete karna chahte hain?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/orders?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setOrders(prev => prev.filter(o => o.id !== id));
+      } else {
+        alert(await res.text());
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Something went wrong while deleting order");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleOpenProductModal = (product: Product | null = null) => {
     if (product) {
@@ -329,7 +347,7 @@ export default function AdminPage() {
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-          <p className="text-zinc-400 text-sm">Processing admin console...</p>
+          <p className="text-zinc-400 text-sm font-medium tracking-wide">Initializing Premium Console...</p>
         </div>
       </div>
     );
@@ -337,425 +355,501 @@ export default function AdminPage() {
 
   if (pageStatus === "forbidden") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-black">
-        <ShieldCheck className="w-16 h-16 text-zinc-700" />
-        <h1 className="text-2xl font-bold text-white">Access Denied</h1>
-        <p className="text-zinc-400">Yeh page sirf admins ke liye hai.</p>
-        <button onClick={() => router.push("/")} className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition">Go Home</button>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-zinc-950 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900 to-black">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center p-8 rounded-3xl border border-white/5 bg-white/5 backdrop-blur-xl shadow-2xl">
+          <ShieldCheck className="w-16 h-16 text-red-500 mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+          <h1 className="text-2xl font-bold text-white tracking-wide">Access Denied</h1>
+          <p className="text-zinc-400 mt-2 text-center max-w-xs">You do not have the required administrative privileges to view this area.</p>
+          <button onClick={() => router.push("/")} className="mt-6 px-8 py-3 bg-red-500 hover:bg-red-600 shadow-[0_0_15px_rgba(239,68,68,0.3)] text-white rounded-xl font-bold transition-all hover:scale-105 active:scale-95">Go Home</button>
+        </motion.div>
       </div>
     );
   }
 
-  return (
-    <div className={`min-h-screen pt-24 pb-20 ${isLight ? "bg-zinc-50" : "bg-black"}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+  const renderMessages = () => {
+    if (filteredMessages.length === 0) return <EmptyState icon={<MessageSquare />} text="No messages found" isLight={isLight} />;
+    return (
+      <div className="grid grid-cols-1 gap-4">
+        {filteredMessages.map((msg, i) => (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={msg.id} onClick={() => setExpandedId(expandedId === msg.id ? null : msg.id)} className={`p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${isLight ? "bg-white border-zinc-200/80 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-500/10" : "bg-white/[0.02] border-white/5 hover:border-orange-500/30 hover:bg-white/[0.04] shadow-xl"}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center font-bold text-lg sm:text-xl shadow-lg shadow-orange-500/20 shrink-0">
+                  {msg.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0 sm:hidden">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`font-bold truncate text-sm ${isLight ? "text-zinc-900" : "text-white"}`}>{msg.name}</span>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block ${isLight ? "bg-orange-100 text-orange-700" : "bg-orange-500/10 text-orange-400"}`}>{msg.email}</span>
+                </div>
+              </div>
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/profile")}
-              className={`p-2 rounded-xl transition ${isLight ? "hover:bg-zinc-200 text-zinc-600" : "hover:bg-zinc-800 text-zinc-400"}`}
-            >
-              <ArrowLeft size={20} />
-            </button>
+              <div className="hidden sm:block flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`font-bold truncate ${isLight ? "text-zinc-900" : "text-white"}`}>{msg.name}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${isLight ? "bg-orange-100 text-orange-700" : "bg-orange-500/10 text-orange-400"}`}>{msg.email}</span>
+                </div>
+                <p className={`text-sm truncate ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>{msg.message}</p>
+              </div>
+
+              <div className="flex items-center justify-between sm:justify-start gap-3 shrink-0">
+                <span className={`text-[10px] flex items-center gap-1.5 font-medium ${isLight ? "text-zinc-400" : "text-zinc-500"}`}><Calendar size={12}/>{formatDate(msg.createdAt)}</span>
+                <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-2.5 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors"><Trash2 size={16}/></button>
+              </div>
+            </div>
+            <AnimatePresence>
+              {expandedId === msg.id && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className={`mt-4 pt-4 border-t text-sm leading-relaxed whitespace-pre-wrap p-4 rounded-xl ${isLight ? "border-zinc-100 bg-zinc-50/50 text-zinc-700" : "border-white/5 bg-black/20 text-zinc-300"}`}>
+                    {msg.message}
+                    <div className="mt-4"><a href={`mailto:${msg.email}`} className="inline-flex items-center gap-2 text-xs font-bold text-orange-500 hover:text-orange-400 transition-colors">Reply via Email <ArrowLeft className="w-3 h-3 rotate-[135deg]" /></a></div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderUsers = () => {
+    if (filteredUsers.length === 0) return <EmptyState icon={<Users />} text="No users found" isLight={isLight} />;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredUsers.map((user, i) => (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} key={user.id} className={`p-5 rounded-2xl border transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-lg" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl"}`}>
+            <div className="flex items-start justify-between mb-4">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${user.role === 'admin' ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-indigo-500/20' : 'bg-gradient-to-br from-zinc-700 to-zinc-800 text-zinc-300'}`}>
+                {user.role === 'admin' ? <ShieldCheck size={20}/> : <UserIcon size={20}/>}
+              </div>
+              <button disabled={user.email === session?.user?.email} onClick={() => handleDeleteUser(user.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-20"><Trash2 size={16}/></button>
+            </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck className="w-5 h-5 text-orange-500" />
-                <span className={`text-xs font-bold uppercase tracking-widest ${isLight ? "text-zinc-400" : "text-zinc-500"}`}>
-                  Admin Panel
-                </span>
+                <span className={`font-bold truncate text-lg ${isLight ? "text-zinc-900" : "text-white"}`}>{user.name || "Unknown User"}</span>
               </div>
-              <h1 className={`text-2xl sm:text-3xl font-bold ${isLight ? "text-zinc-900" : "text-white"}`}>
-                Management Console
-              </h1>
+              <p className={`text-sm truncate mb-3 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>{user.email}</p>
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider ${user.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400' : isLight ? 'bg-zinc-100 text-zinc-600' : 'bg-zinc-800 text-zinc-400'}`}>{user.role}</span>
+                <span className={`text-[10px] font-medium ${isLight ? "text-zinc-400" : "text-zinc-500"}`}>{formatDate(user.createdAt)}</span>
+              </div>
             </div>
-          </div>
-
-          <div className={`px-5 py-3 rounded-2xl border text-center ${isLight ? "bg-white border-zinc-200" : "bg-zinc-900 border-white/10"}`}>
-            <p className="text-2xl font-bold text-orange-500">
-               {activeTab === "messages" ? messages.length : activeTab === "users" ? users.length : products.length}
-            </p>
-            <p className={`text-xs mt-0.5 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>
-              Total {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </p>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-3 mb-8">
-           <button 
-             onClick={() => { setActiveTab("messages"); setSearch(""); }}
-             className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all shadow-md ${activeTab === "messages" ? "bg-orange-500 text-white" : isLight ? "bg-white text-zinc-500 hover:bg-zinc-100 shadow-sm" : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 shadow-sm"}`}
-           >
-             <MessageSquare size={16} /> Messages
-           </button>
-           <button 
-             onClick={() => { setActiveTab("users"); setSearch(""); }}
-             className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all shadow-md ${activeTab === "users" ? "bg-indigo-600 text-white" : isLight ? "bg-white text-zinc-500 hover:bg-zinc-100 shadow-sm" : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 shadow-sm"}`}
-           >
-             <Users size={16} /> Users
-           </button>
-            <button 
-              onClick={() => { setActiveTab("products"); setSearch(""); }}
-              className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all shadow-md ${activeTab === "products" ? "bg-emerald-600 text-white" : isLight ? "bg-white text-zinc-500 hover:bg-zinc-100 shadow-sm" : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 shadow-sm"}`}
-            >
-              <Package size={16} /> Products
-            </button>
-            <button 
-              onClick={() => { setActiveTab("orders"); setSearch(""); }}
-              className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold transition-all shadow-md ${activeTab === "orders" ? "bg-amber-600 text-white" : isLight ? "bg-white text-zinc-500 hover:bg-zinc-100 shadow-sm" : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 shadow-sm"}`}
-            >
-              <ShoppingCart size={16} /> Orders
-            </button>
-        </div>
-
-        {/* Search & Actions */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className={`relative flex-1 rounded-2xl border ${isLight ? "bg-white border-zinc-200 shadow-sm" : "bg-zinc-900 border-white/5"}`}>
-            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isLight ? "text-zinc-400" : "text-zinc-500"}`} />
-            <input
-              type="text"
-              placeholder={`Search ${activeTab}...`}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={`w-full pl-11 pr-10 py-3.5 text-sm bg-transparent focus:outline-none rounded-2xl ${isLight ? "text-zinc-900 placeholder:text-zinc-400" : "text-white placeholder:text-zinc-700"}`}
-            />
-            {search && <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2"><X className="w-4 h-4 text-zinc-500" /></button>}
-          </div>
-          {activeTab === "products" && (
-            <button 
-              onClick={() => handleOpenProductModal()}
-              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-500 transition shadow-lg shadow-emerald-900/10"
-            >
-              <Plus size={18} /> Add Product
-            </button>
-          )}
-
-          {activeTab === "orders" && (
-            <select
-              value={orderStatusFilter}
-              onChange={(e) => setOrderStatusFilter(e.target.value)}
-              className={`px-4 py-3.5 text-sm font-bold border outline-none rounded-2xl transition-all cursor-pointer ${isLight ? "bg-white border-zinc-200 text-zinc-900 shadow-sm" : "bg-zinc-900 border-white/5 text-white"}`}
-            >
-              <option value="all">All Orders</option>
-              <option value="pending">Pending</option>
-              <option value="awaiting_verification">Awaiting Verification</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="failed">Failed / Fake Payment</option>
-            </select>
-          )}
-        </div>
-
-        {/* Content Views */}
-        <div className="space-y-4">
-          {activeTab === "messages" && (
-             filteredMessages.length === 0 ? <EmptyState icon={<MessageSquare />} text="No messages found" isLight={isLight} /> :
-             filteredMessages.map(msg => (
-                <div key={msg.id} onClick={() => setExpandedId(expandedId === msg.id ? null : msg.id)} className={`p-5 rounded-2xl border cursor-pointer transition-all ${isLight ? "bg-white border-zinc-200 hover:border-orange-200 shadow-sm" : "bg-zinc-900 border-white/5 hover:border-orange-500/20"}`}>
-                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold"> {msg.name.charAt(0).toUpperCase()} </div>
-                      <div className="flex-1">
-                         <div className="flex items-center gap-2"><span className={`font-bold ${isLight ? "text-zinc-900" : "text-white"}`}>{msg.name}</span><span className="text-[10px] text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full font-bold uppercase">{msg.email}</span></div>
-                         <p className={`text-sm truncate mt-0.5 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>{msg.message}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                         <span className="text-[10px] text-zinc-500 flex items-center gap-1"><Calendar size={12}/>{formatDate(msg.createdAt)}</span>
-                         <button onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition"><Trash2 size={16}/></button>
-                      </div>
-                   </div>
-                   {expandedId === msg.id && (
-                     <div className="mt-4 pt-4 border-t border-white/5 text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap bg-black/20 p-4 rounded-xl">
-                        {msg.message}
-                        <div className="mt-3"><a href={`mailto:${msg.email}`} className="text-xs text-orange-500 hover:underline">Reply via Email →</a></div>
-                     </div>
-                   )}
-                </div>
-             ))
-          )}
-
-          {activeTab === "users" && (
-            filteredUsers.length === 0 ? <EmptyState icon={<Users />} text="No users found" isLight={isLight} /> :
-            filteredUsers.map(user => (
-               <div key={user.id} className={`p-5 rounded-2xl border transition-all ${isLight ? "bg-white border-zinc-200 shadow-sm" : "bg-zinc-900 border-white/5"}`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${user.role === 'admin' ? 'bg-indigo-600/20 text-indigo-400' : 'bg-zinc-800 text-zinc-500'}`}> {user.role === 'admin' ? <ShieldCheck size={20}/> : <UserIcon size={20}/>} </div>
-                     <div className="flex-1">
-                        <div className="flex items-center gap-2"><span className={`font-bold ${isLight ? "text-zinc-900" : "text-white"}`}>{user.name || "N/A"}</span><span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${user.role === 'admin' ? 'bg-indigo-600 text-white' : 'bg-zinc-600 text-zinc-300'}`}>{user.role}</span></div>
-                        <p className="text-xs text-zinc-500 mt-0.5">{user.email}</p>
-                     </div>
-                     <div className="flex items-center gap-3">
-                        <span className="text-[10px] text-zinc-500">Joined {formatDate(user.createdAt)}</span>
-                        <button disabled={user.email === session?.user?.email} onClick={() => handleDeleteUser(user.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition disabled:opacity-20"><Trash2 size={16}/></button>
-                     </div>
-                  </div>
-               </div>
-            ))
-          )}
-
-          {activeTab === "products" && (
-            filteredProducts.length === 0 ? <EmptyState icon={<Package />} text="No products found" isLight={isLight} /> :
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-               {filteredProducts.map(p => (
-                  <div key={p.id} className={`rounded-2xl border overflow-hidden ${isLight ? "bg-white border-zinc-200 shadow-sm" : "bg-zinc-900 border-white/5"}`}>
-                     <div className="relative h-40">
-                        <Image src={p.image} alt={p.name} fill className="object-cover" unoptimized />
-                        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] text-orange-400 font-bold uppercase">{p.category}</div>
-                     </div>
-                     <div className="p-4">
-                        <h3 className={`font-bold truncate ${isLight ? "text-zinc-900" : "text-white"}`}>{p.name}</h3>
-                        <div className="flex items-center justify-between mt-2">
-                           <span className="text-lg font-black text-orange-500">₹{p.price}</span>
-                           <div className="flex items-center gap-1">
-                              <button onClick={() => handleOpenProductModal(p)} className="p-2 text-zinc-400 hover:bg-emerald-500/10 hover:text-emerald-500 rounded-lg transition"><Edit size={16}/></button>
-                              <button onClick={() => handleDeleteProduct(p.id)} className="p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition"><Trash2 size={16}/></button>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               ))}
-            </div>
-          )}
-
-          {activeTab === "orders" && (
-            filteredOrders.length === 0 ? <EmptyState icon={<ShoppingCart />} text="No orders found" isLight={isLight} /> :
-            <div className="space-y-4">
-               {filteredOrders.map(order => {
-                  let parsedItems = [];
-                  try {
-                    parsedItems = JSON.parse(order.items || "[]");
-                  } catch (e) {}
-                  return (
-                  <div key={order.id} className={`p-5 rounded-2xl border transition-all ${isLight ? "bg-white border-zinc-200 shadow-sm" : "bg-zinc-900 border-white/5"}`}>
-                     <div className="flex flex-col md:flex-row md:items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold ${order.status === 'awaiting_verification' ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
-                           <ShoppingCart size={24}/>
-                        </div>
-                        <div className="flex-1">
-                           <div className="flex items-center gap-2 mb-1">
-                              <span className={`font-bold ${isLight ? "text-zinc-900" : "text-white"}`}>Order #{order.id.slice(-6).toUpperCase()}</span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                                order.status === 'awaiting_verification' ? 'bg-amber-500 text-black' :
-                                order.status === 'processing' ? 'bg-blue-600 text-white' :
-                                order.status === 'failed' ? 'bg-red-600 text-white' :
-                                'bg-emerald-600 text-white'
-                              }`}>
-                                {order.status.replace('_', ' ')}
-                              </span>
-                           </div>
-                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
-                              <span>Customer: {order.user.name || order.user.email}</span>
-                              <span>Method: <span className="uppercase font-bold text-orange-500">{order.paymentMethod}</span></span>
-                              {order.transactionId && <span className="text-zinc-400">UTR: <span className="font-mono text-white bg-white/5 px-1.5 py-0.5 rounded">{order.transactionId}</span></span>}
-                           </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                           <span className="text-lg font-black text-orange-500">₹{order.totalAmount.toLocaleString()}</span>
-                           <div className="flex items-center gap-2">
-                              {order.status === 'awaiting_verification' && (
-                                <button 
-                                  onClick={() => handleUpdateOrderStatus(order.id, 'processing')}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded-lg transition"
-                                >
-                                  <CheckCircle size={14}/> Verify Payment
-                                </button>
-                              )}
-                              <select 
-                                value={order.status}
-                                onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                                className="bg-black/20 border border-white/10 text-[10px] px-2 py-1.5 rounded-lg outline-none focus:border-orange-500 transition"
-                              >
-                                 <option value="pending">Pending</option>
-                                 <option value="awaiting_verification">Awaiting Verify</option>
-                                 <option value="processing">Processing</option>
-                                 <option value="shipped">Shipped</option>
-                                 <option value="delivered">Delivered</option>
-                                 <option value="failed">Failed / Fake Payment</option>
-                              </select>
-                           </div>
-                        </div>
-                     </div>
-
-                     {/* Customization Details Section */}
-                     <div className={`mt-4 pt-4 border-t ${isLight ? "border-zinc-200" : "border-white/5"}`}>
-                        <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Order Items & Customizations</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                           {parsedItems.map((item: any, idx: number) => (
-                              <div key={item.id || idx} className={`flex gap-3 p-3 rounded-xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
-                                 <div className="w-12 h-12 rounded-lg bg-zinc-800 overflow-hidden shrink-0">
-                                    <img src={item.product?.image} alt={item.product?.name} className="w-full h-full object-cover" />
-                                 </div>
-                                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                    <p className={`text-sm font-bold truncate ${isLight ? "text-zinc-900" : "text-white"}`}>{item.product?.name} <span className="text-zinc-500 font-normal">x{item.qty}</span></p>
-                                    
-                                    {(item.customText || item.customImage) && (
-                                       <div className="mt-1.5 space-y-1">
-                                          {item.customText && (
-                                             <div className="text-xs bg-orange-500/10 text-orange-500 px-2 py-1 rounded inline-block max-w-[200px] truncate">
-                                                <span className="font-semibold text-orange-600">Text:</span> {item.customText}
-                                             </div>
-                                          )}
-                                          {item.customImage && (
-                                             <div className="mt-2 text-left flex flex-col gap-1.5">
-                                                <p className={`text-[10px] font-semibold uppercase tracking-wider ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>Custom Image:</p>
-                                                <div className="flex gap-3 items-center">
-                                                   <a href={item.customImage} target="_blank" rel="noreferrer" className={`block shrink-0 w-16 h-16 rounded-xl overflow-hidden border transition relative ${isLight ? "border-zinc-300 shadow-sm" : "border-white/20 shadow-md"}`}>
-                                                      <img src={item.customImage} alt="Custom" className="w-full h-full object-cover" />
-                                                   </a>
-                                                   <div className="flex flex-col gap-1.5">
-                                                      <button type="button" onClick={async () => {
-                                                          try {
-                                                            if (item.customImage.startsWith('data:')) {
-                                                              const res = await fetch(item.customImage);
-                                                              const blob = await res.blob();
-                                                              const url = window.URL.createObjectURL(blob);
-                                                              window.open(url, '_blank');
-                                                            } else {
-                                                              window.open(item.customImage, '_blank');
-                                                            }
-                                                          } catch(e) {
-                                                            window.open(item.customImage, '_blank');
-                                                          }
-                                                      }} className="w-full text-[10px] bg-blue-500/10 text-blue-500 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-500/20 transition text-center border-none cursor-pointer">
-                                                         Open Link
-                                                      </button>
-                                                      <button type="button" onClick={async () => {
-                                                          try {
-                                                            const res = await fetch(item.customImage);
-                                                            const blob = await res.blob();
-                                                            const url = window.URL.createObjectURL(blob);
-                                                            const a = document.createElement("a");
-                                                            a.href = url;
-                                                            a.download = `artpeak_custom_${item.id || idx}.jpg`;
-                                                            a.click();
-                                                            window.URL.revokeObjectURL(url);
-                                                          } catch(e) {
-                                                            window.open(item.customImage, '_blank');
-                                                          }
-                                                      }} className="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-500/20 transition border-none cursor-pointer">
-                                                         Download Img
-                                                      </button>
-                                                   </div>
-                                                </div>
-                                             </div>
-                                          )}
-                                       </div>
-                                    )}
-                                 </div>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-
-                     {/* Shipping Details Block */}
-                     <div className={`mt-4 p-4 rounded-xl border ${isLight ? "bg-orange-50 border-orange-200" : "bg-orange-500/5 border-orange-500/10"}`}>
-                         <h4 className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-3">Shipping Details</h4>
-                         {order.customerName ? (
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                 <div>
-                                     <p className={`text-xs mb-0.5 ${isLight ? "text-zinc-600" : "text-zinc-500"}`}>Customer Name</p>
-                                     <p className={`text-sm font-semibold ${isLight ? "text-zinc-900" : "text-white"}`}>{order.customerName}</p>
-                                 </div>
-                                 <div>
-                                     <p className={`text-xs mb-0.5 ${isLight ? "text-zinc-600" : "text-zinc-500"}`}>Contact</p>
-                                     <p className={`text-sm font-semibold ${isLight ? "text-zinc-900" : "text-white"}`}>{order.phone}</p>
-                                     {order.email && <p className={`text-xs ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>{order.email}</p>}
-                                 </div>
-                                 <div className="md:col-span-2">
-                                     <p className={`text-xs mb-0.5 ${isLight ? "text-zinc-600" : "text-zinc-500"}`}>Delivery Address</p>
-                                     <p className={`text-sm font-semibold ${isLight ? "text-zinc-900" : "text-white"}`}>{order.address}</p>
-                                     <p className={`text-xs mt-0.5 ${isLight ? "text-zinc-700" : "text-zinc-400"}`}>{order.city}, {order.state} - {order.pincode}</p>
-                                 </div>
-                             </div>
-                         ) : (
-                             <p className={`text-sm italic ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>No shipping details provided (Legacy Order)</p>
-                         )}
-                     </div>
-                  </div>
-               )})}
-            </div>
-          )}
-        </div>
+          </motion.div>
+        ))}
       </div>
+    );
+  };
 
-      {/* Product Modal */}
+  const renderProducts = () => {
+    if (filteredProducts.length === 0) return <EmptyState icon={<Package />} text="No products found" isLight={isLight} />;
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredProducts.map((p, i) => (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={p.id} className={`group rounded-3xl border overflow-hidden transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-xl hover:shadow-black/5" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl hover:shadow-black/50"}`}>
+            <div className="relative h-48 overflow-hidden">
+              <Image src={p.image} alt={p.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" unoptimized />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60"></div>
+              <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-xs text-white font-bold tracking-widest uppercase border border-white/10">{p.category}</div>
+              <div className="absolute bottom-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-black shadow-lg shadow-orange-500/30">₹{p.price.toLocaleString()}</div>
+            </div>
+            <div className="p-5">
+              <h3 className={`font-bold text-lg truncate mb-4 ${isLight ? "text-zinc-900" : "text-white"}`}>{p.name}</h3>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleOpenProductModal(p)} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl font-bold transition-all"><Edit size={16}/> Edit</button>
+                <button onClick={() => handleDeleteProduct(p.id)} className="p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"><Trash2 size={16}/></button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderOrders = () => {
+    if (filteredOrders.length === 0) return <EmptyState icon={<ShoppingCart />} text="No orders found" isLight={isLight} />;
+    return (
+      <div className="space-y-4">
+        {filteredOrders.map((order, i) => {
+          let parsedItems = [];
+          try { parsedItems = JSON.parse(order.items || "[]"); } catch (e) {}
+          return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={order.id} className={`p-6 rounded-3xl border transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-lg" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl"}`}>
+              <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
+                <div className="flex gap-4 items-start">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg shrink-0 ${
+                    order.status === 'awaiting_verification' ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-500/20' : 
+                    order.status === 'processing' ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-blue-500/20' :
+                    order.status === 'delivered' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-500/20' :
+                    order.status === 'failed' ? 'bg-gradient-to-br from-red-400 to-red-600 text-white shadow-red-500/20' :
+                    'bg-gradient-to-br from-zinc-400 to-zinc-600 text-white shadow-zinc-500/20'
+                  }`}>
+                    <ShoppingCart size={24}/>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <span className={`text-lg font-black tracking-wide ${isLight ? "text-zinc-900" : "text-white"}`}>#{order.id.slice(-6).toUpperCase()}</span>
+                      <span className={`text-[10px] px-3 py-1 rounded-md font-bold uppercase tracking-widest ${
+                        order.status === 'awaiting_verification' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' :
+                        order.status === 'processing' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
+                        order.status === 'failed' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
+                        order.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
+                        'bg-zinc-500/20 text-zinc-600 dark:text-zinc-400'
+                      }`}>
+                        {order.status.replace('_', ' ')}
+                      </span>
+                      {order.status === 'awaiting_verification' && (
+                        <button onClick={() => handleUpdateOrderStatus(order.id, 'processing')} className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] uppercase tracking-widest font-bold rounded-md transition shadow-md shadow-emerald-500/20">
+                          <CheckCircle size={12}/> Verify
+                        </button>
+                      )}
+                      
+                      <button 
+                        onClick={() => handleDeleteOrder(order.id)} 
+                        disabled={deletingId === order.id}
+                        className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-[10px] uppercase tracking-widest font-bold rounded-md transition border border-red-500/20 disabled:opacity-50"
+                      >
+                        {deletingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12}/>} Delete
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-1 text-sm font-medium">
+                      <span className={isLight ? "text-zinc-600" : "text-zinc-400"}>Customer: <span className={isLight ? "text-zinc-900" : "text-zinc-200"}>{order.user.name || order.user.email}</span></span>
+                      <span className={isLight ? "text-zinc-600" : "text-zinc-400"}>Method: <span className="uppercase text-orange-500">{order.paymentMethod}</span></span>
+                      {order.transactionId && <span className={isLight ? "text-zinc-600" : "text-zinc-400"}>UTR: <span className={`font-mono px-2 py-0.5 rounded-md ${isLight ? "bg-zinc-100 text-zinc-800" : "bg-white/10 text-white"}`}>{order.transactionId}</span></span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col xl:items-end gap-3 min-w-[200px]">
+                  <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">₹{order.totalAmount.toLocaleString()}</span>
+                  <div className={`w-full xl:w-auto px-4 py-2 rounded-xl border flex items-center justify-between gap-3 ${isLight ? "bg-white border-zinc-200" : "bg-black/40 border-white/10"}`}>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Status</span>
+                    <select value={order.status} onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer">
+                       <option value="pending">Pending</option>
+                       <option value="awaiting_verification">Awaiting Verify</option>
+                       <option value="processing">Processing</option>
+                       <option value="shipped">Shipped</option>
+                       <option value="delivered">Delivered</option>
+                       <option value="failed">Failed / Fake</option>
+                    </select>
+                  </div>
+                  <span className={`text-[11px] font-medium xl:mt-2 ${isLight ? "text-zinc-400" : "text-zinc-500"}`}>{formatDate(order.createdAt)}</span>
+                </div>
+              </div>
+
+              {/* Order Details Accordion / Sections */}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Items */}
+                <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50/50 border-zinc-200/80" : "bg-white/[0.01] border-white/5"}`}>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2 text-zinc-500"><Package size={14}/> Items Ordered</h4>
+                  <div className="space-y-3">
+                    {parsedItems.map((item: any, idx: number) => (
+                      <div key={item.id || idx} className={`flex gap-3 p-3 rounded-xl ${isLight ? "bg-white border border-zinc-100 shadow-sm" : "bg-black/20"}`}>
+                         <div className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0 border border-white/5">
+                            <img src={item.product?.image} alt="" className="w-full h-full object-cover" />
+                         </div>
+                         <div className="flex-1 min-w-0">
+                            <p className={`font-bold text-sm truncate ${isLight ? "text-zinc-900" : "text-white"}`}>{item.product?.name} <span className="text-orange-500">x{item.qty}</span></p>
+                            {(item.customText || item.customImage) && (
+                               <div className="mt-2 text-xs space-y-1">
+                                  {item.customText && <p><span className="text-zinc-500">Text:</span> {item.customText}</p>}
+                                  {item.customImage && (
+                                    <div className="flex gap-2 items-center mt-1">
+                                      <a href={item.customImage} target="_blank" rel="noreferrer" className="w-8 h-8 rounded border border-white/20 overflow-hidden block">
+                                        <img src={item.customImage} className="w-full h-full object-cover" />
+                                      </a>
+                                      <a href={item.customImage} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">View Image</a>
+                                    </div>
+                                  )}
+                               </div>
+                            )}
+                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Shipping */}
+                <div className={`p-5 rounded-2xl border ${isLight ? "bg-orange-50/50 border-orange-200/50" : "bg-orange-500/5 border-orange-500/10"}`}>
+                  <h4 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2 text-orange-500"><Mail size={14}/> Shipping Details</h4>
+                  {order.customerName ? (
+                    <div className="space-y-4 text-sm font-medium">
+                      <div>
+                        <p className={isLight ? "text-zinc-500 text-xs uppercase tracking-wider mb-1" : "text-zinc-500 text-xs uppercase tracking-wider mb-1"}>Customer</p>
+                        <p className={isLight ? "text-zinc-900" : "text-white"}>{order.customerName}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className={isLight ? "text-zinc-500 text-xs uppercase tracking-wider mb-1" : "text-zinc-500 text-xs uppercase tracking-wider mb-1"}>Phone</p>
+                          <p className={isLight ? "text-zinc-900" : "text-white"}>{order.phone}</p>
+                        </div>
+                        <div>
+                          <p className={isLight ? "text-zinc-500 text-xs uppercase tracking-wider mb-1" : "text-zinc-500 text-xs uppercase tracking-wider mb-1"}>Email</p>
+                          <p className={`truncate ${isLight ? "text-zinc-900" : "text-white"}`}>{order.email}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className={isLight ? "text-zinc-500 text-xs uppercase tracking-wider mb-1" : "text-zinc-500 text-xs uppercase tracking-wider mb-1"}>Address</p>
+                        <p className={isLight ? "text-zinc-900 leading-relaxed" : "text-white leading-relaxed"}>{order.address}<br/>{order.city}, {order.state} - {order.pincode}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm italic text-zinc-500">Legacy Order - No shipping data saved.</p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+    );
+  };
+
+  const navItems = [
+    { id: "messages", label: "Messages", icon: <MessageSquare size={18} />, count: messages.length, color: "text-orange-500", bg: "bg-orange-500" },
+    { id: "users", label: "Users", icon: <Users size={18} />, count: users.length, color: "text-indigo-500", bg: "bg-indigo-500" },
+    { id: "products", label: "Products", icon: <Package size={18} />, count: products.length, color: "text-emerald-500", bg: "bg-emerald-500" },
+    { id: "orders", label: "Orders", icon: <ShoppingCart size={18} />, count: orders.length, color: "text-amber-500", bg: "bg-amber-500" },
+  ];
+
+  return (
+    <div className={`min-h-screen flex ${isLight ? "bg-[#f8fafc] text-zinc-900" : "bg-[#050505] text-white"}`}>
+      
+      {/* Desktop Sidebar */}
+      <aside className={`max-md:hidden w-72 shrink-0 border-r flex flex-col relative z-20 ${isLight ? "bg-white/60 border-zinc-200/80 backdrop-blur-2xl" : "bg-black/40 border-white/5 backdrop-blur-2xl"}`}>
+        <div className="p-8 pb-4">
+          <button onClick={() => router.push("/")} className={`mb-8 p-2.5 rounded-xl border transition-all hover:scale-105 active:scale-95 ${isLight ? "bg-white border-zinc-200 shadow-sm hover:shadow-md text-zinc-600" : "bg-white/5 border-white/10 hover:bg-white/10 text-zinc-400"}`}>
+            <ArrowLeft size={18} />
+          </button>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black tracking-wide">ADMIN</h1>
+              <p className={`text-[10px] uppercase tracking-widest font-bold ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Console</p>
+            </div>
+          </div>
+        </div>
+
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          {navItems.map(item => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => { setActiveTab(item.id as any); setSearch(""); }}
+                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
+                  isActive 
+                  ? (isLight ? "bg-white shadow-md border border-zinc-100" : "bg-white/10 shadow-lg border border-white/10") 
+                  : (isLight ? "hover:bg-black/5" : "hover:bg-white/5")
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`${isActive ? item.color : isLight ? "text-zinc-400 group-hover:text-zinc-600" : "text-zinc-500 group-hover:text-zinc-300"} transition-colors`}>{item.icon}</span>
+                  <span className={`font-bold ${isActive ? (isLight ? "text-zinc-900" : "text-white") : (isLight ? "text-zinc-500 group-hover:text-zinc-700" : "text-zinc-400 group-hover:text-zinc-200")}`}>{item.label}</span>
+                </div>
+                {item.count > 0 && (
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg ${isActive ? `${item.bg} text-white shadow-md` : isLight ? "bg-zinc-200 text-zinc-600" : "bg-white/10 text-zinc-400"}`}>
+                    {item.count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </nav>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-h-screen relative max-w-full overflow-hidden">
+        
+        {/* Mobile Header */}
+        <div className={`md:hidden sticky top-0 z-40 px-5 py-4 border-b flex flex-col gap-4 ${isLight ? "bg-white/80 border-zinc-200 backdrop-blur-xl" : "bg-black/80 border-white/5 backdrop-blur-xl"}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+               <button onClick={() => router.push("/")} className={`p-2 rounded-lg ${isLight ? "bg-zinc-100/80 text-zinc-600" : "bg-white/10 text-zinc-400"}`}><ArrowLeft size={16}/></button>
+               <span className={`font-black tracking-wider ${isLight ? "text-zinc-900" : "text-white"}`}>ADMIN PANEL</span>
+            </div>
+            {activeTab === "products" && (
+              <button onClick={() => handleOpenProductModal()} className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-500/20">
+                 <Plus size={18} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar snap-x">
+             {navItems.map(item => (
+               <button 
+                key={item.id} 
+                onClick={() => { setActiveTab(item.id as any); setSearch(""); }} 
+                className={`snap-center shrink-0 px-4 py-2 rounded-xl flex items-center gap-2 font-bold transition-all border ${
+                  activeTab === item.id 
+                    ? `${item.bg} text-white border-transparent shadow-lg shadow-orange-500/20` 
+                    : isLight 
+                      ? "bg-zinc-100 border-zinc-200 text-zinc-500" 
+                      : "bg-white/5 border-white/10 text-zinc-400"
+                }`}
+               >
+                 {item.icon} <span className="text-xs">{item.label}</span>
+               </button>
+             ))}
+          </div>
+
+          <div className={`relative flex items-center rounded-xl border transition-all ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-white/5 border-white/10"}`}>
+            <Search className={`absolute left-3 w-3.5 h-3.5 ${search ? "text-orange-500" : "text-zinc-500"}`} />
+            <input 
+              type="text" 
+              placeholder={`Search ${activeTab}...`} 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+              className={`w-full pl-9 pr-9 py-2.5 bg-transparent outline-none text-xs font-medium placeholder:text-zinc-500 ${isLight ? "text-zinc-900" : "text-white"}`} 
+            />
+            {search && <button onClick={() => setSearch("")} className="absolute right-3 p-1 hover:bg-zinc-500/20 rounded-md transition-colors"><X size={12}/></button>}
+          </div>
+
+          {activeTab === "orders" && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {["all", "pending", "awaiting_verification", "processing", "shipped", "delivered", "failed"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setOrderStatusFilter(status)}
+                  className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                    orderStatusFilter === status
+                      ? "bg-orange-500 text-white border-transparent"
+                      : isLight ? "bg-white border-zinc-200 text-zinc-500" : "bg-white/5 border-white/10 text-zinc-400"
+                  }`}
+                >
+                  {status.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Top Navbar */}
+        <header className={`hidden md:flex sticky top-0 z-30 px-10 py-6 items-center justify-between border-b ${isLight ? "bg-white/60 border-zinc-200/80 backdrop-blur-2xl" : "bg-black/40 border-white/5 backdrop-blur-2xl"}`}>
+           <h2 className="text-3xl font-black capitalize tracking-tight flex items-center gap-4">
+              {activeTab}
+              <span className={`text-sm font-bold px-3 py-1 rounded-xl ${isLight ? "bg-zinc-200 text-zinc-600" : "bg-white/10 text-zinc-400"}`}>
+                {activeTab === "messages" ? messages.length : activeTab === "users" ? users.length : activeTab === "products" ? products.length : orders.length} Total
+              </span>
+           </h2>
+           <div className="flex items-center gap-4">
+              <div className={`relative flex items-center rounded-2xl border transition-all ${search ? (isLight ? "border-orange-400 shadow-md shadow-orange-500/10" : "border-orange-500/50 shadow-lg shadow-orange-500/20") : (isLight ? "border-zinc-200 bg-white" : "border-white/10 bg-white/5")}`}>
+                <Search className={`absolute left-4 w-4 h-4 ${search ? "text-orange-500" : "text-zinc-500"}`} />
+                <input type="text" placeholder={`Search ${activeTab}...`} value={search} onChange={(e) => setSearch(e.target.value)} className={`w-64 pl-11 pr-10 py-3 bg-transparent outline-none text-sm font-medium placeholder:text-zinc-500 ${isLight ? "text-zinc-900" : "text-white"}`} />
+                {search && <button onClick={() => setSearch("")} className="absolute right-3 p-1 hover:bg-zinc-500/20 rounded-md transition-colors"><X size={14}/></button>}
+              </div>
+
+              {activeTab === "products" && (
+                <button onClick={() => handleOpenProductModal()} className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
+                   <Plus size={18} /> Add
+                </button>
+              )}
+
+              {activeTab === "orders" && (
+                <select value={orderStatusFilter} onChange={(e) => setOrderStatusFilter(e.target.value)} className={`px-4 py-3 rounded-2xl outline-none font-bold text-sm cursor-pointer border ${isLight ? "bg-white border-zinc-200" : "bg-[#111] border-white/10 text-white"}`}>
+                   <option value="all">All Statuses</option>
+                   <option value="pending">Pending</option>
+                   <option value="awaiting_verification">Awaiting Verification</option>
+                   <option value="processing">Processing</option>
+                   <option value="shipped">Shipped</option>
+                   <option value="delivered">Delivered</option>
+                   <option value="failed">Failed / Fake</option>
+                </select>
+              )}
+           </div>
+        </header>
+
+        {/* Content View */}
+        <div className="flex-1 p-5 md:p-10 overflow-y-auto custom-scrollbar relative z-10 pb-32 md:pb-10">
+           <AnimatePresence mode="wait">
+              <motion.div key={activeTab} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.2 }}>
+                 {activeTab === "messages" && renderMessages()}
+                 {activeTab === "users" && renderUsers()}
+                 {activeTab === "products" && renderProducts()}
+                 {activeTab === "orders" && renderOrders()}
+              </motion.div>
+           </AnimatePresence>
+        </div>
+      </main>
+
+      {/* Product Modal overlay unchanged functionally, but styled */}
       <AnimatePresence>
          {showProductModal && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowProductModal(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-              <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border shadow-2xl p-6 sm:p-8 ${isLight ? "bg-white border-zinc-200" : "bg-zinc-950 border-white/10"}`}>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowProductModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border shadow-2xl p-6 sm:p-8 custom-scrollbar ${isLight ? "bg-white border-zinc-200" : "bg-zinc-950 border-white/10"}`}>
                  <div className="flex justify-between items-center mb-6">
-                    <h2 className={`text-2xl font-bold ${isLight ? "text-zinc-900" : "text-white"}`}>{editingProduct ? "Edit Product" : "Add New Product"}</h2>
-                    <button onClick={() => setShowProductModal(false)} className="p-2 hover:bg-white/5 rounded-full"><X size={20}/></button>
+                    <h2 className={`text-2xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>{editingProduct ? "Edit Product" : "Add New Product"}</h2>
+                    <button onClick={() => setShowProductModal(false)} className={`p-2 rounded-full transition-colors ${isLight ? "hover:bg-zinc-100" : "hover:bg-white/10"}`}><X size={20}/></button>
                  </div>
                  
                  <form onSubmit={handleSaveProduct} className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                       <FormGroup label="Product Name" icon={<Tag size={14}/>}>
-                          <input required value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm" placeholder="e.g. Wooden Frame" />
+                       <FormGroup label="Product Name" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="e.g. Wooden Frame" />
                        </FormGroup>
-                       <FormGroup label="Base Price (₹)" icon={<IndianRupee size={14}/>}>
-                          <input required type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm" placeholder="999" />
+                       <FormGroup label="Base Price (₹)" icon={<IndianRupee size={14}/>} isLight={isLight}>
+                          <input required type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="999" />
                        </FormGroup>
-                       <FormGroup label="Category" icon={<Package size={14}/>}>
-                          <select value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm appearance-none">
+                       <FormGroup label="Category" icon={<Package size={14}/>} isLight={isLight}>
+                          <select value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} className={`w-full bg-transparent outline-none py-2 text-sm appearance-none font-medium ${isLight ? "" : "[&>option]:bg-zinc-900"}`}>
                              <option value="Wood">Wood</option>
                              <option value="Metal">Metal</option>
                              <option value="Glass">Glass</option>
                              <option value="Acrylic">Acrylic</option>
                           </select>
                        </FormGroup>
-                       <FormGroup label="Main Image URL" icon={<ImageIcon size={14}/>}>
-                          <input required value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm" placeholder="https://..." />
+                       <FormGroup label="Main Image URL" icon={<ImageIcon size={14}/>} isLight={isLight}>
+                          <input required value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="https://..." />
                        </FormGroup>
                     </div>
 
                     {/* Additional Images Section */}
-                    <div className="space-y-3">
-                       <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5"><ImageIcon size={14}/> Additional Images</label>
-                          <button type="button" onClick={addImageField} className="text-[10px] bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md font-bold hover:bg-orange-500/20 transition flex items-center gap-1"><Plus size={10}/> Add URL</button>
+                    <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                       <div className="flex items-center justify-between mb-4">
+                          <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2"><ImageIcon size={14}/> Additional Images</label>
+                          <button type="button" onClick={addImageField} className="text-[10px] bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg font-bold hover:bg-orange-500/20 transition flex items-center gap-1.5 border border-orange-500/20"><Plus size={12}/> ADD URL</button>
                        </div>
-                       <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                       <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                           {productForm.images.map((url, idx) => (
                              <div key={idx} className="flex gap-2">
-                                <div className="flex-1 px-3 rounded-xl border bg-black/20 border-white/5 flex items-center">
-                                   <input value={url} onChange={e => updateImageField(idx, e.target.value)} className="w-full bg-transparent outline-none py-2 text-xs" placeholder="https://..." />
+                                <div className={`flex-1 px-4 rounded-xl border flex items-center transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
+                                   <input value={url} onChange={e => updateImageField(idx, e.target.value)} className="w-full bg-transparent outline-none py-2.5 text-xs font-medium" placeholder="https://..." />
                                 </div>
-                                <button type="button" onClick={() => removeImageField(idx)} className="p-2 text-zinc-500 hover:text-red-500 transition"><Trash2 size={14}/></button>
+                                <button type="button" onClick={() => removeImageField(idx)} className="p-3 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
                              </div>
                           ))}
-                          {productForm.images.length === 0 && <p className="text-[10px] text-zinc-600 text-center py-2">No additional images added.</p>}
+                          {productForm.images.length === 0 && <p className="text-xs text-zinc-500 text-center py-4 italic font-medium">No additional images added.</p>}
                        </div>
                     </div>
 
                     {/* Bulk Pricing Section */}
-                    <div className="space-y-3">
-                       <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5"><Layers size={14}/> Bulk Pricing Tiers</label>
-                          <button type="button" onClick={addBulkTier} className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-md font-bold hover:bg-emerald-500/20 transition flex items-center gap-1"><Plus size={10}/> Add Tier</button>
+                    <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                       <div className="flex items-center justify-between mb-4">
+                          <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2"><Layers size={14}/> Bulk Pricing Tiers</label>
+                          <button type="button" onClick={addBulkTier} className="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-500/20 transition flex items-center gap-1.5 border border-emerald-500/20"><Plus size={12}/> ADD TIER</button>
                        </div>
-                       <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                       <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                           {productForm.bulkPricing.map((tier, idx) => (
                              <div key={idx} className="flex gap-2 items-center">
-                                <div className="flex-[2] px-3 rounded-xl border bg-black/20 border-white/5 flex items-center gap-2">
-                                   <span className="text-[10px] text-zinc-600">Qty:</span>
-                                   <input type="number" value={tier.qty} onChange={e => updateBulkTier(idx, "qty", e.target.value)} className="w-full bg-transparent outline-none py-2 text-xs" />
+                                <div className={`flex-[2] px-4 rounded-xl border flex items-center gap-2 transition-colors focus-within:border-emerald-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
+                                   <span className="text-[10px] uppercase font-bold text-zinc-500">Qty</span>
+                                   <input type="number" value={tier.qty} onChange={e => updateBulkTier(idx, "qty", e.target.value)} className="w-full bg-transparent outline-none py-2.5 text-xs font-bold" />
                                 </div>
-                                <div className="flex-[3] px-3 rounded-xl border bg-black/20 border-white/5 flex items-center gap-2">
-                                   <span className="text-[10px] text-zinc-600">Price: ₹</span>
-                                   <input type="number" value={tier.price} onChange={e => updateBulkTier(idx, "price", e.target.value)} className="w-full bg-transparent outline-none py-2 text-xs" />
+                                <div className={`flex-[3] px-4 rounded-xl border flex items-center gap-2 transition-colors focus-within:border-emerald-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
+                                   <span className="text-[10px] uppercase font-bold text-zinc-500">Price ₹</span>
+                                   <input type="number" value={tier.price} onChange={e => updateBulkTier(idx, "price", e.target.value)} className="w-full bg-transparent outline-none py-2.5 text-xs font-bold text-emerald-500" />
                                 </div>
-                                <button type="button" onClick={() => removeBulkTier(idx)} className="p-2 text-zinc-500 hover:text-red-500 transition"><Trash2 size={14}/></button>
+                                <button type="button" onClick={() => removeBulkTier(idx)} className="p-3 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
                              </div>
                           ))}
-                          {productForm.bulkPricing.length === 0 && <p className="text-[10px] text-zinc-600 text-center py-2">No bulk pricing tiers defined.</p>}
+                          {productForm.bulkPricing.length === 0 && <p className="text-xs text-zinc-500 text-center py-4 italic font-medium">No bulk pricing tiers defined.</p>}
                        </div>
                     </div>
 
-                    <button type="submit" className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-orange-900/10 transition active:scale-95 uppercase tracking-widest mt-4">
+                    <button type="submit" className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black rounded-2xl shadow-xl shadow-orange-500/25 transition-all active:scale-[0.98] uppercase tracking-widest mt-6 text-sm">
                        {editingProduct ? "Update Product" : "Save Product"}
                     </button>
                  </form>
@@ -767,6 +861,7 @@ export default function AdminPage() {
   );
 }
 
+
 function EmptyState({ icon, text, isLight }: { icon: React.ReactNode, text: string, isLight: boolean }) {
   return (
     <div className={`flex flex-col items-center justify-center py-20 rounded-3xl border border-dashed ${isLight ? "border-zinc-300" : "border-zinc-800"}`}>
@@ -776,11 +871,15 @@ function EmptyState({ icon, text, isLight }: { icon: React.ReactNode, text: stri
   );
 }
 
-function FormGroup({ label, icon, children }: { label: string, icon: React.ReactNode, children: React.ReactNode }) {
+function FormGroup({ label, icon, children, isLight }: { label: string, icon: React.ReactNode, children: React.ReactNode, isLight: boolean }) {
   return (
     <div className="space-y-1.5">
        <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">{icon} {label}</label>
-       <div className={`px-4 rounded-xl border bg-black/20 focus-within:border-orange-500 transition-colors border-white/5`}>
+       <div className={`px-4 rounded-xl border transition-all focus-within:border-orange-500 ${
+         isLight 
+          ? "bg-zinc-50 border-zinc-200 text-zinc-900" 
+          : "bg-black/20 border-white/10 text-white"
+       }`}>
           {children}
        </div>
     </div>
