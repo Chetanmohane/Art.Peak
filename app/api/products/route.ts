@@ -8,7 +8,7 @@ export async function GET() {
         });
 
         // Parse JSON strings back to objects
-        const parsedProducts = products.map(p => ({
+        const parsedProducts = products.map((p: any) => ({
             ...p,
             images: JSON.parse(p.images || "[]"),
             bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : []
