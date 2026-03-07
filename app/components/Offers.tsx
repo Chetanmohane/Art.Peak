@@ -126,7 +126,7 @@ export default function Offers() {
             <Gift size={12} /> Festival Offers
           </span>
           <h2
-            className="text-4xl md:text-5xl font-black tracking-tight"
+            className="text-3xl md:text-5xl font-black tracking-tight px-4"
             style={{ color: isLight ? "#18181b" : "#ffffff" }}
           >
             Exclusive{" "}
@@ -135,7 +135,7 @@ export default function Offers() {
             <span style={{ color: offer.glow }}>Discounts</span>
           </h2>
           <p
-            className="mt-4 max-w-lg text-sm leading-relaxed"
+            className="mt-4 max-w-lg text-[13px] md:text-sm leading-relaxed px-4"
             style={{ color: isLight ? "#52525b" : "rgba(255,255,255,0.55)" }}
           >
             Limited-time offers curated for every festival &amp; occasion. Grab them before they expire!
@@ -192,23 +192,23 @@ export default function Offers() {
 
               <div className="relative z-10 grid md:grid-cols-[1fr_auto] gap-0">
                 {/* ── LEFT PANEL ── */}
-                <div className="p-10 md:p-14">
+                <div className="p-8 md:p-14">
                   {/* Festival tag */}
                   <div
-                    className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] mb-6 px-3 py-1 rounded-full"
+                    className="inline-flex items-center gap-2 text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] mb-5 md:mb-6 px-3 py-1 rounded-full"
                     style={{ background: `${offer.glow}20`, color: accent }}
                   >
                     <Sparkles size={11} /> {offer.festival}
                   </div>
 
                   <h3
-                    className="text-3xl md:text-4xl font-black leading-[1.15] mb-4 max-w-lg"
+                    className="text-2xl md:text-4xl font-black leading-[1.2] mb-4 max-w-lg"
                     style={{ color: isLight ? "#18181b" : "#ffffff" }}
                   >
                     {offer.title}
                   </h3>
                   <p
-                    className="text-sm leading-relaxed mb-10 max-w-md"
+                    className="text-[13px] md:text-sm leading-relaxed mb-8 md:mb-10 max-w-md"
                     style={{ color: isLight ? "#52525b" : "rgba(255,255,255,0.55)" }}
                   >
                     {offer.subtitle}
@@ -218,14 +218,14 @@ export default function Offers() {
                   <div className="flex flex-wrap items-center gap-4">
                     {/* Big Discount Badge */}
                     <div
-                      className="flex items-center gap-3 rounded-2xl px-6 py-4"
+                      className="flex items-center gap-3 rounded-2xl px-5 py-3.5 md:px-6 md:py-4"
                       style={{
                         background: `linear-gradient(135deg, ${offer.glow}${isLight ? "22" : "33"}, ${offer.glow}10)`,
                         border: `1px solid ${offer.glow}${isLight ? "40" : "35"}`,
                       }}
                     >
                       <span
-                        className="text-4xl font-black tracking-tight"
+                        className="text-3xl md:text-4xl font-black tracking-tight"
                         style={{ color: isLight ? offer.glow : "#ffffff" }}
                       >
                         {offer.discountPercent}% OFF
@@ -233,17 +233,17 @@ export default function Offers() {
                     </div>
 
                     {/* Coupon Code */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 max-w-full">
                       <div
-                        className="flex items-center gap-3 rounded-xl px-5 py-3.5"
+                        className="flex items-center gap-2 md:gap-3 rounded-xl px-4 py-3 md:px-5 md:py-3.5 flex-1 min-w-0"
                         style={{
                           background: isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)",
                           border: `1px solid ${isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)"}`,
                         }}
                       >
-                        <Tag size={14} style={{ color: accent }} />
+                        <Tag size={13} style={{ color: accent }} className="shrink-0" />
                         <span
-                          className="font-black tracking-[0.18em] text-sm"
+                          className="font-black tracking-[0.1em] md:tracking-[0.18em] text-[13px] md:text-sm truncate"
                           style={{ color: isLight ? "#18181b" : "#ffffff" }}
                         >
                           {offer.code}
@@ -252,7 +252,7 @@ export default function Offers() {
                       <motion.button
                         whileTap={{ scale: 0.94 }}
                         onClick={copyCode}
-                        className="flex items-center gap-2 rounded-xl px-4 py-3.5 text-xs font-black uppercase tracking-widest transition-all duration-300"
+                        className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 md:py-3.5 text-[11px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 shrink-0"
                         style={{
                           background: copied
                             ? `${offer.glow}25`
@@ -261,19 +261,19 @@ export default function Offers() {
                           border: `1px solid ${copied ? offer.glow + "60" : (isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.1)")}`,
                         }}
                       >
-                        {copied ? <Check size={14} /> : <Copy size={14} />}
-                        {copied ? "Copied!" : "Copy"}
+                        {copied ? <Check size={14} /> : <Copy size={13} />}
+                        <span className="hidden xs:inline">{copied ? "Copied!" : "Copy"}</span>
                       </motion.button>
                     </div>
                   </div>
 
                   {/* CTA */}
-                  <div className="mt-10">
+                  <div className="mt-8 md:mt-10">
                     <Link href="/#products">
                       <motion.button
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
-                        className="inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white group transition-all duration-300"
+                        className="w-full md:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl text-[13px] md:text-sm font-black uppercase tracking-widest text-white group transition-all duration-300"
                         style={{
                           background: `linear-gradient(135deg, ${offer.glow}, ${offer.glow}bb)`,
                           boxShadow: `0 8px 30px ${offer.glow}40`,
@@ -299,7 +299,7 @@ export default function Offers() {
                   {/* Timer */}
                   <div className="text-center w-full">
                     <div
-                      className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] mb-6"
+                      className="flex items-center justify-center gap-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-4 md:mb-6"
                       style={{ color: accent }}
                     >
                       <Clock size={12} /> Offer Expires In
@@ -314,7 +314,7 @@ export default function Offers() {
                       ].map(({ v, l }) => (
                         <div key={l} className="flex flex-col items-center">
                           <div
-                            className="w-14 h-14 rounded-xl flex items-center justify-center mb-2 overflow-hidden"
+                            className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center mb-1.5 overflow-hidden"
                             style={{
                               background: `${offer.glow}${isLight ? "15" : "18"}`,
                               border: `1px solid ${offer.glow}${isLight ? "35" : "30"}`,
@@ -327,7 +327,7 @@ export default function Offers() {
                                 animate={{ y: 0, opacity: 1 }}
                                 exit={{ y: 10, opacity: 0 }}
                                 transition={{ duration: 0.2 }}
-                                className="text-2xl font-black tabular-nums"
+                                className="text-xl md:text-2xl font-black tabular-nums"
                                 style={{ color: isLight ? "#18181b" : "#ffffff" }}
                               >
                                 {v}
@@ -335,7 +335,7 @@ export default function Offers() {
                             </AnimatePresence>
                           </div>
                           <span
-                            className="text-[9px] font-black uppercase tracking-widest"
+                            className="text-[8px] md:text-[9px] font-black uppercase tracking-widest"
                             style={{ color: isLight ? "#71717a" : "rgba(255,255,255,0.35)" }}
                           >
                             {l}

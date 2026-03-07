@@ -73,7 +73,7 @@ export default function Contact() {
             {[
               { Icon: MapPin,  text: "Madhya Pradesh , India" },
               { Icon: Phone,   text: "+91 8839034632" },
-              { Icon: Mail,    text: "art.peak@gmail.com" },
+              { Icon: Mail,    text: "artpeak.shop@gmail.com" },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-center gap-4 hover:text-orange-500 transition cursor-pointer">
                 <Icon className="text-orange-500 flex-shrink-0" />
