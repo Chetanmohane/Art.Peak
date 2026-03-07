@@ -31,22 +31,33 @@ const sectionColors: Record<string, string> = {
 export default function Navbar() {
   const { cart, totalItems, totalPrice, increaseQty, decreaseQty, updateQty, removeItem } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { data: session } = useSession();
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
   
-  if (pathname?.startsWith("/admin")) return null;
-  
-  // Guard the component early rendering sync (it prevents hydration mismatches)
   const isLight = theme === "light";
+
+  useEffect(() => {
+    if (session) {
+      fetch("/api/admin/check")
+        .then((res) => res.json())
+        .then((data) => setIsAdmin(data.isAdmin))
+        .catch(() => setIsAdmin(false));
+    } else {
+      setIsAdmin(false);
+    }
+  }, [session]);
 
   const [open, setOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const { data: session } = useSession();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchItem[]>([]);
   const [highlighted, setHighlighted] = useState(0);
   const [active, setActive] = useState("Home");
+
+  if (pathname?.startsWith("/admin")) return null;
   const [scrolled, setScrolled] = useState(false);
   const [logo, setLogo] = useState("/images/logo/logo.png");
   const [paying, setPaying] = useState(false);
@@ -347,7 +358,7 @@ export default function Navbar() {
             </button>
 
             {/* Admin Panel Button */}
-            {session && (session.user as any)?.role === "admin" && (
+            {isAdmin && (
               <Link
                 href="/admin"
                 className="flex items-center gap-2 px-3 py-2 rounded-full bg-orange-600/10 text-orange-600 border border-orange-600/20 hover:bg-orange-600 hover:text-white transition-all duration-300 font-bold text-xs group/admin"
