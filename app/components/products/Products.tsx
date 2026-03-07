@@ -107,6 +107,7 @@ export default function Products() {
   const { data: session } = useSession();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading ] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [customizingProduct, setCustomizingProduct] = useState<Product | null>(null);
   const [customText, setCustomText] = useState("");
   const [customImage, setCustomImage] = useState<string | null>(null);
@@ -191,11 +192,34 @@ export default function Products() {
             <p className="text-zinc-500 text-lg">No products found. Stay tuned!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} onCustomize={setCustomizingProduct} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+              {(showAll ? products : products.slice(0, 4)).map((product) => (
+                <ProductCard key={product.id} product={product} onCustomize={setCustomizingProduct} />
+              ))}
+            </div>
+
+            {/* SEE MORE BUTTON */}
+            {products.length > 4 && (
+              <div className="mt-16 flex justify-center">
+                <button
+                  onClick={() => setShowAll(!showAll)}
+                  className="group relative px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-base shadow-xl shadow-orange-900/20 transition-all active:scale-95 flex items-center gap-3 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  {showAll ? (
+                    <>
+                      Show Less <ChevronLeft className="rotate-90 group-hover:-translate-y-1 transition-transform" size={20} />
+                    </>
+                  ) : (
+                    <>
+                      See More Products <ChevronRight className="rotate-90 group-hover:translate-y-1 transition-transform" size={20} />
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* CUSTOMIZATION MODAL */}
