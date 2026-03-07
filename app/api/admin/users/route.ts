@@ -69,3 +69,41 @@ export async function DELETE(req: Request) {
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }
+// PATCH /api/admin/users — update user role (admin only)
+export async function PATCH(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session || !(await isAdmin(session))) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
+
+        const body = await req.json();
+        const { id, role } = body;
+
+        if (!id || !role) {
+            return new NextResponse("Missing id or role", { status: 400 });
+        }
+
+        if (role !== "user" && role !== "admin" && role !== "editor") {
+            return new NextResponse("Invalid role", { status: 400 });
+        }
+
+        // Optional: Prevent admin from changing their own role to user
+        const targetUser = await prisma.user.findUnique({ where: { id } });
+        if (targetUser?.email === session.user.email && role === "user") {
+            return new NextResponse("You cannot demote yourself", { status: 400 });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: { role },
+            select: { id: true, role: true }
+        });
+
+        return NextResponse.json(updatedUser);
+    } catch (error) {
+        console.error("Admin users PATCH error:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
+}

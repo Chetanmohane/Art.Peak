@@ -1,10 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]/options";
+
+async function isAuthorized(session: any) {
+    if (!session?.user?.email) return false;
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { role: true },
+    });
+    return user?.role === "admin" || user?.role === "editor";
+}
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
     try {
         const resolvedParams = await params;
         const id = resolvedParams.id;
+        const session = await getServerSession(authOptions);
+        if (!session || !(await isAuthorized(session))) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
         const body = await req.json();
 
         // Safely parse numbers to avoid NaN
@@ -49,6 +64,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     try {
         const resolvedParams = await params;
         const id = resolvedParams.id;
+        const session = await getServerSession(authOptions);
+        if (!session || !(await isAuthorized(session))) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
         await prisma.offer.delete({
             where: { id },
         });

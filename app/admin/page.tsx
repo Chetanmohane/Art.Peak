@@ -98,6 +98,7 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [userRole, setUserRole] = useState<string>("user");
   
   const [filteredMessages, setFilteredMessages] = useState<ContactMessage[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
@@ -169,12 +170,20 @@ export default function AdminPage() {
     try {
       if (!skipAdminCheck) {
         const checkRes = await fetch("/api/admin/check", { credentials: "include" });
-        const { isAdmin } = await checkRes.json();
+        const { isAdmin, role } = await checkRes.json();
 
         if (!isAdmin) {
           setPageStatus("forbidden");
           return;
         }
+        setUserRole(role);
+        
+        // If editor, default to products tab
+        if (role === "editor") {
+           setActiveTab("products");
+        }
+      } else {
+        setUserRole((session?.user as any)?.role || "admin");
       }
 
       // Priority fetch for current tab
@@ -336,7 +345,27 @@ export default function AdminPage() {
       if (res.ok) await fetchOrders();
     } catch (e) { console.error(e); }
   };
-  
+  const handleUpdateUserRole = async (id: string, role: string) => {
+    setPageStatus("loading");
+    try {
+      const res = await fetch(`/api/admin/users`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, role })
+      });
+      if (res.ok) {
+        await fetchUsers();
+        showToast("User role updated successfully!", "success");
+      } else {
+        const errorText = await res.text();
+        showToast(errorText || "Failed to update role", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Something went wrong", "error");
+    } finally { setPageStatus("ready"); }
+  };
+
   const handleDeleteOrder = async (id: string) => {
     if (!confirm("Is order ko delete karna chahte hain?")) return;
     setDeletingId(id);
@@ -704,9 +733,32 @@ export default function AdminPage() {
                 <span className={`font-bold truncate text-lg ${isLight ? "text-zinc-900" : "text-white"}`}>{user.name || "Unknown User"}</span>
               </div>
               <p className={`text-sm truncate mb-3 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>{user.email}</p>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                <span className={`text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider ${user.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400' : isLight ? 'bg-zinc-100 text-zinc-600' : 'bg-zinc-800 text-zinc-400'}`}>{user.role}</span>
-                <span className={`text-[10px] font-medium ${isLight ? "text-zinc-400" : "text-zinc-500"}`}>{formatDate(user.createdAt)}</span>
+              <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Account Role</span>
+                    <select 
+                      value={user.role} 
+                      onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
+                      disabled={user.email === session?.user?.email}
+                      className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-2 py-1 outline-none cursor-pointer transition-colors ${
+                        user.role === 'admin' 
+                        ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' 
+                        : user.role === 'editor'
+                        ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                        : isLight ? 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                      }`}
+                    >
+                      <option value="user">USER</option>
+                      <option value="editor">EDITOR</option>
+                      <option value="admin">ADMIN</option>
+                    </select>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Joined On</span>
+                    <p className={`text-[10px] font-medium mt-0.5 ${isLight ? "text-zinc-400" : "text-zinc-500"}`}>{formatDate(user.createdAt)}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -985,12 +1037,14 @@ export default function AdminPage() {
   };
 
   const navItems = [
-    { id: "messages", label: "Messages", icon: <MessageSquare size={18} />, count: messages.length, color: "text-orange-500", bg: "bg-orange-500" },
-    { id: "users", label: "Users", icon: <Users size={18} />, count: users.length, color: "text-indigo-500", bg: "bg-indigo-500" },
+    { id: "messages", label: "Messages", icon: <MessageSquare size={18} />, count: messages.length, color: "text-orange-50", bg: "bg-orange-500", hidden: userRole === "editor" },
+    { id: "users", label: "Users", icon: <Users size={18} />, count: users.length, color: "text-indigo-500", bg: "bg-indigo-500", hidden: userRole === "editor" },
     { id: "products", label: "Products", icon: <Package size={18} />, count: products.length, color: "text-emerald-500", bg: "bg-emerald-500" },
-    { id: "orders", label: "Orders", icon: <ShoppingCart size={18} />, count: orders.length, color: "text-amber-500", bg: "bg-amber-500" },
+    { id: "orders", label: "Orders", icon: <ShoppingCart size={18} />, count: orders.length, color: "text-amber-500", bg: "bg-amber-500", hidden: userRole === "editor" },
     { id: "offers", label: "Offers", icon: <Tag size={18} />, count: offers.length, color: "text-fuchsia-500", bg: "bg-fuchsia-500" },
   ];
+
+  const filteredNavItems = navItems.filter(item => !item.hidden);
 
   return (
     <div className={`min-h-screen flex ${isLight ? "bg-[#f8fafc] text-zinc-900" : "bg-[#050505] text-white"}`}>
@@ -1002,18 +1056,18 @@ export default function AdminPage() {
             <ArrowLeft size={18} />
           </button>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${userRole === 'editor' ? 'from-emerald-400 to-emerald-600' : 'from-orange-400 to-orange-600'} flex items-center justify-center text-white shadow-lg shadow-orange-500/20`}>
               <ShieldCheck size={22} />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-wide">ADMIN</h1>
+              <h1 className="text-xl font-black tracking-wide">{userRole === 'editor' ? 'EDITOR' : 'ADMIN'}</h1>
               <p className={`text-[10px] uppercase tracking-widest font-bold ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Console</p>
             </div>
           </div>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navItems.map(item => {
+          {filteredNavItems.map(item => {
             const isActive = activeTab === item.id;
             return (
               <button
@@ -1048,7 +1102,7 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
                <button onClick={() => router.push("/")} className={`p-2 rounded-lg ${isLight ? "bg-zinc-100/80 text-zinc-600" : "bg-white/10 text-zinc-400"}`}><ArrowLeft size={16}/></button>
-               <span className={`font-black tracking-wider ${isLight ? "text-zinc-900" : "text-white"}`}>ADMIN PANEL</span>
+               <span className={`font-black tracking-wider ${isLight ? "text-zinc-900" : "text-white"}`}>{userRole === 'editor' ? 'EDITOR PANEL' : 'ADMIN PANEL'}</span>
             </div>
             {activeTab === "products" && (
               <button onClick={() => handleOpenProductModal()} className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-500/20">
@@ -1063,7 +1117,7 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar snap-x">
-             {navItems.map(item => (
+             {filteredNavItems.map(item => (
                <button 
                 key={item.id} 
                 onClick={() => { setActiveTab(item.id as any); setSearch(""); }} 

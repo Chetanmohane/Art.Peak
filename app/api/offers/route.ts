@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/options";
+
+async function isAuthorized(session: any) {
+    if (!session?.user?.email) return false;
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { role: true },
+    });
+    return user?.role === "admin" || user?.role === "editor";
+}
 
 export async function GET() {
     try {
@@ -19,6 +30,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session || !(await isAuthorized(session))) {
+            return new NextResponse("Forbidden", { status: 403 });
+        }
         const body = await req.json();
         const offer = await prisma.offer.create({
             data: {

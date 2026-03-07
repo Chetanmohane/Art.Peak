@@ -10,7 +10,7 @@ async function isAdmin(session: any) {
         where: { email: session.user.email },
         select: { role: true },
     });
-    return user?.role === "admin";
+    return user?.role === "admin" || user?.role === "editor";
 }
 
 // GET /api/admin/products — fetch ALL products (admin only)

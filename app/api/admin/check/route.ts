@@ -17,9 +17,12 @@ export async function GET() {
             select: { role: true },
         });
 
-        return NextResponse.json({ isAdmin: user?.role === "admin" });
+        return NextResponse.json({
+            isAdmin: user?.role === "admin" || user?.role === "editor",
+            role: user?.role
+        });
     } catch (error) {
         console.error("Admin check error:", error);
-        return NextResponse.json({ isAdmin: false });
+        return NextResponse.json({ isAdmin: false, role: "user" });
     }
 }
