@@ -677,6 +677,22 @@ export default function Navbar() {
 
               {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto px-6 py-4">
+                {/* Helper for calculating item price in render */}
+                {(() => {
+                  const getItemPrice = (item: any) => {
+                    if (!item?.product) return 0;
+                    let price = item.product.price || 0;
+                    if (item.product.bulkPricing && Array.isArray(item.product.bulkPricing)) {
+                      const tier = [...item.product.bulkPricing]
+                        .sort((a,b) => b.qty - a.qty)
+                        .find(t => item.qty >= t.qty);
+                      if (tier) price = tier.price;
+                    }
+                    return price * (item.qty || 1);
+                  };
+                  return null;
+                })()}
+                
                 <AnimatePresence mode="wait">
                   {checkoutStep === "cart" && (
                     <motion.div key="cart" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
@@ -743,7 +759,19 @@ export default function Navbar() {
                               </div>
                             </div>
                             <div className="text-right flex flex-col justify-center shrink-0">
-                               <p className="font-bold text-sm text-orange-500">₹{( (item.product?.bulkPricing ? (item.product.bulkPricing.find(t => item.qty >= t.qty)?.price || item.product.price) : (item.product?.price || 0) ) * (item.qty || 0)).toLocaleString()}</p>
+                               <p className="font-bold text-sm text-orange-500">
+                                 ₹{(() => {
+                                   if (!item?.product) return "0";
+                                   let price = item.product.price || 0;
+                                   if (item.product.bulkPricing && Array.isArray(item.product.bulkPricing)) {
+                                     const tier = [...item.product.bulkPricing]
+                                       .sort((a,b) => b.qty - a.qty)
+                                       .find(t => item.qty >= t.qty);
+                                     if (tier) price = tier.price;
+                                   }
+                                   return (price * (item.qty || 1)).toLocaleString();
+                                 })()}
+                               </p>
                             </div>
                           </div>
                         ))

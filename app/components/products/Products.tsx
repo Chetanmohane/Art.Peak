@@ -302,9 +302,11 @@ export default function Products() {
   };
 
   /* ── Bulk price calc ── */
-  const getBulkPrice = (product: Product, qty: number) => {
-    if (!product.bulkPricing) return product.price;
-    const applicable = product.bulkPricing
+  const getBulkPrice = (product: Product | null, qty: number) => {
+    if (!product) return 0;
+    if (!product.bulkPricing || !Array.isArray(product.bulkPricing) || product.bulkPricing.length === 0) return product.price;
+    
+    const applicable = [...product.bulkPricing]
       .filter((t) => qty >= t.qty)
       .sort((a, b) => b.qty - a.qty);
     return applicable[0]?.price ?? product.price;
@@ -612,10 +614,10 @@ export default function Products() {
                         <Tag size={10} className="text-orange-500"/> Volume Discounts
                       </p>
                       <div className="grid grid-cols-3 gap-2">
-                        {customizingProduct.bulkPricing.sort((a,b) => a.qty - b.qty).map((tier, tidx) => (
+                        {[...customizingProduct.bulkPricing].sort((a,b) => a.qty - b.qty).map((tier, tidx) => (
                           <div key={tidx} className={`p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${customQty >= tier.qty ? "bg-orange-600/10 border-orange-500/30 ring-1 ring-orange-500/20" : "bg-black/20 border-white/5"}`}>
                             <span className={`text-[10px] font-bold ${customQty >= tier.qty ? "text-orange-400" : "text-zinc-500"}`}>{tier.qty}+ Pcs</span>
-                            <span className={`text-xs font-black ${customQty >= tier.qty ? "text-white" : "text-zinc-300"}`}>₹{tier.qty === 0 ? customizingProduct.price : tier.price}</span>
+                            <span className={`text-xs font-black ${customQty >= tier.qty ? "text-white" : "text-zinc-300"}`}>₹{tier.price}</span>
                           </div>
                         ))}
                       </div>
