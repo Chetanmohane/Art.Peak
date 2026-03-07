@@ -7,7 +7,7 @@ export default function About() {
   return (
     <section
       id="about"
-      className="relative py-16 sm:py-20 lg:py-28 overflow-hidden"
+      className="relative py-12 sm:py-16 lg:py-20 overflow-hidden"
       style={{ background: "linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary), var(--bg-primary))" }}
     >
       {/* 🔥 Background Glow Effect */}

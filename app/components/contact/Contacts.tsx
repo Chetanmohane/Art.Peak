@@ -45,7 +45,7 @@ export default function Contact() {
   return (
     <section
       id="contact"
-      className="relative py-20 md:py-28 overflow-hidden"
+      className="relative py-12 md:py-16 overflow-hidden"
       style={{ background: "linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary), var(--bg-primary))" }}
     >
       {/* Background Glow */}

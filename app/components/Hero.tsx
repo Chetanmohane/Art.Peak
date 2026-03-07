@@ -11,7 +11,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-[100dvh] pt-24 pb-12 flex flex-col items-center justify-center overflow-hidden"
+      className="relative min-h-[85dvh] pt-20 pb-10 flex flex-col items-center justify-center overflow-hidden"
     >
       {/* ── DARK MODE: Photo background ── */}
       {!isLight && (
