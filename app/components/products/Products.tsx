@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../context/CartContext";
 import { useSession } from "next-auth/react";
+import { useTheme } from "../../context/ThemeContext";
 
 interface Product {
   id: string;
@@ -39,6 +40,8 @@ function ProductCard({
   onCustomize: (product: Product) => void;
   index: number;
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const images =
     product.images && product.images.length > 0
@@ -73,7 +76,7 @@ function ProductCard({
       }}
     >
       {/* ── Image Section ── */}
-      <div className="relative h-56 overflow-hidden bg-zinc-900 shrink-0">
+      <div className={`relative aspect-square overflow-hidden shrink-0 ${isLight ? "bg-[#f8fafc]" : "bg-black/20"}`}>
         <Image
           src={images[currentImageIndex]}
           alt={product.name}

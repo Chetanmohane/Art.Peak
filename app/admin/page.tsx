@@ -566,12 +566,12 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((p, i) => (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={p.id} className={`group rounded-3xl border overflow-hidden transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-xl hover:shadow-black/5" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl hover:shadow-black/50"}`}>
-                <div className="relative h-48 overflow-hidden bg-zinc-900 shadow-inner">
+                <div className={`relative aspect-square overflow-hidden shadow-inner ${isLight ? "bg-zinc-100" : "bg-black/40"}`}>
                   <Image 
                     src={p.image} 
                     alt={p.name} 
                     fill 
-                    className="object-contain p-2 transition-transform duration-700 group-hover:scale-110" 
+                    className="object-contain transition-transform duration-700 group-hover:scale-110" 
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw" 
                     priority={i < 4}
                     unoptimized={p.image.startsWith('data:')}
