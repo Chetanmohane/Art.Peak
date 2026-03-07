@@ -13,11 +13,20 @@ interface Product {
 }
 
 export interface CartItem {
-  id: string; // Unique ID for the cart item
+  id: string;
   product: Product;
   qty: number;
   customText?: string;
   customImage?: string | null;
+}
+
+export interface AppliedCoupon {
+  code: string;
+  festival: string;
+  discount: number;  // percentage
+  discountAmount: number;
+  emoji: string;
+  glow: string;
 }
 
 interface CartContextType {
@@ -30,6 +39,10 @@ interface CartContextType {
   clearCart: () => void;
   totalPrice: number;
   totalItems: number;
+  // Coupon
+  coupon: AppliedCoupon | null;
+  setCoupon: (c: AppliedCoupon | null) => void;
+  discountedTotal: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -37,6 +50,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("artpeak_cart");
@@ -61,9 +75,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: Product, customText?: string, customImage?: string | null, qty: number = 1) => {
     const existing = cart.find(
-      (item) => 
-        item?.product?.id === product.id && 
-        item?.customText === customText && 
+      (item) =>
+        item?.product?.id === product.id &&
+        item?.customText === customText &&
         item?.customImage === customImage
     );
 
@@ -107,14 +121,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setCart([]);
+    setCoupon(null);
   };
 
   const totalPrice = cart.reduce((total, item) => {
     if (!item.product) return total;
     let currentPrice = item.product.price;
-    
-    // Check for bulk pricing
-    // Check for bulk pricing safely
+
     if (item.product.bulkPricing && Array.isArray(item.product.bulkPricing) && item.product.bulkPricing.length > 0) {
       const applicableTier = [...item.product.bulkPricing]
         .sort((a, b) => b.qty - a.qty)
@@ -123,15 +136,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
         currentPrice = applicableTier.price;
       }
     }
-    
+
     return total + (currentPrice || 0) * item.qty;
   }, 0);
 
   const totalItems = cart.reduce((total, item) => total + (item.qty || 0), 0);
 
+  // Discount amount recalculated whenever coupon or totalPrice changes
+  const discountAmount = coupon
+    ? Math.round((totalPrice * coupon.discount) / 100)
+    : 0;
+  const discountedTotal = totalPrice - discountAmount;
+
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, increaseQty, decreaseQty, updateQty, removeItem, clearCart, totalPrice, totalItems }}
+      value={{
+        cart,
+        addToCart,
+        increaseQty,
+        decreaseQty,
+        updateQty,
+        removeItem,
+        clearCart,
+        totalPrice,
+        totalItems,
+        coupon,
+        setCoupon,
+        discountedTotal,
+      }}
     >
       {children}
     </CartContext.Provider>

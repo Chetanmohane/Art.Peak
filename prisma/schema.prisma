@@ -62,3 +62,18 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Offer {
+  id          String   @id @default(cuid())
+  festival    String
+  title       String
+  subtitle    String
+  discount    Float    // percentage e.g. 25
+  code        String   @unique
+  validTill   String
+  emoji       String   @default("🎁")
+  glow        String   @default("#f97316")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

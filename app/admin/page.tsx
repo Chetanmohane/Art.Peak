@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import {
   Loader2, MessageSquare, Trash2, Mail,
   Calendar, ArrowLeft, ShieldCheck, Search, X, Users, User as UserIcon,
-  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle, Upload
+  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle, Upload, Gift, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +31,20 @@ interface UserData {
 interface BulkTier {
   qty: number;
   price: number;
+}
+
+interface Offer {
+  id: string;
+  festival: string;
+  title: string;
+  subtitle: string;
+  discount: number;
+  code: string;
+  validTill: string;
+  emoji: string;
+  glow: string;
+  active: boolean;
+  createdAt: string;
 }
 
 interface Product {
@@ -72,11 +86,12 @@ export default function AdminPage() {
   const { theme } = useTheme();
   const isLight = theme === "light";
 
-  const [activeTab, setActiveTab ] = useState<"messages" | "users" | "products" | "orders">("messages");
+  const [activeTab, setActiveTab ] = useState<"messages" | "users" | "products" | "orders" | "offers">("messages");
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [users, setUsers] = useState<UserData[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   
   const [filteredMessages, setFilteredMessages] = useState<ContactMessage[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
@@ -95,6 +110,11 @@ export default function AdminPage() {
   const [cropModal, setCropModal] = useState<{ show: boolean, img: string, isMain: boolean, index?: number }>({
     show: false, img: "", isMain: true
   });
+
+  // Offer modal state
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [offerForm, setOfferForm] = useState({ festival: "", title: "", subtitle: "", discount: "", code: "", validTill: "", emoji: "🎁", glow: "#f97316", active: true });
 
   // Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -139,6 +159,7 @@ export default function AdminPage() {
       if (activeTab === "users") await fetchUsers();
       if (activeTab === "products") await fetchProducts();
       if (activeTab === "orders") await fetchOrders();
+      if (activeTab === "offers") await fetchOffers();
 
       setPageStatus("ready");
 
@@ -147,7 +168,8 @@ export default function AdminPage() {
         activeTab !== "messages" && fetchMessages(),
         activeTab !== "users" && fetchUsers(),
         activeTab !== "products" && fetchProducts(),
-        activeTab !== "orders" && fetchOrders()
+        activeTab !== "orders" && fetchOrders(),
+        activeTab !== "offers" && fetchOffers()
       ].filter(Boolean));
     } catch (e) {
       console.error("Admin page load error:", e);
@@ -277,6 +299,13 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
   };
   
+  const fetchOffers = async () => {
+    try {
+      const res = await fetch("/api/offers?all=1");
+      if (res.ok) setOffers(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
   const handleDeleteOrder = async (id: string) => {
     if (!confirm("Is order ko delete karna chahte hain?")) return;
     setDeletingId(id);
@@ -784,11 +813,206 @@ export default function AdminPage() {
     );
   };
 
+  const renderOffers = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h2 className={`text-xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Offers & Coupons</h2>
+            <p className={`text-xs mt-1 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Add/edit festival offers that customers can apply at checkout.</p>
+          </div>
+          <button
+            onClick={() => { setEditingOffer(null); setOfferForm({ festival: "", title: "", subtitle: "", discount: "", code: "", validTill: "", emoji: "🎁", glow: "#f97316", active: true }); setShowOfferModal(true); }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-orange-600/25"
+          >
+            <Plus size={16} /> Add Offer
+          </button>
+        </div>
+
+        {offers.length === 0 ? (
+          <div className={`rounded-3xl border p-16 text-center ${isLight ? "bg-white/70 border-zinc-200" : "bg-white/[0.02] border-white/5"}`}>
+            <Gift size={40} className="mx-auto mb-4 text-zinc-400" />
+            <p className="text-zinc-400 font-semibold">No offers yet. Add your first one!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {offers.map((offer, i) => (
+              <motion.div
+                key={offer.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`rounded-3xl border overflow-hidden transition-all ${isLight ? "bg-white border-zinc-200 shadow-sm hover:shadow-md" : "bg-white/[0.03] border-white/5 hover:bg-white/[0.05]"}`}
+              >
+                {/* Color bar */}
+                <div className="h-2" style={{ background: offer.glow }} />
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{offer.emoji}</span>
+                      <div>
+                        <p className={`font-black text-sm ${isLight ? "text-zinc-900" : "text-white"}`}>{offer.festival}</p>
+                        <p className={`text-xs ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>{offer.title}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="text-xl font-black" style={{ color: offer.glow }}>{offer.discount}% OFF</span>
+                      <span
+                        className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          offer.active ? "bg-emerald-500/15 text-emerald-500" : "bg-zinc-500/15 text-zinc-500"
+                        }`}
+                      >
+                        {offer.active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl mb-4 text-xs font-black tracking-widest`} style={{ background: `${offer.glow}15`, color: offer.glow }}>
+                    <Tag size={11} /> {offer.code}
+                  </div>
+
+                  <p className={`text-xs leading-relaxed mb-4 ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>{offer.subtitle}</p>
+                  <p className={`text-[11px] mb-4 ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Valid till: {offer.validTill}</p>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingOffer(offer);
+                        setOfferForm({ ...offer, discount: String(offer.discount) });
+                        setShowOfferModal(true);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl font-bold text-xs transition-all"
+                    >
+                      <Edit size={13} /> Edit
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: offer.id, active: !offer.active }) });
+                        fetchOffers();
+                      }}
+                      className={`px-3 py-2.5 rounded-xl font-bold text-xs transition-all ${
+                        offer.active ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white" : "bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500 hover:text-white"
+                      }`}
+                    >
+                      {offer.active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("Delete this offer?")) return;
+                        await fetch("/api/offers", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: offer.id }) });
+                        fetchOffers();
+                      }}
+                      className="px-3 py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Offer Add/Edit Modal */}
+        <AnimatePresence>
+          {showOfferModal && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+              style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+            >
+              <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                className={`${isLight ? "bg-white" : "bg-zinc-900"} rounded-3xl p-8 w-full max-w-lg shadow-2xl border ${ isLight ? "border-zinc-200" : "border-white/10"}`}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>{editingOffer ? "Edit Offer" : "Add New Offer"}</h3>
+                  <button onClick={() => setShowOfferModal(false)} className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"><X size={18} /></button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Festival Name</label>
+                      <input value={offerForm.festival} onChange={e => setOfferForm(p => ({...p, festival: e.target.value}))} placeholder="e.g. Holi Special" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Emoji</label>
+                      <input value={offerForm.emoji} onChange={e => setOfferForm(p => ({...p, emoji: e.target.value}))} placeholder="🎁" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Offer Title</label>
+                    <input value={offerForm.title} onChange={e => setOfferForm(p => ({...p, title: e.target.value}))} placeholder="e.g. Rang Barse, Gifts Barse" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Subtitle / Description</label>
+                    <textarea value={offerForm.subtitle} onChange={e => setOfferForm(p => ({...p, subtitle: e.target.value}))} rows={2} placeholder="Short offer description..." className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none resize-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Discount %</label>
+                      <input type="number" value={offerForm.discount} onChange={e => setOfferForm(p => ({...p, discount: e.target.value}))} placeholder="25" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Coupon Code</label>
+                      <input value={offerForm.code} onChange={e => setOfferForm(p => ({...p, code: e.target.value.toUpperCase()}))} placeholder="HOLI25" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none font-mono ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Valid Till</label>
+                      <input value={offerForm.validTill} onChange={e => setOfferForm(p => ({...p, validTill: e.target.value}))} placeholder="15 March 2026" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Accent Color</label>
+                      <div className="flex gap-2 items-center">
+                        <input type="color" value={offerForm.glow} onChange={e => setOfferForm(p => ({...p, glow: e.target.value}))} className="w-10 h-10 rounded-lg border-0 cursor-pointer" />
+                        <input value={offerForm.glow} onChange={e => setOfferForm(p => ({...p, glow: e.target.value}))} className={`flex-1 px-3 py-2.5 rounded-xl text-sm border outline-none font-mono ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={offerForm.active} onChange={e => setOfferForm(p => ({...p, active: e.target.checked}))} className="w-4 h-4 accent-orange-500" />
+                    <span className={`text-sm font-semibold ${isLight ? "text-zinc-700" : "text-zinc-300"}`}>Offer is Active (visible to customers)</span>
+                  </label>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button onClick={() => setShowOfferModal(false)} className={`flex-1 py-3 rounded-2xl font-bold text-sm border transition ${isLight ? "border-zinc-200 hover:bg-zinc-100" : "border-zinc-700 hover:bg-zinc-800 text-white"}`}>Cancel</button>
+                  <button
+                    onClick={async () => {
+                      if (!offerForm.festival || !offerForm.code || !offerForm.discount) { alert("Please fill Festival, Code & Discount"); return; }
+                      const payload = { ...offerForm, discount: parseFloat(offerForm.discount) };
+                      if (editingOffer) {
+                        await fetch("/api/offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingOffer.id, ...payload }) });
+                      } else {
+                        await fetch("/api/offers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                      }
+                      fetchOffers();
+                      setShowOfferModal(false);
+                    }}
+                    className="flex-1 py-3 rounded-2xl font-bold text-sm bg-orange-600 hover:bg-orange-500 text-white transition shadow-lg shadow-orange-600/25"
+                  >
+                    {editingOffer ? "Save Changes" : "Create Offer"}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   const navItems = [
     { id: "messages", label: "Messages", icon: <MessageSquare size={18} />, count: messages.length, color: "text-orange-500", bg: "bg-orange-500" },
     { id: "users", label: "Users", icon: <Users size={18} />, count: users.length, color: "text-indigo-500", bg: "bg-indigo-500" },
     { id: "products", label: "Products", icon: <Package size={18} />, count: products.length, color: "text-emerald-500", bg: "bg-emerald-500" },
     { id: "orders", label: "Orders", icon: <ShoppingCart size={18} />, count: orders.length, color: "text-amber-500", bg: "bg-amber-500" },
+    { id: "offers", label: "Offers", icon: <Gift size={18} />, count: offers.length, color: "text-pink-500", bg: "bg-pink-500" },
   ];
 
   return (
@@ -948,6 +1172,7 @@ export default function AdminPage() {
                  {activeTab === "users" && renderUsers()}
                  {activeTab === "products" && renderProducts()}
                  {activeTab === "orders" && renderOrders()}
+                 {activeTab === "offers" && renderOffers()}
               </motion.div>
            </AnimatePresence>
         </div>

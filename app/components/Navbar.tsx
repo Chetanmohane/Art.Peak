@@ -29,7 +29,7 @@ const sectionColors: Record<string, string> = {
 };
 
 export default function Navbar() {
-  const { cart, totalItems, totalPrice, increaseQty, decreaseQty, updateQty, removeItem, clearCart } = useCart();
+  const { cart, totalItems, totalPrice, increaseQty, decreaseQty, updateQty, removeItem, clearCart, coupon, setCoupon, discountedTotal } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { data: session, status } = useSession();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -61,6 +61,9 @@ export default function Navbar() {
   const [logo, setLogo] = useState("/images/logo/logo.png");
   const [paying, setPaying] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "address" | "method" | "qr" | "upi" | "upi_id" | "success">("cart");
+  const [couponInput, setCouponInput] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"qr" | "upi" | "upi_id" | null>(null);
   const [enteredUpiId, setEnteredUpiId] = useState("");
   const [upiRequestSent, setUpiRequestSent] = useState(false);
@@ -938,14 +941,81 @@ export default function Navbar() {
               {/* Drawer Footer */}
               {cart.length > 0 && checkoutStep !== "success" && (
                 <div className="px-6 py-5 border-t space-y-4" style={{ backgroundColor: isLight ? "#fafafa" : "#09090b", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}>
+
+                  {/* ── Coupon Input ── */}
+                  {checkoutStep === "cart" && (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          value={couponInput}
+                          onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                          placeholder="Enter coupon code"
+                          className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold outline-none border transition-all"
+                          style={{
+                            backgroundColor: isLight ? "#ffffff" : "#18181b",
+                            color: isLight ? "#18181b" : "#ffffff",
+                            borderColor: couponError ? "#f43f5e" : coupon ? "#10b981" : (isLight ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.1)"),
+                          }}
+                          disabled={!!coupon}
+                        />
+                        {coupon ? (
+                          <button
+                            onClick={() => { setCoupon(null); setCouponInput(""); setCouponError(""); }}
+                            className="px-4 py-2.5 rounded-xl text-xs font-black bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition"
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            disabled={!couponInput.trim() || couponLoading}
+                            onClick={async () => {
+                              setCouponLoading(true);
+                              setCouponError("");
+                              try {
+                                const res = await fetch("/api/offers/validate", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ code: couponInput.trim(), cartTotal: totalPrice }),
+                                });
+                                const data = await res.json();
+                                if (res.ok && data.valid) {
+                                  setCoupon({ code: data.offer.code, festival: data.offer.festival, discount: data.offer.discount, discountAmount: data.discountAmount, emoji: data.offer.emoji, glow: data.offer.glow });
+                                } else {
+                                  setCouponError(data.error || "Invalid code");
+                                }
+                              } catch { setCouponError("Could not validate code"); }
+                              finally { setCouponLoading(false); }
+                            }}
+                            className="px-4 py-2.5 rounded-xl text-xs font-black bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white transition whitespace-nowrap"
+                          >
+                            {couponLoading ? "..." : "Apply"}
+                          </button>
+                        )}
+                      </div>
+                      {couponError && <p className="text-xs text-red-400 font-semibold pl-1">{couponError}</p>}
+                      {coupon && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: `${coupon.glow}15`, border: `1px solid ${coupon.glow}40`, color: coupon.glow }}>
+                          <span>{coupon.emoji}</span>
+                          <span>{coupon.festival} — {coupon.discount}% OFF applied!</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
                       <span>Subtotal ({totalItems} items)</span>
                       <span>₹{totalPrice.toLocaleString()}</span>
                     </div>
+                    {coupon && (
+                      <div className="flex justify-between text-sm font-semibold" style={{ color: coupon.glow }}>
+                        <span>Discount ({coupon.discount}% off)</span>
+                        <span>− ₹{coupon.discountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-bold text-lg pt-2 border-t" style={{ color: isLight ? "#18181b" : "#ffffff", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}>
                       <span>Total</span>
-                      <span className="text-orange-600">₹{totalPrice.toLocaleString()}</span>
+                      <span className="text-orange-600">₹{discountedTotal.toLocaleString()}</span>
                     </div>
                   </div>
                   
