@@ -8,7 +8,7 @@ import AuthContext from "./context/AuthContext";
 export const metadata = { 
   title: "ArtPeak.Shop | Premium Customized Products & Precision Engraving",
   description: "Experience the best in customization! ArtPeak offers elite laser engraving services for wood, metal, glass, and acrylic. Shop personalized gifts, corporate branding, and unique products in India.",
-  keywords: "ArtPeak, ArtPeak.shop, customized products, personalized gifts, laser engraving, custom engraving, custom wood gift, metal marking, personalized accessories India, Art Peak Shop, engraved office supplies, customized home decor, personalized corporate gifts, custom acrylic awards, wood engraving services, metal laser marking",
+  keywords: "ArtPeak, ArtPeak.shop, customized products, personalized gifts, laser engraving, custom engraving, custom wood gift, metal marking, personalized accessories India, Art Peak Shop, customized wooden keychain, custom wooden keychains, engraved keychains, engraved office supplies, customized home decor, personalized corporate gifts, custom acrylic awards, wood engraving services, metal laser marking",
   openGraph: {
     title: "ArtPeak.Shop | Premium Customized Products",
     description: "Elite laser engraving services and customized products. Precision at its peak.",
