@@ -346,6 +346,17 @@ export default function Navbar() {
               </AnimatePresence>
             </button>
 
+            {/* Admin Panel Button */}
+            {session && (session.user as any)?.role === "admin" && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-2 px-3 py-2 rounded-full bg-orange-600/10 text-orange-600 border border-orange-600/20 hover:bg-orange-600 hover:text-white transition-all duration-300 font-bold text-xs group/admin"
+              >
+                <ShieldCheck size={14} className="group-hover/admin:scale-110 transition-transform" />
+                Admin Panel
+              </Link>
+            )}
+
             {/* Auth/Profile Icon */}
             {session ? (
               <Link
@@ -452,6 +463,18 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
+              
+              {/* Admin Link Mobile */}
+              {session && (session.user as any)?.role === "admin" && (
+                <Link
+                  href="/admin"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 text-lg font-bold text-orange-500 p-4 rounded-2xl bg-orange-500/10 border border-orange-500/20"
+                >
+                  <ShieldCheck size={20} />
+                  Admin Dashboard
+                </Link>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
