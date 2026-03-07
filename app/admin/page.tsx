@@ -91,6 +91,11 @@ export default function AdminPage() {
   const [adminCategoryFilter, setAdminCategoryFilter] = useState("all");
   const [showCustomCategory, setShowCustomCategory] = useState(false);
 
+  // Cropper State
+  const [cropModal, setCropModal] = useState<{ show: boolean, img: string, isMain: boolean, index?: number }>({
+    show: false, img: "", isMain: true
+  });
+
   // Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -232,7 +237,7 @@ export default function AdminPage() {
       }
       setFilteredOrders(filtered);
     }
-  }, [search, messages, users, products, orders, activeTab, orderStatusFilter]);
+  }, [search, messages, users, products, orders, activeTab, orderStatusFilter, adminCategoryFilter]);
 
   const handleDeleteMessage = async (id: string) => {
     if (!confirm("Is message ko delete karna chahte hain?")) return;
@@ -353,21 +358,52 @@ export default function AdminPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isMain: boolean, index?: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        const compressedBase64 = await compressImage(file);
-        
-        if (isMain) {
-          setProductForm(prev => ({ ...prev, image: compressedBase64 }));
-        } else if (index !== undefined) {
-          const newImages = [...productForm.images];
-          newImages[index] = compressedBase64;
-          setProductForm(prev => ({ ...prev, images: newImages }));
-        } else {
-          setProductForm(prev => ({ ...prev, images: [...prev.images, compressedBase64] }));
-        }
-      } catch (err) {
-        console.error("Compression error:", err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCropModal({ show: true, img: reader.result as string, isMain, index });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const finalizeImage = async () => {
+    setPageStatus("loading");
+    try {
+      // In a real app we'd use a library like react-easy-crop, 
+      // here we do a high-quality compression + square check
+      const img = new window.Image();
+      img.src = cropModal.img;
+      
+      const compressed = await new Promise<string>((resolve) => {
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const size = Math.min(img.width, img.height);
+          canvas.width = 1000;
+          canvas.height = 1000;
+          const ctx = canvas.getContext("2d");
+          
+          // Draw a center-cropped square
+          ctx?.drawImage(
+            img, 
+            (img.width - size) / 2, (img.height - size) / 2, size, size, // source
+            0, 0, 1000, 1000 // destination
+          );
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        };
+      });
+
+      if (cropModal.isMain) {
+        setProductForm(prev => ({ ...prev, image: compressed }));
+      } else if (cropModal.index !== undefined) {
+        const newImages = [...productForm.images];
+        newImages[cropModal.index] = compressed;
+        setProductForm(prev => ({ ...prev, images: newImages }));
+      } else {
+        setProductForm(prev => ({ ...prev, images: [...prev.images, compressed] }));
       }
+      setCropModal({ ...cropModal, show: false });
+    } finally {
+      setPageStatus("ready");
     }
   };
 
@@ -1082,6 +1118,48 @@ export default function AdminPage() {
               </motion.div>
            </div>
          )}
+      </AnimatePresence>
+
+      {/* Crop Modal */}
+      <AnimatePresence>
+        {cropModal.show && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setCropModal({ ...cropModal, show: false })} />
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className={`relative w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl ${isLight ? "bg-white" : "bg-zinc-900"} border border-white/10`}>
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-500 rounded-2xl shadow-lg shadow-orange-500/20"><ImageIcon className="text-white w-6 h-6" /></div>
+                    <div>
+                      <h2 className={`text-2xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Crop Image</h2>
+                      <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1 underline decoration-orange-500/30 underline-offset-4">Auto Square Center Crop</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setCropModal({ ...cropModal, show: false })} className="p-3 hover:bg-zinc-500/10 rounded-2xl transition-all"><X size={20}/></button>
+                </div>
+
+                <div className="relative aspect-square w-full rounded-3xl overflow-hidden bg-zinc-800 shadow-inner group">
+                   <Image src={cropModal.img} alt="Crop Preview" fill className="object-contain" unoptimized />
+                   {/* Visual Crop Guide */}
+                   <div className="absolute inset-0 border-[3rem] border-black/40 pointer-events-none">
+                      <div className="w-full h-full border-2 border-orange-500 border-dashed opacity-50"></div>
+                   </div>
+                </div>
+
+                <p className="mt-6 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] text-center leading-relaxed">
+                  Image will be automatically cropped from the center to a perfect square for consistency.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mt-10">
+                  <button onClick={() => setCropModal({ ...cropModal, show: false })} className="py-4 rounded-2xl font-black text-xs uppercase tracking-widest border border-zinc-500/20 hover:bg-zinc-500/5 transition-all active:scale-95">Cancel</button>
+                  <button onClick={finalizeImage} className="py-4 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-orange-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                     <CheckCircle size={14}/> Save Crop
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
