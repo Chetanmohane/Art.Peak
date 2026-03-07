@@ -2,11 +2,11 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Loader2, MessageSquare, Trash2, Mail,
   Calendar, ArrowLeft, ShieldCheck, Search, X, Users, User as UserIcon,
-  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle
+  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle, Upload
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -88,6 +88,8 @@ export default function AdminPage() {
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [deletingId, setDeletingId ] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [adminCategoryFilter, setAdminCategoryFilter] = useState("all");
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
 
   // Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -100,6 +102,8 @@ export default function AdminPage() {
     images: [] as string[],
     bulkPricing: [] as BulkTier[]
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const additionalFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -107,25 +111,42 @@ export default function AdminPage() {
       return;
     }
     if (status === "authenticated") {
-      initPage();
+      // If we already know they are admin from session, skip redundant check call
+      const skipCheck = (session?.user as any)?.role === "admin";
+      initPage(skipCheck);
     }
-  }, [status]);
+  }, [status, session]);
 
-  const initPage = async () => {
+  const initPage = async (skipAdminCheck = false) => {
     try {
-      const checkRes = await fetch("/api/admin/check", { credentials: "include" });
-      const { isAdmin } = await checkRes.json();
+      if (!skipAdminCheck) {
+        const checkRes = await fetch("/api/admin/check", { credentials: "include" });
+        const { isAdmin } = await checkRes.json();
 
-      if (!isAdmin) {
-        setPageStatus("forbidden");
-        return;
+        if (!isAdmin) {
+          setPageStatus("forbidden");
+          return;
+        }
       }
 
-      await Promise.all([fetchMessages(), fetchUsers(), fetchProducts(), fetchOrders()]);
+      // Priority fetch for current tab
+      if (activeTab === "messages") await fetchMessages();
+      if (activeTab === "users") await fetchUsers();
+      if (activeTab === "products") await fetchProducts();
+      if (activeTab === "orders") await fetchOrders();
+
       setPageStatus("ready");
+
+      // Non-blocking fetch for everything else to fill counts
+      Promise.all([
+        activeTab !== "messages" && fetchMessages(),
+        activeTab !== "users" && fetchUsers(),
+        activeTab !== "products" && fetchProducts(),
+        activeTab !== "orders" && fetchOrders()
+      ].filter(Boolean));
     } catch (e) {
       console.error("Admin page load error:", e);
-      setPageStatus("forbidden");
+      setPageStatus("ready");
     }
   };
 
@@ -173,7 +194,17 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
+    if (pageStatus === "ready") {
+      if (activeTab === "messages" && messages.length === 0) fetchMessages();
+      if (activeTab === "users" && users.length === 0) fetchUsers();
+      if (activeTab === "products" && products.length === 0) fetchProducts();
+      if (activeTab === "orders" && orders.length === 0) fetchOrders();
+    }
+  }, [activeTab, pageStatus]);
+
+  useEffect(() => {
     const q = search.toLowerCase();
+    // Only filter active tab to save CPU cycles
     if (activeTab === "messages") {
       setFilteredMessages(
         q ? messages.filter(m => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q) || m.message.toLowerCase().includes(q)) : messages
@@ -183,9 +214,14 @@ export default function AdminPage() {
         q ? users.filter(u => (u.name?.toLowerCase() || "").includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q)) : users
       );
     } else if (activeTab === "products") {
-      setFilteredProducts(
-        q ? products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)) : products
-      );
+      let filtered = [...products];
+      if (adminCategoryFilter !== "all") {
+        filtered = filtered.filter(p => p.category === adminCategoryFilter);
+      }
+      if (q) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+      }
+      setFilteredProducts(filtered);
     } else {
       let filtered = [...orders];
       if (orderStatusFilter !== "all") {
@@ -273,6 +309,26 @@ export default function AdminPage() {
       });
     }
     setShowProductModal(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isMain: boolean, index?: number) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        if (isMain) {
+          setProductForm(prev => ({ ...prev, image: base64 }));
+        } else if (index !== undefined) {
+          const newImages = [...productForm.images];
+          newImages[index] = base64;
+          setProductForm(prev => ({ ...prev, images: newImages }));
+        } else {
+          setProductForm(prev => ({ ...prev, images: [...prev.images, base64] }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -443,26 +499,58 @@ export default function AdminPage() {
   };
 
   const renderProducts = () => {
-    if (filteredProducts.length === 0) return <EmptyState icon={<Package />} text="No products found" isLight={isLight} />;
+    const uniqueCategories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
+    
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((p, i) => (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={p.id} className={`group rounded-3xl border overflow-hidden transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-xl hover:shadow-black/5" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl hover:shadow-black/50"}`}>
-            <div className="relative h-48 overflow-hidden">
-              <Image src={p.image} alt={p.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" unoptimized />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60"></div>
-              <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-xs text-white font-bold tracking-widest uppercase border border-white/10">{p.category}</div>
-              <div className="absolute bottom-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-black shadow-lg shadow-orange-500/30">₹{p.price.toLocaleString()}</div>
-            </div>
-            <div className="p-5">
-              <h3 className={`font-bold text-lg truncate mb-4 ${isLight ? "text-zinc-900" : "text-white"}`}>{p.name}</h3>
-              <div className="flex items-center gap-2">
-                <button onClick={() => handleOpenProductModal(p)} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl font-bold transition-all"><Edit size={16}/> Edit</button>
-                <button onClick={() => handleDeleteProduct(p.id)} className="p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"><Trash2 size={16}/></button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+      <div className="space-y-6">
+        {/* Category Filter */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2">
+          {uniqueCategories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setAdminCategoryFilter(cat)}
+              className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
+                adminCategoryFilter === cat 
+                  ? "bg-orange-500 text-white border-transparent shadow-lg shadow-orange-500/20" 
+                  : isLight ? "bg-white border-zinc-200 text-zinc-500 hover:border-orange-200" : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {filteredProducts.length === 0 ? (
+          <EmptyState icon={<Package />} text="No products found in this category" isLight={isLight} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map((p, i) => (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={p.id} className={`group rounded-3xl border overflow-hidden transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-xl hover:shadow-black/5" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl hover:shadow-black/50"}`}>
+                <div className="relative h-48 overflow-hidden bg-zinc-900 shadow-inner">
+                  <Image 
+                    src={p.image} 
+                    alt={p.name} 
+                    fill 
+                    className="object-contain p-2 transition-transform duration-700 group-hover:scale-110" 
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw" 
+                    priority={i < 4}
+                    unoptimized={p.image.startsWith('data:')}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60"></div>
+                  <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] text-white font-bold tracking-widest uppercase border border-white/10">{p.category}</div>
+                  <div className="absolute bottom-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-black shadow-lg shadow-orange-500/30">₹{p.price.toLocaleString()}</div>
+                </div>
+                <div className="p-5">
+                  <h3 className={`font-bold text-lg truncate mb-4 ${isLight ? "text-zinc-900" : "text-white"}`}>{p.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleOpenProductModal(p)} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl font-bold transition-all"><Edit size={16}/> Edit</button>
+                    <button onClick={() => handleDeleteProduct(p.id)} className="p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"><Trash2 size={16}/></button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -544,29 +632,44 @@ export default function AdminPage() {
                 <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50/50 border-zinc-200/80" : "bg-white/[0.01] border-white/5"}`}>
                   <h4 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2 text-zinc-500"><Package size={14}/> Items Ordered</h4>
                   <div className="space-y-3">
-                    {parsedItems.map((item: any, idx: number) => (
-                      <div key={item.id || idx} className={`flex gap-3 p-3 rounded-xl ${isLight ? "bg-white border border-zinc-100 shadow-sm" : "bg-black/20"}`}>
-                         <div className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0 border border-white/5">
-                            <img src={item.product?.image} alt="" className="w-full h-full object-cover" />
-                         </div>
-                         <div className="flex-1 min-w-0">
-                            <p className={`font-bold text-sm truncate ${isLight ? "text-zinc-900" : "text-white"}`}>{item.product?.name} <span className="text-orange-500">x{item.qty}</span></p>
-                            {(item.customText || item.customImage) && (
-                               <div className="mt-2 text-xs space-y-1">
-                                  {item.customText && <p><span className="text-zinc-500">Text:</span> {item.customText}</p>}
-                                  {item.customImage && (
-                                    <div className="flex gap-2 items-center mt-1">
-                                      <a href={item.customImage} target="_blank" rel="noreferrer" className="w-8 h-8 rounded border border-white/20 overflow-hidden block">
-                                        <img src={item.customImage} className="w-full h-full object-cover" />
-                                      </a>
-                                      <a href={item.customImage} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">View Image</a>
-                                    </div>
-                                  )}
-                               </div>
-                            )}
-                         </div>
-                      </div>
-                    ))}
+                    {parsedItems.map((item: any, idx: number) => {
+                      if (!item || !item.product) return null; // Defensive check
+                      return (
+                        <div key={item.id || idx} className={`flex gap-3 p-3 rounded-xl ${isLight ? "bg-white border border-zinc-100 shadow-sm" : "bg-black/20"}`}>
+                            <div className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0 border border-white/5 relative">
+                               <Image 
+                                 src={item.product?.image || "/images/placeholder.png"} 
+                                 alt="" 
+                                 fill 
+                                 className="object-cover" 
+                                 sizes="56px"
+                               />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                               <p className={`font-bold text-sm truncate ${isLight ? "text-zinc-900" : "text-white"}`}>{item.product?.name} <span className="text-orange-500">x{item.qty}</span></p>
+                               {(item.customText || item.customImage) && (
+                                  <div className="mt-2 text-xs space-y-1">
+                                     {item.customText && <p><span className="text-zinc-500">Text:</span> {item.customText}</p>}
+                                     {item.customImage && (
+                                       <div className="flex gap-2 items-center mt-1">
+                                         <a href={item.customImage} target="_blank" rel="noreferrer" className="w-8 h-8 rounded border border-white/20 overflow-hidden block relative shrink-0">
+                                           <Image 
+                                              src={item.customImage} 
+                                              fill 
+                                              alt="Custom customization" 
+                                              className="object-cover"
+                                              sizes="32px"
+                                           />
+                                         </a>
+                                         <a href={item.customImage} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">View Image</a>
+                                       </div>
+                                     )}
+                                  </div>
+                               )}
+                            </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Shipping */}
@@ -793,37 +896,120 @@ export default function AdminPage() {
                        <FormGroup label="Base Price (₹)" icon={<IndianRupee size={14}/>} isLight={isLight}>
                           <input required type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="999" />
                        </FormGroup>
-                       <FormGroup label="Category" icon={<Package size={14}/>} isLight={isLight}>
-                          <select value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} className={`w-full bg-transparent outline-none py-2 text-sm appearance-none font-medium ${isLight ? "" : "[&>option]:bg-zinc-900"}`}>
-                             <option value="Wood">Wood</option>
-                             <option value="Metal">Metal</option>
-                             <option value="Glass">Glass</option>
-                             <option value="Acrylic">Acrylic</option>
-                          </select>
-                       </FormGroup>
-                       <FormGroup label="Main Image URL" icon={<ImageIcon size={14}/>} isLight={isLight}>
-                          <input required value={productForm.image} onChange={e => setProductForm({...productForm, image: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="https://..." />
-                       </FormGroup>
-                    </div>
+                        <FormGroup label="Category" icon={<Package size={14}/>} isLight={isLight}>
+                           <div className="flex flex-col gap-2 py-1 w-full">
+                              <select 
+                                 value={showCustomCategory ? "custom" : productForm.category} 
+                                 onChange={e => {
+                                    if (e.target.value === "custom") {
+                                       setShowCustomCategory(true);
+                                    } else {
+                                       setShowCustomCategory(false);
+                                       setProductForm({...productForm, category: e.target.value});
+                                    }
+                                 }} 
+                                 className={`w-full bg-transparent outline-none py-1 text-sm appearance-none font-bold ${isLight ? "" : "[&>option]:bg-zinc-900"}`}
+                              >
+                                 <option value="Personalized">Personalized</option>
+                                 <option value="Keychain">Keychain</option>
+                                 <option value="Home Decor">Home Decor</option>
+                                 <option value="Corporate">Corporate</option>
+                                 <option value="Gift Set">Gift Set</option>
+                                 <option value="Office">Office</option>
+                                 <option value="other">Other</option>
+                                 <option value="custom">+ New Category...</option>
+                              </select>
+                              {showCustomCategory && (
+                                 <input 
+                                    autoFocus
+                                    placeholder="Enter category name"
+                                    className="w-full bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-orange-500"
+                                    value={productForm.category === "custom" ? "" : productForm.category}
+                                    onChange={(e) => setProductForm({...productForm, category: e.target.value})}
+                                 />
+                              )}
+                           </div>
+                        </FormGroup>
+                        <div className="space-y-1.5 row-span-2">
+                           <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5 focus-within:text-orange-500 transition-colors">
+                              <ImageIcon size={14}/> Main Image
+                           </label>
+                           <div 
+                              onClick={() => fileInputRef.current?.click()}
+                              className={`relative h-28 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${
+                                 productForm.image 
+                                    ? "border-emerald-500/50 bg-emerald-500/5" 
+                                    : "border-white/10 hover:border-orange-500/50 bg-white/5 hover:bg-orange-500/5"
+                              }`}
+                           >
+                              <input 
+                                 type="file" 
+                                 ref={fileInputRef} 
+                                 className="hidden" 
+                                 accept="image/*"
+                                 onChange={(e) => handleImageUpload(e, true)}
+                              />
+                              {productForm.image ? (
+                                 <div className="absolute inset-0 p-1">
+                                    <Image src={productForm.image} alt="Preview" fill className="object-cover rounded-xl" unoptimized />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
+                                       <Edit size={20} className="text-white" />
+                                    </div>
+                                 </div>
+                              ) : (
+                                 <>
+                                    <Upload size={20} className="text-zinc-500 mb-1" />
+                                    <p className="text-[10px] font-bold text-zinc-500">UPLOAD PHOTO</p>
+                                 </>
+                              )}
+                           </div>
+                        </div>
+                     </div>
 
                     {/* Additional Images Section */}
-                    <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
-                       <div className="flex items-center justify-between mb-4">
-                          <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2"><ImageIcon size={14}/> Additional Images</label>
-                          <button type="button" onClick={addImageField} className="text-[10px] bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg font-bold hover:bg-orange-500/20 transition flex items-center gap-1.5 border border-orange-500/20"><Plus size={12}/> ADD URL</button>
-                       </div>
-                       <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                          {productForm.images.map((url, idx) => (
-                             <div key={idx} className="flex gap-2">
-                                <div className={`flex-1 px-4 rounded-xl border flex items-center transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
-                                   <input value={url} onChange={e => updateImageField(idx, e.target.value)} className="w-full bg-transparent outline-none py-2.5 text-xs font-medium" placeholder="https://..." />
-                                </div>
-                                <button type="button" onClick={() => removeImageField(idx)} className="p-3 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
-                             </div>
-                          ))}
-                          {productForm.images.length === 0 && <p className="text-xs text-zinc-500 text-center py-4 italic font-medium">No additional images added.</p>}
-                       </div>
-                    </div>
+                     <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                        <div className="flex items-center justify-between mb-4">
+                           <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2"><ImageIcon size={14}/> Additional Images Gallery</label>
+                           <button type="button" onClick={() => additionalFileInputRef.current?.click()} className="text-[10px] bg-orange-500/10 text-orange-500 px-3 py-1.5 rounded-lg font-bold hover:bg-orange-500/20 transition flex items-center gap-1.5 border border-orange-500/20">
+                              <Plus size={12}/> UPLOAD MORE
+                           </button>
+                           <input 
+                              type="file" 
+                              ref={additionalFileInputRef} 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload(e, false)}
+                           />
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-h-56 overflow-y-auto pr-2 custom-scrollbar">
+                           {productForm.images.map((url, idx) => (
+                              <div key={idx} className="relative group aspect-square rounded-xl border border-white/10 overflow-hidden bg-black/20">
+                                 <Image src={url} alt="" fill className="object-cover" unoptimized />
+                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <button 
+                                       type="button" 
+                                       onClick={() => {
+                                          const input = document.createElement('input');
+                                          input.type = 'file';
+                                          input.accept = 'image/*';
+                                          input.onchange = (e: any) => handleImageUpload(e, false, idx);
+                                          input.click();
+                                       }}
+                                       className="p-1.5 bg-white/20 hover:bg-white/40 rounded-lg text-white transition"
+                                    >
+                                       <Edit size={14} />
+                                    </button>
+                                    <button type="button" onClick={() => removeImageField(idx)} className="p-1.5 bg-red-500/20 hover:bg-red-500 rounded-lg text-white transition"><Trash2 size={14}/></button>
+                                 </div>
+                              </div>
+                           ))}
+                           {productForm.images.length === 0 && (
+                              <div className="col-span-full py-8 text-center bg-white/5 rounded-xl border border-dashed border-white/10">
+                                 <p className="text-xs text-zinc-500 italic font-medium">Click "UPLOAD MORE" to add gallery images.</p>
+                              </div>
+                           )}
+                        </div>
+                     </div>
 
                     {/* Bulk Pricing Section */}
                     <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>

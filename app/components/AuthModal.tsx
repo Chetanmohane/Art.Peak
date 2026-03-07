@@ -37,9 +37,16 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         
         if (res?.error) {
           setError("Invalid email or password");
+          setLoading(false);
         } else {
+          // Success Path - Clear state and delay close slightly to allow session to propagate if needed
+          // or just close immediately if refresh is responsive
           onClose();
-          router.refresh(); // Soft refresh to update session state while preserving cart
+          router.refresh(); 
+          // Use hard reload for admin login to ensure session lag doesn't block admin entry
+          if (window.location.pathname === "/admin") {
+            window.location.reload();
+          }
         }
       } else {
         // Signup Flow

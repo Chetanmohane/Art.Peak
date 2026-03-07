@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Menu, X, ShoppingCart, Plus, Minus, Trash2, ShoppingBag, Search, Sun, Moon, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Menu, X, ShoppingCart, Plus, Minus, Trash2, ShoppingBag, Search, Sun, Moon, ArrowLeft, ShieldCheck, CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
@@ -12,7 +12,7 @@ import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import AuthModal from "./AuthModal";
 import { User as UserIcon } from "lucide-react";
-import QRCode from "react-qr-code";
+
 
 const navLinks = [
   { name: "Home", href: "#home" },
@@ -29,16 +29,16 @@ const sectionColors: Record<string, string> = {
 };
 
 export default function Navbar() {
-  const { cart, totalItems, totalPrice, increaseQty, decreaseQty, updateQty, removeItem } = useCart();
+  const { cart, totalItems, totalPrice, increaseQty, decreaseQty, updateQty, removeItem, clearCart } = useCart();
   const { theme, toggleTheme } = useTheme();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
   
   const isLight = theme === "light";
 
   useEffect(() => {
-    if (session) {
+    if (status === "authenticated") {
       fetch("/api/admin/check")
         .then((res) => res.json())
         .then((data) => setIsAdmin(data.isAdmin))
@@ -46,7 +46,7 @@ export default function Navbar() {
     } else {
       setIsAdmin(false);
     }
-  }, [session]);
+  }, [status]);
 
   const [open, setOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -57,7 +57,6 @@ export default function Navbar() {
   const [highlighted, setHighlighted] = useState(0);
   const [active, setActive] = useState("Home");
 
-  if (pathname?.startsWith("/admin")) return null;
   const [scrolled, setScrolled] = useState(false);
   const [logo, setLogo] = useState("/images/logo/logo.png");
   const [paying, setPaying] = useState(false);
@@ -85,7 +84,11 @@ export default function Navbar() {
            const data = await res.json();
            if (data.status === "processing" || data.status === "success" || data.status === "completed") {
               setCheckoutStep("success");
-              setCartOpen(false); // Wait to show success briefly before closing or just show success page
+              setTimeout(() => {
+                setCartOpen(false);
+                clearCart();
+                window.location.href = "/profile?tab=orders";
+              }, 1500);
            }
         }
       } catch (err) {
@@ -144,11 +147,16 @@ export default function Navbar() {
     }
   }, [searchOpen]);
 
-  // Listen for 'open-auth-modal' events from other components (e.g. Products)
+  // Listen for events from other components (e.g. Products)
   useEffect(() => {
     const openAuth = () => setAuthOpen(true);
+    const openCart = () => setCartOpen(true);
     window.addEventListener('open-auth-modal', openAuth);
-    return () => window.removeEventListener('open-auth-modal', openAuth);
+    window.addEventListener('open-cart-modal', openCart);
+    return () => {
+      window.removeEventListener('open-auth-modal', openAuth);
+      window.removeEventListener('open-cart-modal', openCart);
+    };
   }, []);
 
   useEffect(() => {
@@ -242,6 +250,9 @@ export default function Navbar() {
       });
       if (res.ok) {
         setCheckoutStep("success");
+        setCartOpen(false);
+        clearCart();
+        window.location.href = "/profile?tab=orders";
       } else {
         alert(await res.text());
       }
@@ -261,6 +272,8 @@ export default function Navbar() {
            shippingDetails.state.trim() !== "" && 
            shippingDetails.pincode.trim() !== "";
   };
+  
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <>
@@ -676,13 +689,17 @@ export default function Navbar() {
                       ) : (
                         cart.map((item) => (
                           <div key={item.id} className="flex gap-4 rounded-2xl p-4 border" style={{ backgroundColor: isLight ? "#fafafa" : "#18181b", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.05)" }}>
-                            <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-                              <Image src={item.product.image} alt={item.product.name} fill className="object-cover" unoptimized />
+                            <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-800">
+                               {item?.product?.image ? (
+                                 <Image src={item.product.image} alt={item.product.name} fill className="object-cover" unoptimized />
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-[10px] text-zinc-500">No Image</div>
+                               )}
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                               <div>
-                                <p className="font-semibold text-xs truncate" style={{ color: isLight ? "#18181b" : "#ffffff" }}>{item.product.name}</p>
-                                <p className="text-orange-500 text-[10px] mt-0.5 uppercase tracking-wider">{item.product.category}</p>
+                                <p className="font-semibold text-xs truncate" style={{ color: isLight ? "#18181b" : "#ffffff" }}>{item?.product?.name || 'Unknown Product'}</p>
+                                <p className="text-orange-500 text-[10px] mt-0.5 uppercase tracking-wider">{item?.product?.category || ''}</p>
                               </div>
                               <div className="flex items-center justify-between mt-2">
                                 <div className="flex flex-col gap-2 flex-1">
@@ -726,7 +743,7 @@ export default function Navbar() {
                               </div>
                             </div>
                             <div className="text-right flex flex-col justify-center shrink-0">
-                               <p className="font-bold text-sm text-orange-500">₹{( (item.product.bulkPricing ? (item.product.bulkPricing.find(t => item.qty >= t.qty)?.price || item.product.price) : item.product.price ) * item.qty).toLocaleString()}</p>
+                               <p className="font-bold text-sm text-orange-500">₹{( (item.product?.bulkPricing ? (item.product.bulkPricing.find(t => item.qty >= t.qty)?.price || item.product.price) : (item.product?.price || 0) ) * (item.qty || 0)).toLocaleString()}</p>
                             </div>
                           </div>
                         ))
@@ -837,6 +854,42 @@ export default function Navbar() {
 
 
 
+                  {checkoutStep === "method" && (
+                    <motion.div key="method" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="py-2 space-y-6">
+                      <button onClick={() => setCheckoutStep("address")} className="flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-orange-400 mb-2 transition group">
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center bg-zinc-800 group-hover:bg-orange-500/20 transition"><ArrowLeft size={12}/></span>
+                        Back to Address
+                      </button>
+
+                      <div className="flex items-center gap-2 mb-5">
+                          <span className="w-7 h-7 rounded-full bg-emerald-500 text-white text-[11px] font-black flex items-center justify-center shadow-lg shadow-emerald-500/30">✓</span>
+                          <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">Address</span>
+                          <div className="flex-1 h-[2px] bg-orange-500 rounded-full" />
+                          <span className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white text-[11px] font-black flex items-center justify-center shadow-lg shadow-orange-500/30">2</span>
+                          <span className="text-[11px] font-black text-orange-400 uppercase tracking-widest font-black">Payment</span>
+                      </div>
+
+                      <h3 className="text-xl font-black mb-1" style={{ color: isLight ? "#111827" : "#f4f4f5" }}>Choose Payment</h3>
+                      <p className="text-xs font-medium text-zinc-400 mb-6">Select your preferred payment method.</p>
+
+                      <div className="grid gap-4">
+                        <div
+                          className={`flex items-center gap-4 p-5 rounded-3xl border-2 border-orange-500 bg-orange-500/5 transition-all group`}
+                        >
+                          <div className="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shrink-0">
+                            <CreditCard size={24} />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-black text-sm uppercase tracking-tight" style={{ color: isLight ? "#18181b" : "#ffffff" }}>Cashfree Checkout</p>
+                            <p className="text-[10px] text-zinc-400 mt-0.5 font-bold uppercase tracking-wider">UPI / Card / NetBanking / Wallet</p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+
+
                   {checkoutStep === "success" && (
                     <motion.div key="success" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center justify-center py-10 text-center space-y-4">
                        <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
@@ -845,8 +898,10 @@ export default function Navbar() {
                           </motion.div>
                        </div>
                        <h3 className="text-2xl font-bold">Order Recorded!</h3>
-                       <p className="text-zinc-500 text-sm max-w-[240px]">Hooray! Aapka order record ho gaya hai. Admin verification ke baad ye process hoga.</p>
-                       <button onClick={() => setCartOpen(false)} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition shadow-lg shadow-emerald-900/20">Great!</button>
+                       <div className="flex gap-4 mt-2">
+                         <button onClick={() => setCartOpen(false)} className="px-6 py-3 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 font-bold rounded-2xl transition">Continue Shopping</button>
+                         <button onClick={() => { setCartOpen(false); window.location.href = '/profile?tab=orders'; }} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition shadow-lg shadow-emerald-900/20">View Orders</button>
+                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -867,12 +922,35 @@ export default function Navbar() {
                   </div>
                   
                   {checkoutStep === "cart" && (
-                    <button onClick={() => setCheckoutStep("address")} className="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                    <button 
+                      onClick={() => {
+                        console.log("Proceed to Address - Status:", status);
+                        if (status === "authenticated") {
+                          setCheckoutStep("address");
+                        } else {
+                          setAuthOpen(true);
+                        }
+                      }} 
+                      className="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                    >
                        Proceed to Address <ArrowLeft className="rotate-180" size={18} />
                     </button>
                   )}
 
                   {checkoutStep === "address" && (
+                    <button 
+                      onClick={() => {
+                        setCheckoutStep("method");
+                        setPaymentMethod("upi_id");
+                      }} 
+                      disabled={!isAddressValid()}
+                      className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                    >
+                       Continue to Payment <ArrowLeft className="rotate-180" size={18} />
+                    </button>
+                  )}
+
+                  {checkoutStep === "method" && paymentMethod === "upi_id" && (
                      <button 
                         onClick={async () => {
                            setPaying(true);
@@ -904,11 +982,21 @@ export default function Navbar() {
                               setPaying(false);
                            }
                         }} 
-                        disabled={!isAddressValid() || paying} 
+                        disabled={paying} 
                         className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
                      >
                         {paying ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : "Pay Securely with Cashfree"}
                      </button>
+                  )}
+
+                  {checkoutStep === "qr" && (
+                    <button 
+                      onClick={handleQrOrder}
+                      disabled={paying || utr.length < 12}
+                      className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 py-4 rounded-2xl text-white font-bold text-base shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                    >
+                      {paying ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : "Verify & Complete Order"}
+                    </button>
                   )}
                 </div>
               )}

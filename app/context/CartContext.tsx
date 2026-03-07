@@ -27,6 +27,7 @@ interface CartContextType {
   decreaseQty: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
   removeItem: (id: string) => void;
+  clearCart: () => void;
   totalPrice: number;
   totalItems: number;
 }
@@ -41,7 +42,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem("artpeak_cart");
     if (saved) {
       try {
-        setCart(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setCart(parsed.filter(item => item && item.product && item.id));
+        }
       } catch (e) {
         console.error("Failed to parse cart", e);
       }
@@ -58,9 +62,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = (product: Product, customText?: string, customImage?: string | null, qty: number = 1) => {
     const existing = cart.find(
       (item) => 
-        item.product.id === product.id && 
-        item.customText === customText && 
-        item.customImage === customImage
+        item?.product?.id === product.id && 
+        item?.customText === customText && 
+        item?.customImage === customImage
     );
 
     if (existing) {
@@ -101,7 +105,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart(cart.filter((item) => item.id !== id));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   const totalPrice = cart.reduce((total, item) => {
+    if (!item.product) return total;
     let currentPrice = item.product.price;
     
     // Check for bulk pricing
@@ -113,14 +122,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    return total + currentPrice * item.qty;
+    return total + (currentPrice || 0) * item.qty;
   }, 0);
 
-  const totalItems = cart.reduce((total, item) => total + item.qty, 0);
+  const totalItems = cart.reduce((total, item) => total + (item.qty || 0), 0);
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, increaseQty, decreaseQty, updateQty, removeItem, totalPrice, totalItems }}
+      value={{ cart, addToCart, increaseQty, decreaseQty, updateQty, removeItem, clearCart, totalPrice, totalItems }}
     >
       {children}
     </CartContext.Provider>

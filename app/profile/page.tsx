@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { User, Package, Settings, LogOut, Loader2, KeyRound, ArrowLeft, MessageSquare, ShieldCheck, Mail, Calendar } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "../context/CartContext";
 
 interface Order {
   id: string;
@@ -34,6 +35,7 @@ export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { theme } = useTheme();
+  const { clearCart } = useCart();
   const isLight = theme === "light";
 
   const [activeTab, setActiveTab] = useState<"profile" | "orders" | "security" | "messages">("profile");
@@ -42,6 +44,22 @@ export default function ProfilePage() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const tab = p.get('tab');
+      if (tab === 'orders' || tab === 'security' || tab === 'messages') {
+        setActiveTab(tab as any);
+      }
+      
+      if (p.get('clearCart') === 'true') {
+        clearCart();
+        const newUrl = window.location.pathname + '?tab=orders';
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [clearCart]);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -154,7 +172,7 @@ export default function ProfilePage() {
   const tabClass = (tab: string) => {
     const isActive = activeTab === tab;
     return `
-      relative flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all duration-300 group
+      relative flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5 rounded-2xl transition-all duration-300 group whitespace-nowrap flex-shrink-0
       ${isActive 
         ? "bg-orange-500 text-white shadow-xl shadow-orange-500/30 font-bold" 
         : (isLight 
@@ -220,46 +238,47 @@ export default function ProfilePage() {
           
           {/* Sidebar Navigation */}
           <aside className="w-full lg:w-72 shrink-0">
-            <nav className={`flex flex-col gap-2 p-2 rounded-3xl border bg-opacity-50 backdrop-blur-xl sticky top-24 transition-all duration-300 ${
+            <nav className={`flex flex-row overflow-x-auto lg:flex-col lg:overflow-visible gap-2 p-2 rounded-3xl border bg-opacity-50 backdrop-blur-xl sticky top-24 transition-all duration-300 scrollbar-hide ${
               isLight ? "bg-white border-zinc-200/80 shadow-xl shadow-black/5" : "bg-zinc-950/50 border-white/5 shadow-2xl"
             }`}>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-5 pt-4 pb-2">Navigation</p>
               
               <button onClick={() => setActiveTab("profile")} className={tabClass("profile")}>
                 <User size={18} className={activeTab === "profile" ? "text-white" : "text-zinc-500"} /> 
-                <span className="flex-1 text-left">My Profile</span>
-                {activeTab === "profile" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
+                <span className="text-left">My Profile</span>
+                {activeTab === "profile" && <motion.div layoutId="tab-indicator" className="absolute bottom-1 lg:bottom-auto lg:left-1 w-12 lg:w-1.5 h-1 lg:h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
               </button>
               
               <button onClick={() => setActiveTab("orders")} className={tabClass("orders")}>
                 <Package size={18} className={activeTab === "orders" ? "text-white" : "text-zinc-500"} /> 
-                <span className="flex-1 text-left">Order History</span>
-                {activeTab === "orders" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
+                <span className="text-left">Order History</span>
+                {activeTab === "orders" && <motion.div layoutId="tab-indicator" className="absolute bottom-1 lg:bottom-auto lg:left-1 w-12 lg:w-1.5 h-1 lg:h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
               </button>
               
               <button onClick={() => setActiveTab("messages")} className={tabClass("messages")}>
                 <MessageSquare size={18} className={activeTab === "messages" ? "text-white" : "text-zinc-500"} /> 
-                <span className="flex-1 text-left">My Messages</span>
-                {activeTab === "messages" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
+                <span className="text-left">My Messages</span>
+                {activeTab === "messages" && <motion.div layoutId="tab-indicator" className="absolute bottom-1 lg:bottom-auto lg:left-1 w-12 lg:w-1.5 h-1 lg:h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
               </button>
               
               <button onClick={() => setActiveTab("security")} className={tabClass("security")}>
                 <Settings size={18} className={activeTab === "security" ? "text-white" : "text-zinc-500"} /> 
-                <span className="flex-1 text-left">Account Settings</span>
-                {activeTab === "security" && <motion.div layoutId="tab-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
+                <span className="text-left">Account Settings</span>
+                {activeTab === "security" && <motion.div layoutId="tab-indicator" className="absolute bottom-1 lg:bottom-auto lg:left-1 w-12 lg:w-1.5 h-1 lg:h-1.5 rounded-full bg-white shadow-[0_0_10px_white]" />}
               </button>
 
-              <div className="h-px bg-current opacity-10 mx-4 my-2"></div>
+              <div className="hidden lg:block h-px bg-current opacity-10 mx-4 my-2"></div>
+              <div className="lg:hidden w-px bg-current opacity-10 my-2 mx-1 flex-shrink-0"></div>
 
               {isAdmin && (
                 <button
                   onClick={() => router.push("/admin")}
-                  className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-black text-[10px] uppercase tracking-[0.15em] relative group
+                  className={`flex flex-shrink-0 whitespace-nowrap items-center gap-2 lg:gap-3 px-4 lg:px-5 py-3 lg:py-3.5 rounded-2xl transition-all font-black text-[10px] uppercase tracking-[0.15em] relative group
                     ${isLight 
-                      ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/30 hover:-translate-y-0.5" 
+                      ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/30 lg:hover:-translate-y-0.5" 
                       : "bg-indigo-500 text-white hover:bg-indigo-600 shadow-2xl shadow-indigo-500/40"}`}
                 >
-                  <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> 
+                  <ShieldCheck size={16} className="lg:group-hover:rotate-12 transition-transform" /> 
                   Admin Console
                   <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
@@ -267,7 +286,7 @@ export default function ProfilePage() {
 
               <button 
                 onClick={() => signOut({ callbackUrl: '/' })} 
-                className={`mt-2 flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all font-bold text-sm text-red-500 group
+                className={`lg:mt-2 flex flex-shrink-0 whitespace-nowrap items-center gap-2 lg:gap-3 px-4 lg:px-5 py-3 lg:py-3.5 rounded-2xl transition-all font-bold text-sm text-red-500 group
                   ${isLight ? "hover:bg-red-50" : "hover:bg-red-500/10"}`}
               >
                 <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all">
@@ -388,18 +407,22 @@ export default function ProfilePage() {
                               
                               <div className="space-y-4">
                                 {parsedItems.map((item: any, idx: number) => (
-                                  <div key={item.id || idx} className={`flex gap-4 p-4 rounded-2xl ${isLight ? "bg-white shadow-sm" : "bg-zinc-900/50"}`}>
+                                  <div key={item?.id || idx} className={`flex gap-4 p-4 rounded-2xl ${isLight ? "bg-white shadow-sm" : "bg-zinc-900/50"}`}>
                                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-zinc-200 shrink-0 border border-white/10 shadow-lg">
-                                      <img src={item.product?.image} alt={item.product?.name} className="w-full h-full object-cover" />
+                                       {item?.product?.image ? (
+                                         <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                                       ) : (
+                                         <div className="w-full h-full flex items-center justify-center bg-zinc-800 text-[8px] text-zinc-500">No Img</div>
+                                       )}
                                     </div>
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                                       <div className="flex justify-between items-start gap-2">
                                         <p className={`text-sm font-black truncate ${isLight ? "text-zinc-900" : "text-white"}`}>
-                                          {item.product?.name}
+                                          {item?.product?.name || 'Product'}
                                         </p>
-                                        <p className="text-xs font-black text-orange-500 shrink-0">x{item.qty}</p>
+                                        <p className="text-xs font-black text-orange-500 shrink-0">x{item?.qty || 1}</p>
                                       </div>
-                                      {(item.customText || item.customImage) && (
+                                      {(item?.customText || item?.customImage) && (
                                         <div className="mt-2 flex flex-wrap gap-2">
                                           {item.customText && (
                                             <p className="text-[10px] bg-orange-500/5 text-orange-400 px-2 py-1 rounded-md font-bold italic truncate max-w-[150px]">"{item.customText}"</p>

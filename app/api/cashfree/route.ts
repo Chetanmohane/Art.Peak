@@ -21,6 +21,10 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { amount, customer_id, customer_phone, customer_email, uph_id, items, shipping, paymentMethod } = body;
 
+        if (!amount || parseFloat(amount) <= 0) {
+            return NextResponse.json({ success: false, error: 'Positive order amount is required' }, { status: 400 });
+        }
+
         const appId = process.env.CASHFREE_APP_ID;
         const secretKey = process.env.CASHFREE_SECRET_KEY;
         const env = process.env.CASHFREE_ENV || 'SANDBOX';
@@ -65,7 +69,7 @@ export async function POST(req: Request) {
                 customer_email: customer_email || 'test@example.com'
             },
             order_meta: {
-                return_url: env === 'PRODUCTION' ? "https://www.google.com/" : `${process.env.NEXTAUTH_URL}/`
+                return_url: `https://artpeak.shop/profile?tab=orders&clearCart=true`
             }
         };
 
