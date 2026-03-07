@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import {
   Loader2, MessageSquare, Trash2, Mail,
   Calendar, ArrowLeft, ShieldCheck, Search, X, Users, User as UserIcon,
-  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle, Upload, Gift, ToggleLeft, ToggleRight
+  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle, Upload
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,20 +31,6 @@ interface UserData {
 interface BulkTier {
   qty: number;
   price: number;
-}
-
-interface Offer {
-  id: string;
-  festival: string;
-  title: string;
-  subtitle: string;
-  discount: number;
-  code: string;
-  validTill: string;
-  emoji: string;
-  glow: string;
-  active: boolean;
-  createdAt: string;
 }
 
 interface Product {
@@ -80,6 +66,26 @@ interface Order {
   pincode?: string | null;
 }
 
+interface Offer {
+  id: string;
+  festival: string;
+  title: string;
+  subtitle: string;
+  discountPercent: number;
+  code: string;
+  validTill: string;
+  emoji: string;
+  glow: string;
+  darkBg: string;
+  lightBg: string;
+  darkTextAccent: string;
+  lightTextAccent: string;
+  isActive: boolean;
+  minQuantity: number;
+  minAmount: number;
+  createdAt?: string;
+}
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -97,6 +103,7 @@ export default function AdminPage() {
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   
   const [pageStatus, setPageStatus] = useState<"loading" | "forbidden" | "ready">("loading");
   const [search, setSearch] = useState("");
@@ -111,11 +118,6 @@ export default function AdminPage() {
     show: false, img: "", isMain: true
   });
 
-  // Offer modal state
-  const [showOfferModal, setShowOfferModal] = useState(false);
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
-  const [offerForm, setOfferForm] = useState({ festival: "", title: "", subtitle: "", discount: "", code: "", validTill: "", emoji: "🎁", glow: "#f97316", active: true });
-
   // Product Modal State
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -127,6 +129,27 @@ export default function AdminPage() {
     images: [] as string[],
     bulkPricing: [] as BulkTier[]
   });
+
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [offerForm, setOfferForm] = useState({
+    festival: "", title: "", subtitle: "", discountPercent: 0, 
+    code: "", validTill: "", emoji: "🎉", glow: "#f97316", 
+    darkBg: "linear-gradient(135deg, #120900 0%, #251500 40%, #120900 100%)", 
+    lightBg: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%)",
+    darkTextAccent: "#fb923c", lightTextAccent: "#c2410c", isActive: true,
+    minQuantity: 0, minAmount: 0
+  });
+
+  const [toast, setToast] = useState<{ show: boolean, message: string, type: "success" | "error" }>({
+    show: false, message: "", type: "success"
+  });
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const additionalFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -219,6 +242,16 @@ export default function AdminPage() {
       }
     } catch (e) { console.error(e); }
   };
+  const fetchOffers = async () => {
+    try {
+      const offerRes = await fetch("/api/offers", { credentials: "include" });
+      if (offerRes.ok) {
+        const data = await offerRes.json();
+        setOffers(data || []);
+        setFilteredOffers(data || []);
+      }
+    } catch (e) { console.error(e); }
+  };
 
   useEffect(() => {
     if (pageStatus === "ready") {
@@ -226,6 +259,7 @@ export default function AdminPage() {
       if (activeTab === "users" && users.length === 0) fetchUsers();
       if (activeTab === "products" && products.length === 0) fetchProducts();
       if (activeTab === "orders" && orders.length === 0) fetchOrders();
+      if (activeTab === "offers" && offers.length === 0) fetchOffers();
     }
   }, [activeTab, pageStatus]);
 
@@ -249,7 +283,7 @@ export default function AdminPage() {
         filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
       }
       setFilteredProducts(filtered);
-    } else {
+    } else if (activeTab === "orders") {
       let filtered = [...orders];
       if (orderStatusFilter !== "all") {
         filtered = filtered.filter(o => o.status === orderStatusFilter);
@@ -258,8 +292,12 @@ export default function AdminPage() {
         filtered = filtered.filter(o => o.transactionId?.toLowerCase().includes(q) || o.user.email.toLowerCase().includes(q) || o.id.toLowerCase().includes(q));
       }
       setFilteredOrders(filtered);
+    } else if (activeTab === "offers") {
+      setFilteredOffers(
+        q ? offers.filter(o => o.festival.toLowerCase().includes(q) || o.code.toLowerCase().includes(q) || o.title.toLowerCase().includes(q)) : offers
+      );
     }
-  }, [search, messages, users, products, orders, activeTab, orderStatusFilter, adminCategoryFilter]);
+  }, [search, messages, users, products, orders, offers, activeTab, orderStatusFilter, adminCategoryFilter]);
 
   const handleDeleteMessage = async (id: string) => {
     if (!confirm("Is message ko delete karna chahte hain?")) return;
@@ -276,7 +314,7 @@ export default function AdminPage() {
     try {
       const res = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
       if (res.ok) setUsers(prev => prev.filter(u => u.id !== id));
-      else alert(await res.text());
+      else showToast(await res.text(), "error");
     } finally { setDeletingId(null); }
   };
 
@@ -299,13 +337,6 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
   };
   
-  const fetchOffers = async () => {
-    try {
-      const res = await fetch("/api/offers?all=1");
-      if (res.ok) setOffers(await res.json());
-    } catch (e) { console.error(e); }
-  };
-
   const handleDeleteOrder = async (id: string) => {
     if (!confirm("Is order ko delete karna chahte hain?")) return;
     setDeletingId(id);
@@ -313,15 +344,30 @@ export default function AdminPage() {
       const res = await fetch(`/api/admin/orders?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         setOrders(prev => prev.filter(o => o.id !== id));
+        showToast("Order deleted successfully", "success");
       } else {
-        alert(await res.text());
+        showToast(await res.text(), "error");
       }
     } catch (e) {
       console.error(e);
-      alert("Something went wrong while deleting order");
+      showToast("Something went wrong while deleting order", "error");
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleDeleteOffer = async (id: string) => {
+    if (!confirm("Is offer ko delete karna chahte hain?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/offers/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setOffers(prev => prev.filter(o => o.id !== id));
+        showToast("Offer deleted successfully", "success");
+      } else {
+        showToast(await res.text(), "error");
+      }
+    } finally { setDeletingId(null); }
   };
 
   const handleOpenProductModal = (product: Product | null = null) => {
@@ -456,8 +502,74 @@ export default function AdminPage() {
       if (res.ok) {
         await fetchProducts();
         setShowProductModal(false);
+        showToast(`Product ${editingProduct ? "updated" : "created"} successfully!`, "success");
       } else {
-        alert(await res.text());
+        showToast(await res.text(), "error");
+      }
+    } finally { setPageStatus("ready"); }
+  };
+
+  const handleOpenOfferModal = (offer: Offer | null = null) => {
+    if (offer) {
+      setEditingOffer(offer);
+      setOfferForm({
+        festival: offer.festival, title: offer.title, subtitle: offer.subtitle,
+        discountPercent: offer.discountPercent, code: offer.code, validTill: offer.validTill,
+        emoji: offer.emoji, glow: offer.glow, darkBg: offer.darkBg, lightBg: offer.lightBg,
+        darkTextAccent: offer.darkTextAccent, lightTextAccent: offer.lightTextAccent, isActive: offer.isActive,
+        minQuantity: offer.minQuantity, minAmount: offer.minAmount
+      });
+    } else {
+      setEditingOffer(null);
+      setOfferForm({
+        festival: "", title: "", subtitle: "", discountPercent: 0, 
+        code: "", validTill: "", emoji: "🎉", glow: "#f97316", 
+        darkBg: "linear-gradient(135deg, #120900 0%, #251500 40%, #120900 100%)", 
+        lightBg: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%)",
+        darkTextAccent: "#fb923c", lightTextAccent: "#c2410c", isActive: true,
+        minQuantity: 0, minAmount: 0
+      });
+    }
+    setShowOfferModal(true);
+  };
+
+  const handleSaveOffer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPageStatus("loading");
+    try {
+      const method = editingOffer ? "PUT" : "POST";
+      const url = editingOffer ? `/api/offers/${editingOffer.id}` : "/api/offers";
+      
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(offerForm)
+      });
+
+      if (res.ok) {
+        await fetchOffers();
+        setShowOfferModal(false);
+        showToast(`Offer ${editingOffer ? "updated" : "created"} successfully! ✨`, "success");
+      } else {
+        const errorData = await res.json();
+        showToast(errorData.error || "Failed to save offer", "error");
+      }
+    } finally { setPageStatus("ready"); }
+  };
+
+  const toggleOfferActive = async (offer: Offer) => {
+    setPageStatus("loading");
+    try {
+      const res = await fetch(`/api/offers/${offer.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...offer, isActive: !offer.isActive })
+      });
+      if (res.ok) {
+        await fetchOffers();
+        showToast(`Offer ${offer.isActive ? "deactivated" : "activated"}!`, "success");
+      } else {
+        showToast(await res.text(), "error");
       }
     } finally { setPageStatus("ready"); }
   };
@@ -814,195 +926,60 @@ export default function AdminPage() {
   };
 
   const renderOffers = () => {
+    if (filteredOffers.length === 0) return <EmptyState icon={<Tag />} text="No offers found" isLight={isLight} />;
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h2 className={`text-xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Offers & Coupons</h2>
-            <p className={`text-xs mt-1 ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Add/edit festival offers that customers can apply at checkout.</p>
-          </div>
-          <button
-            onClick={() => { setEditingOffer(null); setOfferForm({ festival: "", title: "", subtitle: "", discount: "", code: "", validTill: "", emoji: "🎁", glow: "#f97316", active: true }); setShowOfferModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-orange-600/25"
-          >
-            <Plus size={16} /> Add Offer
-          </button>
-        </div>
-
-        {offers.length === 0 ? (
-          <div className={`rounded-3xl border p-16 text-center ${isLight ? "bg-white/70 border-zinc-200" : "bg-white/[0.02] border-white/5"}`}>
-            <Gift size={40} className="mx-auto mb-4 text-zinc-400" />
-            <p className="text-zinc-400 font-semibold">No offers yet. Add your first one!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {offers.map((offer, i) => (
-              <motion.div
-                key={offer.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className={`rounded-3xl border overflow-hidden transition-all ${isLight ? "bg-white border-zinc-200 shadow-sm hover:shadow-md" : "bg-white/[0.03] border-white/5 hover:bg-white/[0.05]"}`}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredOffers.map((offer, i) => (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={offer.id} className={`p-6 rounded-3xl border transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-xl hover:shadow-black/5" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl hover:shadow-black/50"}`}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl bg-black/10 dark:bg-white/10 p-2 rounded-2xl">{offer.emoji}</span>
+                <div>
+                  <h3 className={`font-bold text-lg ${isLight ? "text-zinc-900" : "text-white"}`}>{offer.festival}</h3>
+                  <p className={`text-sm ${isLight ? "text-orange-600" : "text-orange-400"} font-bold`}>{offer.discountPercent}% OFF</p>
+                </div>
+              </div>
+            <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md flex items-center gap-2 ${offer.isActive ? "bg-emerald-500/20 text-emerald-500" : "bg-red-500/20 text-red-500"}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${offer.isActive ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                {offer.isActive ? "Active" : "Inactive"}
+              </div>
+            </div>
+            <div className="space-y-2 mb-6">
+              <p className={`text-sm font-semibold truncate ${isLight ? "text-zinc-800" : "text-zinc-200"}`}>{offer.title}</p>
+              <div className="flex justify-between items-center bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-white/5">
+                <span className="text-xs text-zinc-500 font-bold uppercase tracking-widest">Code</span>
+                <span className="font-mono text-sm font-bold bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded">{offer.code}</span>
+              </div>
+              <div className="space-y-1.5 pt-1">
+                {(offer.minQuantity > 0 || offer.minAmount > 0) && (
+                  <div className={`p-2.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider ${isLight ? "bg-orange-50/50 border-orange-200/50 text-orange-600" : "bg-orange-500/5 border-orange-500/20 text-orange-400"}`}>
+                    <div className="flex items-center gap-1.5 mb-1 opacity-80"><ShieldCheck size={10}/> Applied Rules:</div>
+                    {offer.minQuantity > 0 && <div className="flex justify-between items-center px-1"><span>Min Items:</span> <span className="bg-orange-500/10 px-1.5 py-0.5 rounded">{offer.minQuantity} Qty</span></div>}
+                    {offer.minAmount > 0 && <div className="flex justify-between items-center px-1 mt-0.5"><span>Min Total:</span> <span className="bg-orange-500/10 px-1.5 py-0.5 rounded">₹{offer.minAmount}</span></div>}
+                  </div>
+                )}
+              </div>
+              <p className={`text-xs ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>Valid till: {offer.validTill}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={() => toggleOfferActive(offer)} 
+                className={`w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                  offer.isActive 
+                  ? "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white" 
+                  : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white"
+                }`}
               >
-                {/* Color bar */}
-                <div className="h-2" style={{ background: offer.glow }} />
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{offer.emoji}</span>
-                      <div>
-                        <p className={`font-black text-sm ${isLight ? "text-zinc-900" : "text-white"}`}>{offer.festival}</p>
-                        <p className={`text-xs ${isLight ? "text-zinc-500" : "text-zinc-400"}`}>{offer.title}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      <span className="text-xl font-black" style={{ color: offer.glow }}>{offer.discount}% OFF</span>
-                      <span
-                        className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                          offer.active ? "bg-emerald-500/15 text-emerald-500" : "bg-zinc-500/15 text-zinc-500"
-                        }`}
-                      >
-                        {offer.active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl mb-4 text-xs font-black tracking-widest`} style={{ background: `${offer.glow}15`, color: offer.glow }}>
-                    <Tag size={11} /> {offer.code}
-                  </div>
-
-                  <p className={`text-xs leading-relaxed mb-4 ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>{offer.subtitle}</p>
-                  <p className={`text-[11px] mb-4 ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Valid till: {offer.validTill}</p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingOffer(offer);
-                        setOfferForm({ ...offer, discount: String(offer.discount) });
-                        setShowOfferModal(true);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl font-bold text-xs transition-all"
-                    >
-                      <Edit size={13} /> Edit
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await fetch("/api/offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: offer.id, active: !offer.active }) });
-                        fetchOffers();
-                      }}
-                      className={`px-3 py-2.5 rounded-xl font-bold text-xs transition-all ${
-                        offer.active ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white" : "bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500 hover:text-white"
-                      }`}
-                    >
-                      {offer.active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm("Delete this offer?")) return;
-                        await fetch("/api/offers", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: offer.id }) });
-                        fetchOffers();
-                      }}
-                      className="px-3 py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        {/* Offer Add/Edit Modal */}
-        <AnimatePresence>
-          {showOfferModal && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-              style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
-            >
-              <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-                className={`${isLight ? "bg-white" : "bg-zinc-900"} rounded-3xl p-8 w-full max-w-lg shadow-2xl border ${ isLight ? "border-zinc-200" : "border-white/10"}`}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className={`text-xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>{editingOffer ? "Edit Offer" : "Add New Offer"}</h3>
-                  <button onClick={() => setShowOfferModal(false)} className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"><X size={18} /></button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Festival Name</label>
-                      <input value={offerForm.festival} onChange={e => setOfferForm(p => ({...p, festival: e.target.value}))} placeholder="e.g. Holi Special" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Emoji</label>
-                      <input value={offerForm.emoji} onChange={e => setOfferForm(p => ({...p, emoji: e.target.value}))} placeholder="🎁" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Offer Title</label>
-                    <input value={offerForm.title} onChange={e => setOfferForm(p => ({...p, title: e.target.value}))} placeholder="e.g. Rang Barse, Gifts Barse" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Subtitle / Description</label>
-                    <textarea value={offerForm.subtitle} onChange={e => setOfferForm(p => ({...p, subtitle: e.target.value}))} rows={2} placeholder="Short offer description..." className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none resize-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Discount %</label>
-                      <input type="number" value={offerForm.discount} onChange={e => setOfferForm(p => ({...p, discount: e.target.value}))} placeholder="25" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Coupon Code</label>
-                      <input value={offerForm.code} onChange={e => setOfferForm(p => ({...p, code: e.target.value.toUpperCase()}))} placeholder="HOLI25" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none font-mono ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Valid Till</label>
-                      <input value={offerForm.validTill} onChange={e => setOfferForm(p => ({...p, validTill: e.target.value}))} placeholder="15 March 2026" className={`w-full px-4 py-2.5 rounded-xl text-sm border outline-none ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-black uppercase tracking-widest text-orange-500 block mb-1.5">Accent Color</label>
-                      <div className="flex gap-2 items-center">
-                        <input type="color" value={offerForm.glow} onChange={e => setOfferForm(p => ({...p, glow: e.target.value}))} className="w-10 h-10 rounded-lg border-0 cursor-pointer" />
-                        <input value={offerForm.glow} onChange={e => setOfferForm(p => ({...p, glow: e.target.value}))} className={`flex-1 px-3 py-2.5 rounded-xl text-sm border outline-none font-mono ${isLight ? "bg-zinc-50 border-zinc-200 text-zinc-900" : "bg-zinc-800 border-zinc-700 text-white"}`} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={offerForm.active} onChange={e => setOfferForm(p => ({...p, active: e.target.checked}))} className="w-4 h-4 accent-orange-500" />
-                    <span className={`text-sm font-semibold ${isLight ? "text-zinc-700" : "text-zinc-300"}`}>Offer is Active (visible to customers)</span>
-                  </label>
-                </div>
-
-                <div className="flex gap-3 mt-6">
-                  <button onClick={() => setShowOfferModal(false)} className={`flex-1 py-3 rounded-2xl font-bold text-sm border transition ${isLight ? "border-zinc-200 hover:bg-zinc-100" : "border-zinc-700 hover:bg-zinc-800 text-white"}`}>Cancel</button>
-                  <button
-                    onClick={async () => {
-                      if (!offerForm.festival || !offerForm.code || !offerForm.discount) { alert("Please fill Festival, Code & Discount"); return; }
-                      const payload = { ...offerForm, discount: parseFloat(offerForm.discount) };
-                      if (editingOffer) {
-                        await fetch("/api/offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingOffer.id, ...payload }) });
-                      } else {
-                        await fetch("/api/offers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-                      }
-                      fetchOffers();
-                      setShowOfferModal(false);
-                    }}
-                    className="flex-1 py-3 rounded-2xl font-bold text-sm bg-orange-600 hover:bg-orange-500 text-white transition shadow-lg shadow-orange-600/25"
-                  >
-                    {editingOffer ? "Save Changes" : "Create Offer"}
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {offer.isActive ? <X size={14}/> : <CheckCircle size={14}/>}
+                {offer.isActive ? "Deactivate Offer" : "Activate Offer"}
+              </button>
+              <div className="flex gap-2">
+                <button onClick={() => handleOpenOfferModal(offer)} className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition flex items-center justify-center gap-2"><Edit size={16}/> Edit</button>
+                <button onClick={() => handleDeleteOffer(offer.id)} className="p-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition"><Trash2 size={16}/></button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
     );
   };
@@ -1012,7 +989,7 @@ export default function AdminPage() {
     { id: "users", label: "Users", icon: <Users size={18} />, count: users.length, color: "text-indigo-500", bg: "bg-indigo-500" },
     { id: "products", label: "Products", icon: <Package size={18} />, count: products.length, color: "text-emerald-500", bg: "bg-emerald-500" },
     { id: "orders", label: "Orders", icon: <ShoppingCart size={18} />, count: orders.length, color: "text-amber-500", bg: "bg-amber-500" },
-    { id: "offers", label: "Offers", icon: <Gift size={18} />, count: offers.length, color: "text-pink-500", bg: "bg-pink-500" },
+    { id: "offers", label: "Offers", icon: <Tag size={18} />, count: offers.length, color: "text-fuchsia-500", bg: "bg-fuchsia-500" },
   ];
 
   return (
@@ -1078,6 +1055,11 @@ export default function AdminPage() {
                  <Plus size={18} />
               </button>
             )}
+            {activeTab === "offers" && (
+              <button onClick={() => handleOpenOfferModal()} className="p-2 bg-fuchsia-500 text-white rounded-lg shadow-lg shadow-fuchsia-500/20">
+                 <Plus size={18} />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar snap-x">
@@ -1134,7 +1116,7 @@ export default function AdminPage() {
            <h2 className="text-3xl font-black capitalize tracking-tight flex items-center gap-4">
               {activeTab}
               <span className={`text-sm font-bold px-3 py-1 rounded-xl ${isLight ? "bg-zinc-200 text-zinc-600" : "bg-white/10 text-zinc-400"}`}>
-                {activeTab === "messages" ? messages.length : activeTab === "users" ? users.length : activeTab === "products" ? products.length : orders.length} Total
+                {activeTab === "messages" ? messages.length : activeTab === "users" ? users.length : activeTab === "products" ? products.length : activeTab === "offers" ? offers.length : orders.length} Total
               </span>
            </h2>
            <div className="flex items-center gap-4">
@@ -1146,6 +1128,12 @@ export default function AdminPage() {
 
               {activeTab === "products" && (
                 <button onClick={() => handleOpenProductModal()} className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
+                   <Plus size={18} /> Add
+                </button>
+              )}
+
+              {activeTab === "offers" && (
+                <button onClick={() => handleOpenOfferModal()} className="flex items-center gap-2 px-6 py-3 bg-fuchsia-500 hover:bg-fuchsia-600 text-white rounded-2xl font-bold shadow-lg shadow-fuchsia-500/20 transition-all hover:scale-105 active:scale-95">
                    <Plus size={18} /> Add
                 </button>
               )}
@@ -1386,9 +1374,137 @@ export default function AdminPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Offer Modal */}
+      <AnimatePresence>
+         {showOfferModal && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowOfferModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border shadow-2xl p-6 sm:p-8 custom-scrollbar ${isLight ? "bg-white border-zinc-200" : "bg-zinc-950 border-white/10"}`}>
+                 <div className="flex justify-between items-center mb-6">
+                    <h2 className={`text-2xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>{editingOffer ? "Edit Offer" : "Add New Offer"}</h2>
+                    <button onClick={() => setShowOfferModal(false)} className={`p-2 rounded-full transition-colors ${isLight ? "hover:bg-zinc-100" : "hover:bg-white/10"}`}><X size={20}/></button>
+                 </div>
+                 
+                 <form onSubmit={handleSaveOffer} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                       <FormGroup label="Festival / Event" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={offerForm.festival} onChange={e => setOfferForm({...offerForm, festival: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="e.g. Holi Special" />
+                       </FormGroup>
+                       <FormGroup label="Discount Percent" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required type="number" value={offerForm.discountPercent} onChange={e => setOfferForm({...offerForm, discountPercent: parseFloat(e.target.value)})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="25" />
+                       </FormGroup>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                       <FormGroup label="Promo Code" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={offerForm.code} onChange={e => setOfferForm({...offerForm, code: e.target.value.toUpperCase()})} className="w-full bg-transparent outline-none py-2 text-sm font-bold uppercase" placeholder="HOLI25" />
+                       </FormGroup>
+                       <FormGroup label="Valid Till" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={offerForm.validTill} onChange={e => setOfferForm({...offerForm, validTill: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="15 March 2026" />
+                       </FormGroup>
+                    </div>
+
+                    <FormGroup label="Title" icon={<Tag size={14}/>} isLight={isLight}>
+                       <input required value={offerForm.title} onChange={e => setOfferForm({...offerForm, title: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="Rang Barse, Gifts Barse" />
+                    </FormGroup>
+                    
+                    <FormGroup label="Subtitle" icon={<Tag size={14}/>} isLight={isLight}>
+                       <textarea required rows={2} value={offerForm.subtitle} onChange={e => setOfferForm({...offerForm, subtitle: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium resize-none" placeholder="Provide a short description..." />
+                    </FormGroup>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+                       <FormGroup label="Emoji" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={offerForm.emoji} onChange={e => setOfferForm({...offerForm, emoji: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium text-center" />
+                       </FormGroup>
+                       <FormGroup label="Glow Color" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required type="color" value={offerForm.glow} onChange={e => setOfferForm({...offerForm, glow: e.target.value})} className="w-full h-9 bg-transparent border-none outline-none cursor-pointer p-0 m-0" />
+                       </FormGroup>
+                       <FormGroup label="Light Text Accent" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required type="color" value={offerForm.lightTextAccent} onChange={e => setOfferForm({...offerForm, lightTextAccent: e.target.value})} className="w-full h-9 bg-transparent border-none outline-none cursor-pointer p-0 m-0" />
+                       </FormGroup>
+                       <FormGroup label="Dark Text Accent" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required type="color" value={offerForm.darkTextAccent} onChange={e => setOfferForm({...offerForm, darkTextAccent: e.target.value})} className="w-full h-9 bg-transparent border-none outline-none cursor-pointer p-0 m-0" />
+                       </FormGroup>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                       <FormGroup label="Light Bg (CSS Gradient)" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={offerForm.lightBg} onChange={e => setOfferForm({...offerForm, lightBg: e.target.value})} className="w-full bg-transparent outline-none py-2 text-xs font-mono" />
+                       </FormGroup>
+                       <FormGroup label="Dark Bg (CSS Gradient)" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={offerForm.darkBg} onChange={e => setOfferForm({...offerForm, darkBg: e.target.value})} className="w-full bg-transparent outline-none py-2 text-xs font-mono" />
+                       </FormGroup>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                       <FormGroup label="Min Quantity Requirement" icon={<ShoppingCart size={14}/>} isLight={isLight}>
+                          <input type="number" value={offerForm.minQuantity} onChange={e => setOfferForm({...offerForm, minQuantity: parseInt(e.target.value) || 0})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="0 (No minimum)" />
+                       </FormGroup>
+                       <FormGroup label="Min Amount Requirement" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input type="number" value={offerForm.minAmount} onChange={e => setOfferForm({...offerForm, minAmount: parseFloat(e.target.value) || 0})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="0 (No minimum)" />
+                       </FormGroup>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                       <input type="checkbox" id="isActiveOffer" checked={offerForm.isActive} onChange={e => setOfferForm({...offerForm, isActive: e.target.checked})} className="w-5 h-5 accent-fuchsia-500 cursor-pointer" />
+                       <label htmlFor="isActiveOffer" className={`text-sm font-bold cursor-pointer ${isLight ? "text-zinc-800" : "text-zinc-200"}`}>Active (Show on website)</label>
+                    </div>
+
+                    <button type="submit" className="w-full py-4 bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 hover:from-fuchsia-600 hover:to-fuchsia-700 text-white font-black rounded-2xl shadow-xl shadow-fuchsia-500/25 transition-all active:scale-[0.98] uppercase tracking-widest mt-6 text-sm">
+                       {editingOffer ? "Update Offer" : "Save Offer"}
+                    </button>
+                 </form>
+              </motion.div>
+           </div>
+         )}
+      </AnimatePresence>
+
+      <ToastNotification toast={toast} isLight={isLight} />
     </div>
   );
 }
+
+{/* Premium Toast Notification */}
+const ToastNotification = ({ toast, isLight }: { toast: { show: boolean, message: string, type: "success" | "error" }, isLight: boolean }) => (
+  <AnimatePresence>
+    {toast.show && (
+      <motion.div 
+        initial={{ opacity: 0, y: 50, scale: 0.9, x: "-50%" }}
+        animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+        exit={{ opacity: 0, y: 20, scale: 0.9, x: "-50%" }}
+        className="fixed bottom-10 left-1/2 z-[200] px-4"
+        style={{ perspective: "1000px" }}
+      >
+        <div className={`
+          px-8 py-5 rounded-[2.5rem] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-3xl border flex items-center gap-5 min-w-[340px] max-w-[90vw]
+          ${toast.type === "success" 
+            ? (isLight ? "bg-white/95 border-emerald-100 shadow-emerald-500/10" : "bg-zinc-900/90 border-emerald-500/20 shadow-emerald-500/20")
+            : (isLight ? "bg-white/95 border-red-100 shadow-red-500/10" : "bg-zinc-900/90 border-red-500/20 shadow-red-500/20")
+          }
+        `}>
+          <div className={`w-14 h-14 rounded-3xl flex items-center justify-center shadow-2xl transition-all hover:rotate-12 hover:scale-110 shrink-0 ${toast.type === "success" ? "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white" : "bg-gradient-to-br from-red-400 to-red-600 text-white"}`}>
+            {toast.type === "success" ? <CheckCircle size={28}/> : <X size={28}/>}
+          </div>
+          <div className="flex-1">
+            <p className={`text-[10px] uppercase font-black tracking-[0.3em] mb-1 opacity-70 ${toast.type === "success" ? "text-emerald-600" : "text-red-500"}`}>
+              {toast.type === "success" ? "Action Verified" : "Critical Update"}
+            </p>
+            <p className={`text-base font-black tracking-tight leading-tight ${isLight ? "text-zinc-900" : "text-white"}`}>{toast.message}</p>
+          </div>
+          <div className="absolute inset-x-12 bottom-0 h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: "100%" }}
+              animate={{ width: "0%" }}
+              transition={{ duration: 4, ease: "linear" }}
+              className={`h-full ${toast.type === "success" ? "bg-emerald-500" : "bg-red-500"}`}
+            />
+          </div>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 
 function EmptyState({ icon, text, isLight }: { icon: React.ReactNode, text: string, isLight: boolean }) {

@@ -7,11 +7,11 @@ import Link from "next/link";
 import { useTheme } from "../context/ThemeContext";
 
 interface Offer {
-  id: number;
+  id: string; // Changed from number to string as Prisma uses CUID string id
   festival: string;
   title: string;
   subtitle: string;
-  discount: string;
+  discountPercent: number; // Changed to match schema
   code: string;
   validTill: string;
   emoji: string;
@@ -20,90 +20,40 @@ interface Offer {
   lightBg: string;
   darkTextAccent: string;
   lightTextAccent: string;
+  isActive: boolean;
 }
-
-const offers: Offer[] = [
-  {
-    id: 1,
-    festival: "Holi Special",
-    title: "Rang Barse, Gifts Barse",
-    subtitle: "Give the gift of personalisation this Holi — laser-engraved keepsakes that last a lifetime.",
-    discount: "25% OFF",
-    code: "HOLI25",
-    validTill: "15 March 2026",
-    emoji: "🎨",
-    glow: "#f43f5e",
-    darkBg: "linear-gradient(135deg, #1a0a0e 0%, #2d1020 40%, #1a0a0e 100%)",
-    lightBg: "linear-gradient(135deg, #fff1f5 0%, #ffe4ed 50%, #ffd6e8 100%)",
-    darkTextAccent: "#fb7185",
-    lightTextAccent: "#e11d48",
-  },
-  {
-    id: 2,
-    festival: "Bulk Orders",
-    title: "More You Order, More You Save",
-    subtitle: "Corporate gifting, events & custom merchandise — up to 30% off on bulk orders of 50+ units.",
-    discount: "30% OFF",
-    code: "BULK30",
-    validTill: "Ongoing",
-    emoji: "📦",
-    glow: "#f97316",
-    darkBg: "linear-gradient(135deg, #120900 0%, #251500 40%, #120900 100%)",
-    lightBg: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%)",
-    darkTextAccent: "#fb923c",
-    lightTextAccent: "#c2410c",
-  },
-  {
-    id: 3,
-    festival: "Welcome Gift",
-    title: "Your First Order, Our Best Price",
-    subtitle: "New to Art.Peak? We welcome you with an exclusive first-order discount. No strings attached.",
-    discount: "15% OFF",
-    code: "WELCOME15",
-    validTill: "Always Active",
-    emoji: "🌟",
-    glow: "#10b981",
-    darkBg: "linear-gradient(135deg, #021208 0%, #061f0f 40%, #021208 100%)",
-    lightBg: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%)",
-    darkTextAccent: "#34d399",
-    lightTextAccent: "#065f46",
-  },
-  {
-    id: 4,
-    festival: "Summer Sale",
-    title: "Sizzling Deals This Summer",
-    subtitle: "Beat the heat with cool savings on all engraved products — gifting was never this affordable.",
-    discount: "20% OFF",
-    code: "SUMMER20",
-    validTill: "30 June 2026",
-    emoji: "☀️",
-    glow: "#f59e0b",
-    darkBg: "linear-gradient(135deg, #0a0800 0%, #1c1400 40%, #0a0800 100%)",
-    lightBg: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%)",
-    darkTextAccent: "#fbbf24",
-    lightTextAccent: "#92400e",
-  },
-];
 
 export default function Offers() {
   const { theme } = useTheme();
   const isLight = theme === "light";
 
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [current, setCurrent] = useState(0);
   const [copied, setCopied] = useState(false);
   const [paused, setPaused] = useState(false);
   const [time, setTime] = useState({ d: "00", h: "00", m: "00", s: "00" });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    fetch("/api/offers")
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data)) {
+          setOffers(data.filter((o: Offer) => o.isActive));
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   // Auto-slide — pauses on hover/interaction
   useEffect(() => {
-    if (paused) {
+    if (paused || offers.length === 0) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
     intervalRef.current = setInterval(() => setCurrent((p) => (p + 1) % offers.length), 6000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [paused]);
+  }, [paused, offers.length]);
 
   // Live countdown to end of month
   useEffect(() => {
@@ -124,6 +74,7 @@ export default function Offers() {
   }, []);
 
   const copyCode = () => {
+    if (offers.length === 0) return;
     navigator.clipboard.writeText(offers[current].code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -133,7 +84,9 @@ export default function Offers() {
   const prev = () => { setCurrent((p) => (p - 1 + offers.length) % offers.length); setPaused(true); };
   const next = () => { setCurrent((p) => (p + 1) % offers.length); setPaused(true); };
 
-  const offer = offers[current];
+  if (offers.length === 0) return null;
+
+  const offer = offers[current] || offers[0];
   const bg = isLight ? offer.lightBg : offer.darkBg;
   const accent = isLight ? offer.lightTextAccent : offer.darkTextAccent;
 
@@ -275,7 +228,7 @@ export default function Offers() {
                         className="text-4xl font-black tracking-tight"
                         style={{ color: isLight ? offer.glow : "#ffffff" }}
                       >
-                        {offer.discount}
+                        {offer.discountPercent}% OFF
                       </span>
                     </div>
 
@@ -478,7 +431,7 @@ export default function Offers() {
                 className="text-[11px] font-black mt-1"
                 style={{ color: i === current ? (isLight ? o.lightTextAccent : o.darkTextAccent) : (isLight ? "#71717a" : "rgba(255,255,255,0.4)") }}
               >
-                {o.discount}
+                {o.discountPercent}% OFF
               </p>
             </motion.button>
           ))}

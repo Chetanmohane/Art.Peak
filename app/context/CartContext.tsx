@@ -13,20 +13,11 @@ interface Product {
 }
 
 export interface CartItem {
-  id: string;
+  id: string; // Unique ID for the cart item
   product: Product;
   qty: number;
   customText?: string;
   customImage?: string | null;
-}
-
-export interface AppliedCoupon {
-  code: string;
-  festival: string;
-  discount: number;  // percentage
-  discountAmount: number;
-  emoji: string;
-  glow: string;
 }
 
 interface CartContextType {
@@ -38,19 +29,33 @@ interface CartContextType {
   removeItem: (id: string) => void;
   clearCart: () => void;
   totalPrice: number;
+  originalTotal: number;
+  discountAmount: number;
   totalItems: number;
-  // Coupon
-  coupon: AppliedCoupon | null;
-  setCoupon: (c: AppliedCoupon | null) => void;
-  discountedTotal: number;
+  discountOffer: { 
+    code: string; 
+    discountPercent: number; 
+    minQuantity?: number; 
+    minAmount?: number;
+    error?: string;
+  } | null;
+  applyDiscount: (code: string) => Promise<boolean>;
+  removeDiscount: () => void;
 }
+
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+  const [discountOffer, setDiscountOffer] = useState<{ 
+    code: string; 
+    discountPercent: number;
+    minQuantity?: number;
+    minAmount?: number;
+    error?: string;
+  } | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("artpeak_cart");
@@ -75,9 +80,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: Product, customText?: string, customImage?: string | null, qty: number = 1) => {
     const existing = cart.find(
-      (item) =>
-        item?.product?.id === product.id &&
-        item?.customText === customText &&
+      (item) => 
+        item?.product?.id === product.id && 
+        item?.customText === customText && 
         item?.customImage === customImage
     );
 
@@ -121,13 +126,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setCart([]);
-    setCoupon(null);
   };
 
-  const totalPrice = cart.reduce((total, item) => {
+  const originalTotal = cart.reduce((total, item) => {
     if (!item.product) return total;
     let currentPrice = item.product.price;
-
+    
     if (item.product.bulkPricing && Array.isArray(item.product.bulkPricing) && item.product.bulkPricing.length > 0) {
       const applicableTier = [...item.product.bulkPricing]
         .sort((a, b) => b.qty - a.qty)
@@ -136,33 +140,67 @@ export function CartProvider({ children }: { children: ReactNode }) {
         currentPrice = applicableTier.price;
       }
     }
-
+    
     return total + (currentPrice || 0) * item.qty;
   }, 0);
 
   const totalItems = cart.reduce((total, item) => total + (item.qty || 0), 0);
 
-  // Discount amount recalculated whenever coupon or totalPrice changes
-  const discountAmount = coupon
-    ? Math.round((totalPrice * coupon.discount) / 100)
-    : 0;
-  const discountedTotal = totalPrice - discountAmount;
+  // Validate discount whenever cart, totalItems, or originalTotal changes
+  useEffect(() => {
+    if (discountOffer) {
+      if (discountOffer.minQuantity && totalItems < discountOffer.minQuantity) {
+        setDiscountOffer(prev => prev ? { ...prev, error: `Minimum ${discountOffer.minQuantity} items required for this offer.` } : null);
+      } else if (discountOffer.minAmount && originalTotal < discountOffer.minAmount) {
+        setDiscountOffer(prev => prev ? { ...prev, error: `Minimum order value ₹${discountOffer.minAmount} required for this offer.` } : null);
+      } else if (discountOffer.error) {
+        setDiscountOffer(prev => prev ? { ...prev, error: undefined } : null);
+      }
+    }
+  }, [totalItems, originalTotal]);
+
+  const discountAmount = (discountOffer && !discountOffer.error) ? (originalTotal * discountOffer.discountPercent) / 100 : 0;
+  const totalPrice = originalTotal - discountAmount;
+
+  const applyDiscount = async (code: string) => {
+    try {
+      const res = await fetch("/api/offers");
+      const offers = await res.json();
+      const offer = offers.find((o: any) => o.code.toUpperCase() === code.toUpperCase() && o.isActive);
+      
+      if (offer) {
+        if (offer.minQuantity && totalItems < offer.minQuantity) {
+          return false;
+        }
+        if (offer.minAmount && originalTotal < offer.minAmount) {
+          return false;
+        }
+
+        setDiscountOffer({ 
+          code: offer.code, 
+          discountPercent: offer.discountPercent,
+          minQuantity: offer.minQuantity,
+          minAmount: offer.minAmount
+        });
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
+  const removeDiscount = () => {
+    setDiscountOffer(null);
+  };
 
   return (
     <CartContext.Provider
-      value={{
-        cart,
-        addToCart,
-        increaseQty,
-        decreaseQty,
-        updateQty,
-        removeItem,
-        clearCart,
-        totalPrice,
-        totalItems,
-        coupon,
-        setCoupon,
-        discountedTotal,
+      value={{ 
+        cart, addToCart, increaseQty, decreaseQty, updateQty, removeItem, clearCart, 
+        totalPrice, originalTotal, discountAmount, totalItems, 
+        discountOffer, applyDiscount, removeDiscount 
       }}
     >
       {children}

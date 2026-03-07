@@ -64,16 +64,22 @@ model Product {
 }
 
 model Offer {
-  id          String   @id @default(cuid())
-  festival    String
-  title       String
-  subtitle    String
-  discount    Float    // percentage e.g. 25
-  code        String   @unique
-  validTill   String
-  emoji       String   @default("🎁")
-  glow        String   @default("#f97316")
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  festival        String
+  title           String
+  subtitle        String
+  discountPercent Float
+  code            String   @unique
+  validTill       String
+  emoji           String
+  glow            String
+  darkBg          String
+  lightBg         String
+  darkTextAccent  String
+  lightTextAccent String
+  isActive        Boolean  @default(true)
+  minQuantity     Int      @default(0)
+  minAmount       Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

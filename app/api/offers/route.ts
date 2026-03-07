@@ -1,56 +1,51 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/options";
+import { NextResponse } from "next/server";
+import { prisma } from "../../../lib/prisma";
 
-const prisma = new PrismaClient();
-const db = prisma as any;
-
-// GET – public: list all active offers (or all for admin)
-export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const all = searchParams.get("all") === "1";
+export async function GET() {
     try {
-        const offers = await db.offer.findMany({
-            where: all ? {} : { active: true },
+        const offers = await prisma.offer.findMany({
             orderBy: { createdAt: "desc" },
         });
         return NextResponse.json(offers);
-    } catch {
-        return NextResponse.json([]);
+    } catch (err: any) {
+        console.error("GET OFFERS ERROR", err);
+        return NextResponse.json({
+            error: "Failed to fetch offers",
+            details: err.message,
+            code: err.code
+        }, { status: 500 });
     }
 }
 
-// POST – admin only: create offer
-export async function POST(req: NextRequest) {
-    const session = await getServerSession(authOptions as any);
-    if ((session?.user as any)?.role !== "admin")
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-    const body = await req.json();
-    const offer = await db.offer.create({ data: body });
-    return NextResponse.json(offer);
-}
-
-// PUT – admin only: update offer
-export async function PUT(req: NextRequest) {
-    const session = await getServerSession(authOptions as any);
-    if ((session?.user as any)?.role !== "admin")
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-    const body = await req.json();
-    const { id, ...data } = body;
-    const offer = await db.offer.update({ where: { id }, data });
-    return NextResponse.json(offer);
-}
-
-// DELETE – admin only
-export async function DELETE(req: NextRequest) {
-    const session = await getServerSession(authOptions as any);
-    if ((session?.user as any)?.role !== "admin")
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-    const { id } = await req.json();
-    await db.offer.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+export async function POST(req: Request) {
+    try {
+        const body = await req.json();
+        const offer = await prisma.offer.create({
+            data: {
+                festival: body.festival || "",
+                title: body.title || "",
+                subtitle: body.subtitle || "",
+                discountPercent: parseFloat(body.discountPercent || "0"),
+                code: body.code || "",
+                validTill: body.validTill || "",
+                emoji: body.emoji || "",
+                glow: body.glow || "",
+                darkBg: body.darkBg || "",
+                lightBg: body.lightBg || "",
+                darkTextAccent: body.darkTextAccent || "",
+                lightTextAccent: body.lightTextAccent || "",
+                isActive: body.isActive !== undefined ? body.isActive : true,
+                minQuantity: parseInt(body.minQuantity || "0"),
+                minAmount: parseFloat(body.minAmount || "0"),
+            },
+        });
+        return NextResponse.json(offer);
+    } catch (err: any) {
+        console.error("CREATE OFFER ERROR", err);
+        return NextResponse.json({
+            error: "Failed to create offer",
+            details: err.message,
+            code: err.code
+        }, { status: 500 });
+    }
 }

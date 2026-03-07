@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Menu, X, ShoppingCart, Plus, Minus, Trash2, ShoppingBag, Search, Sun, Moon, ArrowLeft, ShieldCheck, CreditCard } from "lucide-react";
+import { Menu, X, ShoppingCart, Plus, Minus, Trash2, ShoppingBag, Search, Sun, Moon, ArrowLeft, ShieldCheck, CreditCard, Tag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
@@ -29,7 +29,7 @@ const sectionColors: Record<string, string> = {
 };
 
 export default function Navbar() {
-  const { cart, totalItems, totalPrice, increaseQty, decreaseQty, updateQty, removeItem, clearCart, coupon, setCoupon, discountedTotal } = useCart();
+  const { cart, totalItems, totalPrice, originalTotal, discountAmount, discountOffer, applyDiscount, removeDiscount, increaseQty, decreaseQty, updateQty, removeItem, clearCart } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { data: session, status } = useSession();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -52,6 +52,10 @@ export default function Navbar() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [promoSuccess, setPromoSuccess] = useState(false);
+  const [activeOffers, setActiveOffers] = useState<any[]>([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchItem[]>([]);
   const [highlighted, setHighlighted] = useState(0);
@@ -61,9 +65,6 @@ export default function Navbar() {
   const [logo, setLogo] = useState("/images/logo/logo.png");
   const [paying, setPaying] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "address" | "method" | "qr" | "upi" | "upi_id" | "success">("cart");
-  const [couponInput, setCouponInput] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [couponError, setCouponError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"qr" | "upi" | "upi_id" | null>(null);
   const [enteredUpiId, setEnteredUpiId] = useState("");
   const [upiRequestSent, setUpiRequestSent] = useState(false);
@@ -161,7 +162,6 @@ export default function Navbar() {
       window.removeEventListener('open-cart-modal', openCart);
     };
   }, []);
-
   useEffect(() => {
     if (!cartOpen) {
       setTimeout(() => {
@@ -170,6 +170,15 @@ export default function Navbar() {
         setUtr("");
         setShippingDetails({ name: "", phone: "", email: "", address: "", city: "", state: "", pincode: "" });
       }, 300);
+    } else {
+      fetch("/api/offers")
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setActiveOffers(data.filter((o: any) => o.isActive));
+          }
+        })
+        .catch(console.error);
     }
   }, [cartOpen]);
 
@@ -941,81 +950,136 @@ export default function Navbar() {
               {/* Drawer Footer */}
               {cart.length > 0 && checkoutStep !== "success" && (
                 <div className="px-6 py-5 border-t space-y-4" style={{ backgroundColor: isLight ? "#fafafa" : "#09090b", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}>
-
-                  {/* ── Coupon Input ── */}
-                  {checkoutStep === "cart" && (
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <input
-                          value={couponInput}
-                          onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
-                          placeholder="Enter coupon code"
-                          className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold outline-none border transition-all"
-                          style={{
-                            backgroundColor: isLight ? "#ffffff" : "#18181b",
-                            color: isLight ? "#18181b" : "#ffffff",
-                            borderColor: couponError ? "#f43f5e" : coupon ? "#10b981" : (isLight ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.1)"),
-                          }}
-                          disabled={!!coupon}
-                        />
-                        {coupon ? (
-                          <button
-                            onClick={() => { setCoupon(null); setCouponInput(""); setCouponError(""); }}
-                            className="px-4 py-2.5 rounded-xl text-xs font-black bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition"
-                          >
-                            Remove
-                          </button>
-                        ) : (
-                          <button
-                            disabled={!couponInput.trim() || couponLoading}
-                            onClick={async () => {
-                              setCouponLoading(true);
-                              setCouponError("");
-                              try {
-                                const res = await fetch("/api/offers/validate", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ code: couponInput.trim(), cartTotal: totalPrice }),
-                                });
-                                const data = await res.json();
-                                if (res.ok && data.valid) {
-                                  setCoupon({ code: data.offer.code, festival: data.offer.festival, discount: data.offer.discount, discountAmount: data.discountAmount, emoji: data.offer.emoji, glow: data.offer.glow });
-                                } else {
-                                  setCouponError(data.error || "Invalid code");
-                                }
-                              } catch { setCouponError("Could not validate code"); }
-                              finally { setCouponLoading(false); }
-                            }}
-                            className="px-4 py-2.5 rounded-xl text-xs font-black bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white transition whitespace-nowrap"
-                          >
-                            {couponLoading ? "..." : "Apply"}
-                          </button>
-                        )}
-                      </div>
-                      {couponError && <p className="text-xs text-red-400 font-semibold pl-1">{couponError}</p>}
-                      {coupon && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold" style={{ background: `${coupon.glow}15`, border: `1px solid ${coupon.glow}40`, color: coupon.glow }}>
-                          <span>{coupon.emoji}</span>
-                          <span>{coupon.festival} — {coupon.discount}% OFF applied!</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
-                      <span>Subtotal ({totalItems} items)</span>
-                      <span>₹{totalPrice.toLocaleString()}</span>
-                    </div>
-                    {coupon && (
-                      <div className="flex justify-between text-sm font-semibold" style={{ color: coupon.glow }}>
-                        <span>Discount ({coupon.discount}% off)</span>
-                        <span>− ₹{coupon.discountAmount.toLocaleString()}</span>
+                    {/* Promo Code Input */}
+                    {checkoutStep === "cart" && (
+                      <div className="mb-4">
+                        {!discountOffer ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={promoInput}
+                              onChange={(e) => {
+                                setPromoInput(e.target.value.toUpperCase());
+                                setPromoError("");
+                              }}
+                              placeholder="Have a promo code?"
+                              className={`flex-1 px-3 py-2 text-sm rounded-xl outline-none border transition-colors ${
+                                isLight 
+                                  ? "bg-white border-zinc-200 focus:border-orange-400 text-zinc-900" 
+                                  : "bg-zinc-800/80 border-zinc-700 focus:border-orange-500 text-white"
+                              }`}
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!promoInput) return;
+                                const matched = activeOffers.find(o => o.code.toUpperCase() === promoInput.toUpperCase());
+                                if (matched) {
+                                  if (matched.minQuantity && totalItems < matched.minQuantity) {
+                                    setPromoError(`Need ${matched.minQuantity} items to use this code.`);
+                                    return;
+                                  }
+                                  if (matched.minAmount && originalTotal < matched.minAmount) {
+                                    setPromoError(`Min. order ₹${matched.minAmount} required.`);
+                                    return;
+                                  }
+                                }
+                                const success = await applyDiscount(promoInput);
+                                if (success) {
+                                  setPromoSuccess(true);
+                                  setPromoError("");
+                                  setTimeout(() => setPromoSuccess(false), 3000);
+                                } else {
+                                  setPromoError("Invalid or expired code.");
+                                }
+                              }}
+                              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-colors shrink-0"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                             <div className={`flex items-center justify-between p-3 rounded-xl border ${isLight ? "bg-orange-50 border-orange-200" : "bg-orange-500/10 border-orange-500/30"}`}>
+                                <div className="flex items-center gap-2">
+                                  <Tag size={16} className="text-orange-500" />
+                                  <div className="text-sm font-bold" style={{ color: isLight ? "#18181b" : "#ffffff" }}>
+                                    {discountOffer.code} <span className="text-orange-500 ml-1">(-{discountOffer.discountPercent}%)</span>
+                                  </div>
+                                </div>
+                                <button onClick={removeDiscount} className="text-zinc-400 hover:text-red-500 transition">
+                                  <Trash2 size={16} />
+                                </button>
+                             </div>
+                             {discountOffer?.error && (
+                               <p className="text-red-500 text-[10px] ml-1 font-bold animate-pulse">
+                                 ⚠️ {discountOffer.error}
+                               </p>
+                             )}
+                             {(discountOffer?.minQuantity || discountOffer?.minAmount) && !discountOffer.error && (
+                               <div className="flex gap-2 items-center text-[9px] font-black uppercase tracking-widest text-emerald-500 mt-1 ml-1 opacity-80">
+                                 <ShieldCheck size={10}/> Requirement Met:
+                                 {discountOffer.minQuantity && <span>{discountOffer.minQuantity} Qty</span>}
+                                 {discountOffer.minAmount && <span>₹{discountOffer.minAmount} Total</span>}
+                                </div>
+                             )}
+                          </div>
+                        )}
+                        {promoError && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-semibold">{promoError}</p>}
+                        {promoSuccess && <p className="text-emerald-500 text-[10px] mt-1.5 ml-1 font-semibold">Promo code applied successfully!</p>}
+                        
+                        {/* Live Requirement Hint while typing */}
+                        {!discountOffer && promoInput.length >= 3 && !promoError && (() => {
+                          const matchedOffer = activeOffers.find(o => o.code.toUpperCase().includes(promoInput.toUpperCase()));
+                          if (matchedOffer && (matchedOffer.minQuantity > 0 || matchedOffer.minAmount > 0)) {
+                            const metQty = totalItems >= matchedOffer.minQuantity;
+                            const metAmt = originalTotal >= matchedOffer.minAmount;
+                            return (
+                              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className={`mt-3 p-3 rounded-xl border flex flex-col gap-2 ${isLight ? "bg-orange-50/50 border-orange-200" : "bg-orange-500/5 border-orange-500/20"}`}>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-500 flex items-center gap-1.5"><Tag size={10}/> Unlock {matchedOffer.discountPercent}% Off:</p>
+                                  <span className="text-[9px] font-black bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded uppercase">{matchedOffer.code}</span>
+                                </div>
+                                <div className="space-y-1.5">
+                                  {matchedOffer.minQuantity > 0 && (
+                                    <div className="flex items-center justify-between text-[10px] font-bold">
+                                      <span className={isLight ? "text-zinc-500" : "text-zinc-400"}>Add {matchedOffer.minQuantity} Items:</span>
+                                      <span className={metQty ? "text-emerald-500" : "text-orange-400"}>{totalItems} / {matchedOffer.minQuantity} {metQty && "✓"}</span>
+                                    </div>
+                                  )}
+                                  {matchedOffer.minAmount > 0 && (
+                                    <div className="flex items-center justify-between text-[10px] font-bold">
+                                      <span className={isLight ? "text-zinc-500" : "text-zinc-400"}>Order Above ₹{matchedOffer.minAmount}:</span>
+                                      <span className={metAmt ? "text-emerald-500" : "text-orange-400"}>₹{originalTotal} / ₹{matchedOffer.minAmount} {metAmt && "✓"}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                {(!metQty || !metAmt) && (
+                                  <p className="text-[9px] italic text-zinc-500 font-medium">Add more items to unlock this discount! ✨</p>
+                                )}
+                              </motion.div>
+                            )
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
+
+                    <div className="flex justify-between text-sm" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
+                      <span>Subtotal ({totalItems} items)</span>
+                      <span>₹{originalTotal ? originalTotal.toLocaleString() : "0"}</span>
+                    </div>
+
+                    {discountOffer && discountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-orange-500 font-semibold font-medium">
+                        <span>Discount ({discountOffer.code})</span>
+                        <span>-₹{discountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between font-bold text-lg pt-2 border-t" style={{ color: isLight ? "#18181b" : "#ffffff", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}>
                       <span>Total</span>
-                      <span className="text-orange-600">₹{discountedTotal.toLocaleString()}</span>
+                      <span className="text-orange-600">₹{totalPrice ? totalPrice.toLocaleString() : "0"}</span>
                     </div>
                   </div>
                   
