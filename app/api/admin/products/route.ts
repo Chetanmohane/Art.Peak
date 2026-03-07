@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/options";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "../../../../lib/prisma";
 
 // Helper: verify caller is admin by checking DB
 async function isAdmin(session: any) {

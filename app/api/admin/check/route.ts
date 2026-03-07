@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/options";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "../../../../lib/prisma";
 
 // GET /api/admin/check — returns { isAdmin: true/false }
 export async function GET() {

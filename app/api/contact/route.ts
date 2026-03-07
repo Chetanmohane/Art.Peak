@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 
 // POST /api/contact — save a new contact message
 export async function POST(req: Request) {

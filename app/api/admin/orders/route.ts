@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/options";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "../../../../lib/prisma";
 
 async function isAdmin(email: string) {
     const user = await prisma.user.findUnique({
