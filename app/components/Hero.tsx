@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
+import Link from "next/link";
 
 export default function Hero() {
   const { theme } = useTheme();
@@ -109,37 +110,41 @@ export default function Hero() {
           transition={{ delay: 1 }}
           className="mt-10 flex flex-col sm:flex-row justify-center gap-4 sm:gap-6"
         >
-          <button
-            className="px-8 py-3.5 rounded-full font-semibold transition duration-300 shadow-lg"
-            style={{
-              backgroundColor: "#ea580c",
-              color: "#ffffff",
-              boxShadow: "0 10px 30px rgba(234,88,12,0.35)",
-            }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#c2410c")}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#ea580c")}
-          >
-            Get Free Quote
-          </button>
+          <Link href="/#contact">
+            <button
+              className="px-8 py-3.5 rounded-full font-semibold transition duration-300 shadow-lg w-full sm:w-auto"
+              style={{
+                backgroundColor: "#ea580c",
+                color: "#ffffff",
+                boxShadow: "0 10px 30px rgba(234,88,12,0.35)",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#c2410c")}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#ea580c")}
+            >
+              Get Free Quote
+            </button>
+          </Link>
 
-          <button
-            className="px-8 py-3.5 border-2 rounded-full font-semibold transition duration-300"
-            style={{
-              borderColor: "#f97316",
-              color: isLight ? "#c2410c" : "#f97316",
-              backgroundColor: "transparent",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.backgroundColor = "#f97316";
-              e.currentTarget.style.color = "#ffffff";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = isLight ? "#c2410c" : "#f97316";
-            }}
-          >
-            View Services
-          </button>
+          <Link href="/#services">
+            <button
+              className="px-8 py-3.5 border-2 rounded-full font-semibold transition duration-300 w-full sm:w-auto"
+              style={{
+                borderColor: "#f97316",
+                color: isLight ? "#c2410c" : "#f97316",
+                backgroundColor: "transparent",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = "#f97316";
+                e.currentTarget.style.color = "#ffffff";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.color = isLight ? "#c2410c" : "#f97316";
+              }}
+            >
+              View Services
+            </button>
+          </Link>
         </motion.div>
 
         {/* Stats row - light mode only */}

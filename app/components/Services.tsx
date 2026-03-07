@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Service {
   title: string;
@@ -130,9 +131,11 @@ export default function Services() {
                 <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                   {service.desc}
                 </p>
-                <button className="mt-5 px-5 py-2 text-sm bg-orange-600 hover:bg-orange-500 text-white rounded-full transition-colors duration-300 font-semibold">
-                  Learn More
-                </button>
+                <Link href="/#contact">
+                  <button className="mt-5 px-5 py-2 text-sm bg-orange-600 hover:bg-orange-500 text-white rounded-full transition-colors duration-300 font-semibold">
+                    Learn More
+                  </button>
+                </Link>
               </div>
 
               {/* Glow Effect */}

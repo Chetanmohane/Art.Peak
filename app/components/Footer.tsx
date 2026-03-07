@@ -57,7 +57,7 @@ export default function Footer() {
             <ul className="space-y-4 text-sm">
               {["Home", "Services", "About", "Contact"].map((item) => (
                 <li key={item}>
-                  <Link href={`#${item.toLowerCase()}`} className="hover:text-orange-500 transition hover:translate-x-1 inline-block duration-200">
+                  <Link href={`/#${item.toLowerCase()}`} className="hover:text-orange-500 transition hover:translate-x-1 inline-block duration-200">
                     {item}
                   </Link>
                 </li>
