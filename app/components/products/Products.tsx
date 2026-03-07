@@ -605,6 +605,23 @@ export default function Products() {
                     </div>
                   </div>
 
+                  {/* Bulk Price Reference Table */}
+                  {customizingProduct.bulkPricing && customizingProduct.bulkPricing.length > 0 && (
+                    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+                        <Tag size={10} className="text-orange-500"/> Volume Discounts
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {customizingProduct.bulkPricing.sort((a,b) => a.qty - b.qty).map((tier, tidx) => (
+                          <div key={tidx} className={`p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${customQty >= tier.qty ? "bg-orange-600/10 border-orange-500/30 ring-1 ring-orange-500/20" : "bg-black/20 border-white/5"}`}>
+                            <span className={`text-[10px] font-bold ${customQty >= tier.qty ? "text-orange-400" : "text-zinc-500"}`}>{tier.qty}+ Pcs</span>
+                            <span className={`text-xs font-black ${customQty >= tier.qty ? "text-white" : "text-zinc-300"}`}>₹{tier.qty === 0 ? customizingProduct.price : tier.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Quantity */}
                   <div>
                     <label className="block text-sm font-semibold text-zinc-300 mb-3">
@@ -639,20 +656,37 @@ export default function Products() {
                       </div>
 
                       {/* Total breakdown */}
-                      <div className="flex-1 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3">
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
-                          Total
-                        </p>
-                        <p className="text-orange-400 font-black text-lg">
-                          ₹{getBulkPrice(customizingProduct, customQty) * customQty}
-                        </p>
-                        {customizingProduct.bulkPricing?.find(
-                          (t) => customQty >= t.qty
-                        ) && (
-                          <span className="text-[10px] text-green-400 font-semibold bg-green-500/10 px-2 py-0.5 rounded mt-0.5 inline-block">
-                            🎉 Bulk Discount Applied!
-                          </span>
-                        )}
+                      <div className="flex-1 bg-zinc-800/50 border border-white/5 rounded-xl px-4 py-3 relative overflow-hidden group">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Price Details</p>
+                          {customizingProduct.bulkPricing?.find(t => customQty >= t.qty) && (
+                            <span className="text-[9px] animate-pulse bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-black tracking-tighter uppercase">
+                              Applied
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-zinc-500">Unit Price:</span>
+                            <span className={`font-bold ${getBulkPrice(customizingProduct, customQty) < customizingProduct.price ? "text-emerald-400" : "text-white"}`}>
+                              ₹{getBulkPrice(customizingProduct, customQty)}
+                              {getBulkPrice(customizingProduct, customQty) < customizingProduct.price && 
+                                <span className="text-[10px] line-through text-zinc-600 ml-1.5 opacity-50">₹{customizingProduct.price}</span>
+                              }
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center pt-1 border-t border-white/5">
+                            <span className="text-zinc-400 font-bold">Total:</span>
+                            <span className="text-orange-400 font-black text-xl">
+                              ₹{getBulkPrice(customizingProduct, customQty) * customQty}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Visual background flourish */}
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-orange-600/5 blur-3xl rounded-full translate-x-10 -translate-y-10 group-hover:bg-orange-600/10 transition-colors" />
                       </div>
                     </div>
                   </div>

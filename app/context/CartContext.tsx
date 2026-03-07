@@ -115,8 +115,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     // Check for bulk pricing
     if (item.product.bulkPricing && item.product.bulkPricing.length > 0) {
-      // Assuming bulkPricing array is sorted descending by qty
-      const applicableTier = item.product.bulkPricing.find(tier => item.qty >= tier.qty);
+      const applicableTier = [...item.product.bulkPricing]
+        .sort((a, b) => b.qty - a.qty)
+        .find(tier => item.qty >= tier.qty);
       if (applicableTier) {
         currentPrice = applicableTier.price;
       }
