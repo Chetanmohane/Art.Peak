@@ -311,23 +311,63 @@ export default function AdminPage() {
     setShowProductModal(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isMain: boolean, index?: number) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1000; // Limit resolution for web
+          const MAX_HEIGHT = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Quality 0.6 is plenty for web and fits within Vercel's limits
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+          resolve(dataUrl);
+        };
+      };
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isMain: boolean, index?: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
+      try {
+        const compressedBase64 = await compressImage(file);
+        
         if (isMain) {
-          setProductForm(prev => ({ ...prev, image: base64 }));
+          setProductForm(prev => ({ ...prev, image: compressedBase64 }));
         } else if (index !== undefined) {
           const newImages = [...productForm.images];
-          newImages[index] = base64;
+          newImages[index] = compressedBase64;
           setProductForm(prev => ({ ...prev, images: newImages }));
         } else {
-          setProductForm(prev => ({ ...prev, images: [...prev.images, base64] }));
+          setProductForm(prev => ({ ...prev, images: [...prev.images, compressedBase64] }));
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error("Compression error:", err);
+      }
     }
   };
 
