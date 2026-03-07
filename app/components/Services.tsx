@@ -189,23 +189,7 @@ export default function Services() {
           ))}
         </div>
 
-        {/* Workflow / Process Section */}
-        <div className="mt-28 py-16 border-t border-white/5">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            {[
-              { num: "01", title: "Design", text: "Send us your idea or vector file." },
-              { num: "02", title: "Preparation", text: "We optimize settings for your material." },
-              { num: "03", title: "Engraving", text: "Precision laser processing starts." },
-              { num: "04", title: "Quality Check", text: "Rigorous inspection before delivery." }
-            ].map((step, sidx) => (
-              <div key={sidx} className="relative">
-                <span className="text-6xl font-black text-white/5 absolute -top-8 -left-2">{step.num}</span>
-                <h4 className="text-lg font-bold text-white mb-2 relative z-10">{step.title}</h4>
-                <p className="text-sm text-zinc-500 leading-relaxed">{step.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+
       </div>
     </section>
   );
