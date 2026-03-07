@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Tag, Clock, Sparkles, ChevronLeft, ChevronRight, ArrowRight, Gift, Percent, Star } from "lucide-react";
+import { Tag, Clock, ChevronLeft, ChevronRight, ArrowRight, Gift, Sparkles, Copy, Check } from "lucide-react";
 import Link from "next/link";
 
 interface Offer {
@@ -14,247 +14,317 @@ interface Offer {
   code: string;
   validTill: string;
   emoji: string;
-  gradient: string;
-  accentColor: string;
-  badge: string;
+  bg: string;       // card background gradient
+  glow: string;     // glow color
+  textAccent: string;
 }
 
-// ✅ Easy to update: add/edit/remove offers from here
 const offers: Offer[] = [
   {
     id: 1,
-    festival: "Holi Special",
-    title: "Colorful Custom Gifts",
-    subtitle: "Gift your loved ones personalized laser-engraved keepsakes this Holi season",
+    festival: "Holi Special 🎨",
+    title: "Rang Barse, Gifts Barse",
+    subtitle: "Give the gift of personalisation this Holi — laser-engraved keepsakes that last a lifetime.",
     discount: "25% OFF",
     code: "HOLI25",
-    validTill: "March 15, 2026",
+    validTill: "15 March 2026",
     emoji: "🎨",
-    gradient: "linear-gradient(135deg, #ff6b6b 0%, #f06292 50%, #ce93d8 100%)",
-    accentColor: "#f06292",
-    badge: "Limited Time",
+    bg: "linear-gradient(135deg, #1a0a0a 0%, #2d1212 40%, #1a0a0a 100%)",
+    glow: "#f43f5e",
+    textAccent: "#fb7185",
   },
   {
     id: 2,
-    festival: "Bulk Order Deal",
-    title: "Order 50+ Units & Save More",
-    subtitle: "Perfect for corporate gifting, events & businesses — the more you order, the more you save",
+    festival: "Bulk Orders 📦",
+    title: "More You Order, More You Save",
+    subtitle: "Corporate gifting, events & custom merchandise — up to 30% off on bulk orders of 50+ units.",
     discount: "30% OFF",
     code: "BULK30",
     validTill: "Ongoing",
     emoji: "📦",
-    gradient: "linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%)",
-    accentColor: "#f97316",
-    badge: "Best Value",
+    bg: "linear-gradient(135deg, #0d0d0a 0%, #1c1a08 40%, #0d0d0a 100%)",
+    glow: "#f97316",
+    textAccent: "#fb923c",
   },
   {
     id: 3,
-    festival: "New Customer Offer",
-    title: "First Order Discount",
-    subtitle: "New to Art.Peak? Place your first order and enjoy an exclusive welcome discount",
+    festival: "Welcome Offer 🌟",
+    title: "Your First Order, Our Best Price",
+    subtitle: "New to Art.Peak? We welcome you with an exclusive first-order discount. No strings attached.",
     discount: "15% OFF",
     code: "WELCOME15",
-    validTill: "Always Available",
+    validTill: "Always Active",
     emoji: "🌟",
-    gradient: "linear-gradient(135deg, #4ade80 0%, #22d3ee 50%, #818cf8 100%)",
-    accentColor: "#4ade80",
-    badge: "Welcome",
+    bg: "linear-gradient(135deg, #03100a 0%, #071a10 40%, #03100a 100%)",
+    glow: "#34d399",
+    textAccent: "#6ee7b7",
   },
   {
     id: 4,
-    festival: "Summer Sale",
-    title: "Hot Summer Deals on Gifting",
-    subtitle: "Beat the summer heat with cool deals on personalized products for every occasion",
+    festival: "Summer Sale ☀️",
+    title: "Sizzling Deals This Summer",
+    subtitle: "Beat the heat with cool savings on all engraved products — gifting was never this affordable.",
     discount: "20% OFF",
     code: "SUMMER20",
-    validTill: "June 30, 2026",
+    validTill: "30 June 2026",
     emoji: "☀️",
-    gradient: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)",
-    accentColor: "#fbbf24",
-    badge: "Seasonal",
+    bg: "linear-gradient(135deg, #0a0a00 0%, #1a1500 40%, #0a0a00 100%)",
+    glow: "#fbbf24",
+    textAccent: "#fde68a",
   },
 ];
 
 export default function Offers() {
   const [current, setCurrent] = useState(0);
-  const [copied, setCopied] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState({ d: "00", h: "00", m: "00", s: "00" });
+  const [copied, setCopied] = useState(false);
+  const [time, setTime] = useState({ d: "00", h: "00", m: "00", s: "00" });
 
-  // Auto-advance carousel
+  // Auto-slide every 6s
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % offers.length);
-    }, 5000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setCurrent((p) => (p + 1) % offers.length), 6000);
+    return () => clearInterval(t);
   }, []);
 
-  // Countdown timer towards end of month
+  // Live countdown to end of month
   useEffect(() => {
-    const updateTimer = () => {
+    const tick = () => {
       const now = new Date();
       const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const diff = end.getTime() - now.getTime();
-      if (diff <= 0) return;
-      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft({
-        d: String(d).padStart(2, "0"),
-        h: String(h).padStart(2, "0"),
-        m: String(m).padStart(2, "0"),
-        s: String(s).padStart(2, "0"),
+      const ms = end.getTime() - now.getTime();
+      setTime({
+        d: String(Math.floor(ms / 86400000)).padStart(2, "0"),
+        h: String(Math.floor((ms % 86400000) / 3600000)).padStart(2, "0"),
+        m: String(Math.floor((ms % 3600000) / 60000)).padStart(2, "0"),
+        s: String(Math.floor((ms % 60000) / 1000)).padStart(2, "0"),
       });
     };
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
   }, []);
 
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopied(code);
-    setTimeout(() => setCopied(null), 2000);
+  const copyCode = () => {
+    navigator.clipboard.writeText(offers[current].code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
-
-  const prev = () => setCurrent((prev) => (prev - 1 + offers.length) % offers.length);
-  const next = () => setCurrent((prev) => (prev + 1) % offers.length);
 
   const offer = offers[current];
 
   return (
-    <section id="offers" className="py-20 relative overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-      {/* Background Decor */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full blur-[120px] opacity-20" style={{ background: offer.accentColor }} />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full blur-[120px] opacity-20" style={{ background: offer.accentColor }} />
-      </div>
+    <section
+      id="offers"
+      className="relative py-24 overflow-hidden"
+      style={{ background: "var(--bg-secondary)" }}
+    >
+      {/* ── Ambient Glow (follows active offer colour) ── */}
+      <motion.div
+        key={offer.id + "-glow"}
+        animate={{ opacity: 1 }}
+        initial={{ opacity: 0 }}
+        transition={{ duration: 1 }}
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${offer.glow}18 0%, transparent 70%)`,
+        }}
+      />
 
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs font-bold uppercase tracking-widest mb-5"
-          >
-            <Gift size={13} /> Exclusive Offers
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black tracking-tight"
-            style={{ color: "var(--text-primary)" }}
-          >
-            Festival <span className="text-orange-500">Deals</span> & Special <span className="text-orange-500">Offers</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mt-4 text-base max-w-xl mx-auto"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Grab the best deals on laser-engraved gifts for every festival and occasion.
-          </motion.p>
-        </div>
+      <div className="relative z-10 max-w-6xl mx-auto px-6">
+        {/* ── Section Label ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center text-center mb-14"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/8 text-orange-400 text-[11px] font-black uppercase tracking-[0.18em] mb-5">
+            <Gift size={12} /> Festival Offers
+          </span>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight" style={{ color: "var(--text-primary)" }}>
+            Exclusive <span className="text-orange-500">Deals</span> &amp; <span className="text-orange-500">Discounts</span>
+          </h2>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            Limited-time offers curated for every festival &amp; occasion. Grab them before they expire!
+          </p>
+        </motion.div>
 
-        {/* Main Offer Card */}
+        {/* ── Main Card ── */}
         <div className="relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={offer.id}
-              initial={{ opacity: 0, y: 20, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.98 }}
-              transition={{ duration: 0.4 }}
-              className="rounded-[2.5rem] overflow-hidden shadow-2xl relative"
-              style={{ background: offer.gradient }}
+              initial={{ opacity: 0, scale: 0.97, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: -16 }}
+              transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="rounded-[2rem] overflow-hidden relative"
+              style={{
+                background: offer.bg,
+                boxShadow: `0 0 80px ${offer.glow}22, 0 24px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)`,
+              }}
             >
-              {/* Noise overlay for texture */}
-              <div className="absolute inset-0 opacity-10" style={{
-                backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E\")",
-              }} />
+              {/* Inner border glow */}
+              <div
+                className="absolute inset-[1px] rounded-[calc(2rem-1px)] pointer-events-none"
+                style={{ boxShadow: `inset 0 0 60px ${offer.glow}12` }}
+              />
 
-              <div className="relative z-10 p-8 md:p-12 grid md:grid-cols-2 gap-8 items-center">
-                {/* Left: Offer Info */}
-                <div>
-                  {/* Festival Badge */}
-                  <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-bold uppercase tracking-widest">
-                    <Star size={11} fill="white" /> {offer.badge}
+              {/* Dot grid texture */}
+              <div
+                className="absolute inset-0 opacity-[0.04] pointer-events-none"
+                style={{
+                  backgroundImage: "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+                  backgroundSize: "28px 28px",
+                }}
+              />
+
+              <div className="relative z-10 grid md:grid-cols-[1fr_auto] gap-0">
+                {/* ── LEFT PANEL ── */}
+                <div className="p-10 md:p-14">
+                  {/* Festival tag */}
+                  <div
+                    className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] mb-6 px-3 py-1 rounded-full"
+                    style={{ background: `${offer.glow}22`, color: offer.textAccent }}
+                  >
+                    <Sparkles size={11} /> {offer.festival}
                   </div>
 
-                  <div className="text-6xl mb-4">{offer.emoji}</div>
+                  {/* Headline */}
+                  <h3 className="text-3xl md:text-4xl font-black text-white leading-[1.15] mb-4 max-w-lg">
+                    {offer.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed mb-10 max-w-md" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    {offer.subtitle}
+                  </p>
 
-                  <p className="text-white/70 text-sm font-bold uppercase tracking-widest mb-2">{offer.festival}</p>
-                  <h3 className="text-3xl md:text-4xl font-black text-white leading-tight mb-4">{offer.title}</h3>
-                  <p className="text-white/80 text-sm leading-relaxed mb-6">{offer.subtitle}</p>
-
-                  {/* Discount Badge */}
-                  <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 mb-6">
-                    <Percent size={18} className="text-white" />
-                    <span className="text-3xl font-black text-white">{offer.discount}</span>
-                  </div>
-
-                  {/* Coupon Code */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2.5">
-                      <Tag size={14} className="text-white/70" />
-                      <span className="font-black text-white tracking-widest text-sm">{offer.code}</span>
-                    </div>
-                    <button
-                      onClick={() => copyCode(offer.code)}
-                      className="px-4 py-2.5 rounded-xl bg-white text-sm font-black transition-all duration-300 hover:scale-105 active:scale-95"
-                      style={{ color: offer.accentColor }}
+                  {/* Discount pill + coupon row */}
+                  <div className="flex flex-wrap items-center gap-4">
+                    {/* Big Discount Badge */}
+                    <div
+                      className="flex items-center gap-3 rounded-2xl px-6 py-4"
+                      style={{
+                        background: `linear-gradient(135deg, ${offer.glow}33, ${offer.glow}15)`,
+                        border: `1px solid ${offer.glow}40`,
+                      }}
                     >
-                      {copied === offer.code ? "✅ Copied!" : "Copy Code"}
-                    </button>
+                      <span className="text-4xl font-black text-white tracking-tight">
+                        {offer.discount}
+                      </span>
+                    </div>
+
+                    {/* Coupon code */}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-3 rounded-xl px-5 py-3.5 border"
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                          borderColor: "rgba(255,255,255,0.12)",
+                        }}
+                      >
+                        <Tag size={14} style={{ color: offer.textAccent }} />
+                        <span className="font-black text-white tracking-[0.18em] text-sm">
+                          {offer.code}
+                        </span>
+                      </div>
+                      <motion.button
+                        whileTap={{ scale: 0.94 }}
+                        onClick={copyCode}
+                        className="flex items-center gap-2 rounded-xl px-4 py-3.5 text-xs font-black uppercase tracking-widest transition-all duration-300"
+                        style={{
+                          background: copied ? `${offer.glow}30` : "rgba(255,255,255,0.1)",
+                          color: copied ? offer.textAccent : "white",
+                          border: `1px solid ${copied ? offer.glow + "60" : "rgba(255,255,255,0.12)"}`,
+                        }}
+                      >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied ? "Copied!" : "Copy"}
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Shop now */}
+                  <div className="mt-10">
+                    <Link href="/#products">
+                      <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white group transition-all duration-300"
+                        style={{
+                          background: `linear-gradient(135deg, ${offer.glow}, ${offer.glow}aa)`,
+                          boxShadow: `0 8px 30px ${offer.glow}44`,
+                        }}
+                      >
+                        <Sparkles size={15} />
+                        Shop Now &amp; Redeem
+                        <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+                      </motion.button>
+                    </Link>
                   </div>
                 </div>
 
-                {/* Right: Timer + CTA */}
-                <div className="flex flex-col gap-6 items-start md:items-center">
-                  {/* Countdown Timer */}
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 w-full max-w-xs">
-                    <div className="flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-wider mb-4">
-                      <Clock size={13} />
-                      Offer Ends In
+                {/* ── RIGHT PANEL — Countdown ── */}
+                <div
+                  className="flex flex-col items-center justify-center gap-6 px-10 py-12 md:min-w-[260px] border-l"
+                  style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.3)" }}
+                >
+                  <div className="text-center">
+                    <div
+                      className="flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] mb-6"
+                      style={{ color: offer.textAccent }}
+                    >
+                      <Clock size={12} /> Offer Expires In
                     </div>
-                    <div className="grid grid-cols-4 gap-2 text-center">
+
+                    {/* Timer Digits */}
+                    <div className="grid grid-cols-4 gap-2">
                       {[
-                        { val: timeLeft.d, label: "Days" },
-                        { val: timeLeft.h, label: "Hrs" },
-                        { val: timeLeft.m, label: "Min" },
-                        { val: timeLeft.s, label: "Sec" },
-                      ].map(({ val, label }) => (
-                        <div key={label} className="bg-white/10 rounded-xl py-3">
-                          <p className="text-2xl font-black text-white tabular-nums">{val}</p>
-                          <p className="text-[10px] text-white/60 font-bold uppercase tracking-wider mt-1">{label}</p>
+                        { v: time.d, l: "Days" },
+                        { v: time.h, l: "Hrs" },
+                        { v: time.m, l: "Min" },
+                        { v: time.s, l: "Sec" },
+                      ].map(({ v, l }) => (
+                        <div key={l} className="flex flex-col items-center">
+                          <div
+                            className="w-14 h-14 rounded-xl flex items-center justify-center mb-2 relative overflow-hidden"
+                            style={{
+                              background: `${offer.glow}18`,
+                              border: `1px solid ${offer.glow}30`,
+                              boxShadow: `inset 0 0 20px ${offer.glow}10`,
+                            }}
+                          >
+                            <AnimatePresence mode="wait">
+                              <motion.span
+                                key={v}
+                                initial={{ y: -10, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 10, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-2xl font-black text-white tabular-nums"
+                              >
+                                {v}
+                              </motion.span>
+                            </AnimatePresence>
+                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
+                            {l}
+                          </span>
                         </div>
                       ))}
                     </div>
-                    <p className="text-white/50 text-[11px] text-center mt-3 font-medium">Valid till: {offer.validTill}</p>
+
+                    <p className="mt-5 text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                      Valid till: <span style={{ color: "rgba(255,255,255,0.55)" }}>{offer.validTill}</span>
+                    </p>
                   </div>
 
-                  {/* CTA Button */}
-                  <Link href="/#products" className="w-full max-w-xs">
-                    <button className="w-full py-4 rounded-2xl bg-white font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl group"
-                      style={{ color: offer.accentColor }}
-                    >
-                      <Sparkles size={16} />
-                      Shop Now
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </Link>
-
-                  {/* Dots Navigation */}
-                  <div className="flex gap-2 mx-auto">
+                  {/* Dots nav */}
+                  <div className="flex gap-2 mt-2">
                     {offers.map((_, i) => (
-                      <button
+                      <motion.button
                         key={i}
                         onClick={() => setCurrent(i)}
-                        className={`h-2 rounded-full transition-all duration-300 ${i === current ? "w-8 bg-white" : "w-2 bg-white/30"}`}
+                        animate={{ width: i === current ? 28 : 8 }}
+                        className="h-2 rounded-full transition-colors duration-300"
+                        style={{ background: i === current ? offer.glow : "rgba(255,255,255,0.2)" }}
                       />
                     ))}
                   </div>
@@ -265,34 +335,47 @@ export default function Offers() {
 
           {/* Arrow Controls */}
           <button
-            onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/50 transition z-20"
+            onClick={() => setCurrent((p) => (p - 1 + offers.length) % offers.length)}
+            className="absolute -left-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-20 shadow-xl hidden md:flex"
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}
           >
             <ChevronLeft size={18} />
           </button>
           <button
-            onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-black/50 transition z-20"
+            onClick={() => setCurrent((p) => (p + 1) % offers.length)}
+            className="absolute -right-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-20 shadow-xl hidden md:flex"
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(12px)" }}
           >
             <ChevronRight size={18} />
           </button>
         </div>
 
-        {/* Below Cards: Offer Thumbnails */}
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* ── Offer Thumbnails ── */}
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           {offers.map((o, i) => (
-            <button
+            <motion.button
               key={o.id}
               onClick={() => setCurrent(i)}
-              className={`rounded-2xl p-4 text-left border-2 transition-all duration-300 ${
-                i === current ? "border-orange-500 scale-[1.02] shadow-lg shadow-orange-500/20" : "border-transparent opacity-60 hover:opacity-80"
-              }`}
-              style={{ background: o.gradient }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="relative rounded-2xl p-4 text-left overflow-hidden transition-all duration-300"
+              style={{
+                background: i === current ? `${o.glow}22` : "rgba(255,255,255,0.03)",
+                border: `1px solid ${i === current ? o.glow + "60" : "rgba(255,255,255,0.07)"}`,
+                boxShadow: i === current ? `0 8px 24px ${o.glow}22` : "none",
+              }}
             >
+              {i === current && (
+                <motion.div
+                  layoutId="thumb-active"
+                  className="absolute inset-0 rounded-2xl pointer-events-none"
+                  style={{ background: `${o.glow}10` }}
+                />
+              )}
               <div className="text-2xl mb-2">{o.emoji}</div>
-              <p className="text-white text-xs font-black truncate">{o.festival}</p>
-              <p className="text-white/70 text-[10px] mt-0.5 font-bold">{o.discount}</p>
-            </button>
+              <p className="text-white text-xs font-bold leading-tight truncate">{o.festival.replace(/\s*\S+$/, "")}</p>
+              <p className="text-[11px] font-black mt-1" style={{ color: o.textAccent }}>{o.discount}</p>
+            </motion.button>
           ))}
         </div>
       </div>
