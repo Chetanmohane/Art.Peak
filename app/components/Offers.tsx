@@ -23,11 +23,11 @@ interface Offer {
   isActive: boolean;
 }
 
-export default function Offers() {
+export default function Offers({ initialOffers }: { initialOffers?: Offer[] }) {
   const { theme } = useTheme();
   const isLight = theme === "light";
 
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [offers, setOffers] = useState<Offer[]>(initialOffers || []);
   const [current, setCurrent] = useState(0);
   const [copied, setCopied] = useState(false);
   const [paused, setPaused] = useState(false);

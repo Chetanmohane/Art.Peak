@@ -227,11 +227,11 @@ function ProductCard({
   );
 }
 
-export default function Products() {
+export default function Products({ initialProducts }: { initialProducts?: Product[] }) {
   const { addToCart, totalPrice } = useCart();
   const { data: session, status } = useSession();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [loading, setLoading] = useState(!initialProducts);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [activeCategory, setActiveCategory] = useState("All");
