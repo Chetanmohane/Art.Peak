@@ -91,6 +91,7 @@ export default function Hero() {
           >
             Laser Engraving
           </span>
+          <div className="text-2xl md:text-3xl mt-2 opacity-90 font-black tracking-[0.2em] uppercase">at ArtPeak.Shop</div>
         </motion.h1>
 
         <motion.p
@@ -100,8 +101,8 @@ export default function Hero() {
           className="mt-6 text-lg md:text-xl"
           style={{ color: isLight ? "#52525b" : "#d4d4d8" }}
         >
-          Custom engraving on wood, metal, glass & acrylic.{" "}
-          High-precision detailing with advanced CNC laser machines.
+          India's best shop for customized products! Get premium laser engraving on wood, metal, glass & acrylic.{" "}
+          High-precision detailing with advanced machines only at ArtPeak.
         </motion.p>
 
         <motion.div

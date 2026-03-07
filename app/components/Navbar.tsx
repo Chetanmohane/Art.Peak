@@ -303,7 +303,7 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {logo && <Image src={logo} alt="logo" width={48} height={48} className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-white object-cover shadow-sm" unoptimized />}
-            <h1 className="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">Art.Peak</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-orange-500 tracking-tight">ArtPeak.Shop</h1>
           </div>
 
           {/* Desktop Menu */}

@@ -32,16 +32,16 @@ export default function Footer() {
 
           {/* Company */}
           <div>
-            <h2 className="text-3xl font-bold text-orange-500 tracking-wide">Art.Peak</h2>
+            <h2 className="text-3xl font-bold text-orange-500 tracking-wide">ArtPeak.Shop</h2>
             <p className="mt-6 text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
               Premium laser engraving & CNC cutting services delivering
               precision and perfection for every project.
             </p>
             <div className="mt-6 space-y-4 text-sm">
               {[
-                { icon: MapPin, label: "Huzurganj, India" },
-                { icon: Phone, label: "+91 9876543210" },
-                { icon: Mail, label: "info@artpeak.com" },
+                { icon: MapPin, label: "Madhya Pradesh , India" },
+                { icon: Phone, label: "+91-8839034632" },
+                { icon: Mail, label: "artpeak.shop@gmail.com" },
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-3 hover:text-orange-500 transition cursor-pointer">
                   <Icon size={18} />
@@ -122,7 +122,7 @@ export default function Footer() {
           style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
         >
           <p className="text-center md:text-left">
-            © {currentYear} Art.Peak. All rights reserved.
+            © {currentYear} ArtPeak.Shop. All rights reserved.
           </p>
           <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-2 hover:text-orange-500 transition duration-200">
             <ArrowUp size={16} />

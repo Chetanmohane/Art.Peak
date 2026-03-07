@@ -6,7 +6,8 @@ import { useEffect, useState, useRef } from "react";
 import {
   Loader2, MessageSquare, Trash2, Mail,
   Calendar, ArrowLeft, ShieldCheck, Search, X, Users, User as UserIcon,
-  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle, Upload
+  Package, Edit, Plus, Image as ImageIcon, Tag, IndianRupee, Layers, ShoppingCart, CheckCircle, Upload,
+  Zap, Settings, PenTool, Cpu, Hammer, Sparkles, Star, Heart
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -86,18 +87,33 @@ interface Offer {
   createdAt?: string;
 }
 
+interface ServiceAdmin {
+  id: string;
+  title: string;
+  desc: string;
+  longDesc: string;
+  image: string;
+  tag: string;
+  iconName: string;
+  features: string[];
+  createdAt?: string;
+}
+
+const AVAILABLE_ICONS = ["Hammer", "Cpu", "Layers", "PenTool", "Settings", "Zap", "Sparkles", "Package", "Star", "Heart"];
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { theme } = useTheme();
   const isLight = theme === "light";
 
-  const [activeTab, setActiveTab ] = useState<"messages" | "users" | "products" | "orders" | "offers">("messages");
+  const [activeTab, setActiveTab ] = useState<"messages" | "users" | "products" | "orders" | "offers" | "services">("messages");
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [users, setUsers] = useState<UserData[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [services, setServices] = useState<ServiceAdmin[]>([]);
   const [userRole, setUserRole] = useState<string>("user");
   
   const [filteredMessages, setFilteredMessages] = useState<ContactMessage[]>([]);
@@ -105,6 +121,7 @@ export default function AdminPage() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
+  const [filteredServices, setFilteredServices] = useState<ServiceAdmin[]>([]);
   
   const [pageStatus, setPageStatus] = useState<"loading" | "forbidden" | "ready">("loading");
   const [search, setSearch] = useState("");
@@ -140,6 +157,13 @@ export default function AdminPage() {
     lightBg: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 50%, #fed7aa 100%)",
     darkTextAccent: "#fb923c", lightTextAccent: "#c2410c", isActive: true,
     minQuantity: 0, minAmount: 0
+  });
+
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceAdmin | null>(null);
+  const [serviceForm, setServiceForm] = useState({
+    title: "", desc: "", longDesc: "", image: "", 
+    tag: "", iconName: "Sparkles", features: [] as string[]
   });
 
   const [toast, setToast] = useState<{ show: boolean, message: string, type: "success" | "error" }>({
@@ -192,6 +216,7 @@ export default function AdminPage() {
       if (activeTab === "products") await fetchProducts();
       if (activeTab === "orders") await fetchOrders();
       if (activeTab === "offers") await fetchOffers();
+      if (activeTab === "services") await fetchServices();
 
       setPageStatus("ready");
 
@@ -201,7 +226,8 @@ export default function AdminPage() {
         activeTab !== "users" && fetchUsers(),
         activeTab !== "products" && fetchProducts(),
         activeTab !== "orders" && fetchOrders(),
-        activeTab !== "offers" && fetchOffers()
+        activeTab !== "offers" && fetchOffers(),
+        activeTab !== "services" && fetchServices()
       ].filter(Boolean));
     } catch (e) {
       console.error("Admin page load error:", e);
@@ -251,6 +277,7 @@ export default function AdminPage() {
       }
     } catch (e) { console.error(e); }
   };
+
   const fetchOffers = async () => {
     try {
       const offerRes = await fetch("/api/offers", { credentials: "include" });
@@ -262,6 +289,20 @@ export default function AdminPage() {
     } catch (e) { console.error(e); }
   };
 
+  const fetchServices = async () => {
+    try {
+      const res = await fetch("/api/admin/services", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setServices(data || []);
+        setFilteredServices(data || []);
+      }
+    } catch (e) { 
+      console.error(e);
+      showToast("Could not load services", "error");
+    }
+  };
+
   useEffect(() => {
     if (pageStatus === "ready") {
       if (activeTab === "messages" && messages.length === 0) fetchMessages();
@@ -269,6 +310,7 @@ export default function AdminPage() {
       if (activeTab === "products" && products.length === 0) fetchProducts();
       if (activeTab === "orders" && orders.length === 0) fetchOrders();
       if (activeTab === "offers" && offers.length === 0) fetchOffers();
+      if (activeTab === "services" && services.length === 0) fetchServices();
     }
   }, [activeTab, pageStatus]);
 
@@ -305,8 +347,12 @@ export default function AdminPage() {
       setFilteredOffers(
         q ? offers.filter(o => o.festival.toLowerCase().includes(q) || o.code.toLowerCase().includes(q) || o.title.toLowerCase().includes(q)) : offers
       );
+    } else if (activeTab === "services") {
+      setFilteredServices(
+        q ? services.filter(s => s.title.toLowerCase().includes(q) || s.tag.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q)) : services
+      );
     }
-  }, [search, messages, users, products, orders, offers, activeTab, orderStatusFilter, adminCategoryFilter]);
+  }, [search, messages, users, products, orders, offers, services, activeTab, orderStatusFilter, adminCategoryFilter]);
 
   const handleDeleteMessage = async (id: string) => {
     if (!confirm("Is message ko delete karna chahte hain?")) return;
@@ -397,6 +443,72 @@ export default function AdminPage() {
         showToast(await res.text(), "error");
       }
     } finally { setDeletingId(null); }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (!confirm("Is service ko delete karna chahte hain?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/services?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setServices(prev => prev.filter(s => s.id !== id));
+        showToast("Service deleted successfully", "success");
+      } else {
+        showToast("Failed to delete service", "error");
+      }
+    } finally { setDeletingId(null); }
+  };
+
+  const handleOpenServiceModal = (service: ServiceAdmin | null = null) => {
+    if (service) {
+      setEditingService(service);
+      setServiceForm({
+        title: service.title,
+        desc: service.desc,
+        longDesc: service.longDesc,
+        image: service.image,
+        tag: service.tag,
+        iconName: service.iconName,
+        features: service.features || []
+      });
+    } else {
+      setEditingService(null);
+      setServiceForm({
+        title: "", desc: "", longDesc: "", 
+        image: "", tag: "", iconName: "Sparkles", features: []
+      });
+    }
+    setShowServiceModal(true);
+  };
+
+  const handleSaveService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPageStatus("loading");
+
+    try {
+      const url = "/api/admin/services";
+      const method = editingService ? "PUT" : "POST";
+      const body = editingService ? { ...serviceForm, id: editingService.id } : serviceForm;
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        await fetchServices();
+        setShowServiceModal(false);
+        showToast(editingService ? "Service updated!" : "Service created!", "success");
+      } else {
+        showToast("Failed to save service", "error");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Something went wrong", "error");
+    } finally {
+      setPageStatus("ready");
+    }
   };
 
   const handleOpenProductModal = (product: Product | null = null) => {
@@ -1036,12 +1148,70 @@ export default function AdminPage() {
     );
   };
 
+  const renderServices = () => {
+    if (filteredServices.length === 0) return <EmptyState icon={<Layers size={40}/>} text="No services found" isLight={isLight} />;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredServices.map((service, i) => (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={service.id} className={`p-6 rounded-3xl border transition-all duration-300 ${isLight ? "bg-white/70 border-zinc-200/80 hover:shadow-xl hover:shadow-black/5" : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] shadow-xl hover:shadow-black/50"}`}>
+            <div className="flex justify-between items-start mb-4">
+               <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500">
+                    {service.iconName === "Hammer" && <Hammer size={24}/>}
+                    {service.iconName === "Cpu" && <Cpu size={24}/>}
+                    {service.iconName === "Layers" && <Layers size={24}/>}
+                    {service.iconName === "PenTool" && <PenTool size={24}/>}
+                    {service.iconName === "Settings" && <Settings size={24}/>}
+                    {service.iconName === "Zap" && <Zap size={24}/>}
+                    {service.iconName === "Sparkles" && <Sparkles size={24}/>}
+                    {service.iconName === "Package" && <Package size={24}/>}
+                    {service.iconName === "Star" && <Star size={24}/>}
+                    {service.iconName === "Heart" && <Heart size={24}/>}
+                  </div>
+                  <div>
+                    <h3 className={`font-black text-lg ${isLight ? "text-zinc-900" : "text-white"}`}>{service.title}</h3>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">{service.tag}</span>
+                  </div>
+               </div>
+               <button onClick={() => handleDeleteService(service.id)} className="p-2 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"><Trash2 size={16}/></button>
+            </div>
+            
+            <p className={`text-sm mb-4 line-clamp-2 ${isLight ? "text-zinc-600" : "text-zinc-400"}`}>{service.desc}</p>
+            
+            <div className="space-y-2 mb-6">
+               <div className="flex flex-wrap gap-2">
+                  {service.features.slice(0, 3).map((f, idx) => (
+                    <span key={idx} className={`text-[10px] font-bold px-2 py-1 rounded-lg ${isLight ? "bg-zinc-100 text-zinc-600" : "bg-white/5 text-zinc-400"}`}>
+                      {f}
+                    </span>
+                  ))}
+                  {service.features.length > 3 && <span className="text-[10px] font-bold text-zinc-500">+{service.features.length - 3} more</span>}
+               </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => handleOpenServiceModal(service)} 
+                className={`flex-1 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all
+                  ${isLight ? "bg-zinc-900 text-white hover:bg-black" : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20"}
+                `}
+              >
+                Edit Details
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
   const navItems = [
-    { id: "messages", label: "Messages", icon: <MessageSquare size={18} />, count: messages.length, color: "text-orange-50", bg: "bg-orange-500", hidden: userRole === "editor" },
+    { id: "messages", label: "Messages", icon: <MessageSquare size={18} />, count: messages.length, color: "text-orange-500", bg: "bg-orange-500", hidden: userRole === "editor" },
+    { id: "services", label: "Services", icon: <Layers size={18} />, count: services.length, color: "text-blue-500", bg: "bg-blue-500", hidden: false },
     { id: "users", label: "Users", icon: <Users size={18} />, count: users.length, color: "text-indigo-500", bg: "bg-indigo-500", hidden: userRole === "editor" },
     { id: "products", label: "Products", icon: <Package size={18} />, count: products.length, color: "text-emerald-500", bg: "bg-emerald-500" },
     { id: "orders", label: "Orders", icon: <ShoppingCart size={18} />, count: orders.length, color: "text-amber-500", bg: "bg-amber-500", hidden: userRole === "editor" },
-    { id: "offers", label: "Offers", icon: <Tag size={18} />, count: offers.length, color: "text-fuchsia-500", bg: "bg-fuchsia-500" },
+    { id: "offers", label: "Offers", icon: <Tag size={18} />, count: offers.length, color: "text-fuchsia-500", bg: "bg-fuchsia-500", hidden: userRole === "editor" },
   ];
 
   const filteredNavItems = navItems.filter(item => !item.hidden);
@@ -1114,6 +1284,11 @@ export default function AdminPage() {
                  <Plus size={18} />
               </button>
             )}
+            {activeTab === "services" && (
+              <button onClick={() => handleOpenServiceModal()} className="p-2 bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-500/20">
+                 <Plus size={18} />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar snap-x">
@@ -1170,7 +1345,12 @@ export default function AdminPage() {
            <h2 className="text-3xl font-black capitalize tracking-tight flex items-center gap-4">
               {activeTab}
               <span className={`text-sm font-bold px-3 py-1 rounded-xl ${isLight ? "bg-zinc-200 text-zinc-600" : "bg-white/10 text-zinc-400"}`}>
-                {activeTab === "messages" ? messages.length : activeTab === "users" ? users.length : activeTab === "products" ? products.length : activeTab === "offers" ? offers.length : orders.length} Total
+                {activeTab === "messages" ? messages.length : 
+                 activeTab === "users" ? users.length : 
+                 activeTab === "products" ? products.length : 
+                 activeTab === "offers" ? offers.length : 
+                 activeTab === "services" ? services.length :
+                 orders.length} Total
               </span>
            </h2>
            <div className="flex items-center gap-4">
@@ -1188,6 +1368,11 @@ export default function AdminPage() {
 
               {activeTab === "offers" && (
                 <button onClick={() => handleOpenOfferModal()} className="flex items-center gap-2 px-6 py-3 bg-fuchsia-500 hover:bg-fuchsia-600 text-white rounded-2xl font-bold shadow-lg shadow-fuchsia-500/20 transition-all hover:scale-105 active:scale-95">
+                   <Plus size={18} /> Add
+                </button>
+              )}
+              {activeTab === "services" && (
+                <button onClick={() => handleOpenServiceModal()} className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
                    <Plus size={18} /> Add
                 </button>
               )}
@@ -1215,6 +1400,7 @@ export default function AdminPage() {
                  {activeTab === "products" && renderProducts()}
                  {activeTab === "orders" && renderOrders()}
                  {activeTab === "offers" && renderOffers()}
+                 {activeTab === "services" && renderServices()}
               </motion.div>
            </AnimatePresence>
         </div>
@@ -1507,6 +1693,83 @@ export default function AdminPage() {
 
                     <button type="submit" className="w-full py-4 bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 hover:from-fuchsia-600 hover:to-fuchsia-700 text-white font-black rounded-2xl shadow-xl shadow-fuchsia-500/25 transition-all active:scale-[0.98] uppercase tracking-widest mt-6 text-sm">
                        {editingOffer ? "Update Offer" : "Save Offer"}
+                    </button>
+                 </form>
+              </motion.div>
+           </div>
+         )}
+      </AnimatePresence>
+      
+      {/* Service Modal */}
+      <AnimatePresence>
+         {showServiceModal && (
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowServiceModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className={`relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border shadow-2xl p-6 sm:p-8 custom-scrollbar ${isLight ? "bg-white border-zinc-200" : "bg-zinc-950 border-white/10"}`}>
+                 <div className="flex justify-between items-center mb-6">
+                    <h2 className={`text-2xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>{editingService ? "Edit Service" : "Add New Service"}</h2>
+                    <button onClick={() => setShowServiceModal(false)} className={`p-2 rounded-full transition-colors ${isLight ? "hover:bg-zinc-100" : "hover:bg-white/10"}`}><X size={20}/></button>
+                 </div>
+                 
+                 <form onSubmit={handleSaveService} className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                       <FormGroup label="Service Title" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={serviceForm.title} onChange={e => setServiceForm({...serviceForm, title: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="e.g. Custom Woodwork" />
+                       </FormGroup>
+                       <FormGroup label="Service Tag" icon={<Tag size={14}/>} isLight={isLight}>
+                          <input required value={serviceForm.tag} onChange={e => setServiceForm({...serviceForm, tag: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="e.g. Premium" />
+                       </FormGroup>
+                    </div>
+
+                    <FormGroup label="Short Description" icon={<Tag size={14}/>} isLight={isLight}>
+                       <input required value={serviceForm.desc} onChange={e => setServiceForm({...serviceForm, desc: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="Brief overview of the service..." />
+                    </FormGroup>
+                    
+                    <FormGroup label="Long Description" icon={<Tag size={14}/>} isLight={isLight}>
+                       <textarea required rows={3} value={serviceForm.longDesc} onChange={e => setServiceForm({...serviceForm, longDesc: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium resize-none" placeholder="Detailed explanation..." />
+                    </FormGroup>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                       <FormGroup label="Icon Type" icon={<Layers size={14}/>} isLight={isLight}>
+                          <select value={serviceForm.iconName} onChange={e => setServiceForm({...serviceForm, iconName: e.target.value})} className={`w-full bg-transparent outline-none py-2 text-sm font-medium ${isLight ? "" : "[&>option]:bg-zinc-900"}`}>
+                             {AVAILABLE_ICONS.map(icon => <option key={icon} value={icon}>{icon}</option>)}
+                          </select>
+                       </FormGroup>
+                       <FormGroup label="Image URL" icon={<ImageIcon size={14}/>} isLight={isLight}>
+                          <input required value={serviceForm.image} onChange={e => setServiceForm({...serviceForm, image: e.target.value})} className="w-full bg-transparent outline-none py-2 text-xs font-mono" placeholder="https://..." />
+                       </FormGroup>
+                    </div>
+
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5 focus-within:text-orange-500 transition-colors">
+                          <Layers size={14}/> Service Features
+                       </label>
+                       <div className="space-y-3">
+                          {serviceForm.features.map((feature, idx) => (
+                             <div key={idx} className="flex gap-2">
+                                <div className={`flex-1 px-4 rounded-xl border flex items-center transition-colors focus-within:border-emerald-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
+                                   <input value={feature} onChange={e => {
+                                      const newFeatures = [...serviceForm.features];
+                                      newFeatures[idx] = e.target.value;
+                                      setServiceForm({...serviceForm, features: newFeatures});
+                                   }} className="w-full bg-transparent outline-none py-2.5 text-xs font-bold" />
+                                </div>
+                                <button type="button" onClick={() => {
+                                   const newFeatures = serviceForm.features.filter((_, i) => i !== idx);
+                                   setServiceForm({...serviceForm, features: newFeatures});
+                                }} className="p-3 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
+                             </div>
+                          ))}
+                          <button type="button" onClick={() => setServiceForm({...serviceForm, features: [...serviceForm.features, ""]})} className={`w-full py-3 border-2 border-dashed rounded-xl text-xs font-black uppercase tracking-widest transition-all
+                            ${isLight ? "border-zinc-200 text-zinc-400 hover:border-emerald-500 hover:text-emerald-500" : "border-white/10 text-zinc-600 hover:border-emerald-500 hover:text-emerald-500"}
+                          `}>
+                             + Add Feature
+                          </button>
+                       </div>
+                    </div>
+
+                    <button type="submit" className="w-full py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/25 transition-all active:scale-[0.98] uppercase tracking-widest mt-6 text-sm">
+                       {editingService ? "Update Service" : "Save Service"}
                     </button>
                  </form>
               </motion.div>

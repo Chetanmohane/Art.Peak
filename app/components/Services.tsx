@@ -12,77 +12,134 @@ import {
   Zap, 
   CheckCircle2, 
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Package,
+  Star,
+  Heart
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 interface Service {
+  id?: string;
   title: string;
   desc: string;
   longDesc: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
+  iconName?: string;
   image: string;
   tag: string;
   features: string[];
 }
 
+interface DBService {
+  id: string;
+  title: string;
+  desc: string;
+  longDesc: string;
+  image: string;
+  tag: string;
+  iconName: string;
+  features: string[];
+}
+
+interface ServicesProps {
+  initialServices?: DBService[];
+}
+
+const getIcon = (name: string) => {
+  switch (name) {
+    case "Hammer": return <Hammer className="w-6 h-6" />;
+    case "Cpu": return <Cpu className="w-6 h-6" />;
+    case "Layers": return <Layers className="w-6 h-6" />;
+    case "PenTool": return <PenTool className="w-6 h-6" />;
+    case "Settings": return <Settings className="w-6 h-6" />;
+    case "Zap": return <Zap className="w-6 h-6" />;
+    case "Sparkles": return <Sparkles className="w-6 h-6" />;
+    case "Package": return <Package className="w-6 h-6" />;
+    case "Star": return <Star className="w-6 h-6" />;
+    case "Heart": return <Heart className="w-6 h-6" />;
+    default: return <Sparkles className="w-6 h-6" />;
+  }
+};
+
 const services: Service[] = [
   {
-    title: "Wood Engraving",
-    desc: "Precision laser etching on soft and hardwood for personalized art.",
-    longDesc: "Transform natural wood into a canvas. We specialize in high-detail etching and cutting for photo frames, nameplates, and intricate architectural models with zero burn marks.",
+    title: "Laser Engraving",
+    desc: "Precision engraving on multiple materials with high-tech machinery.",
+    longDesc: "Expert laser etching on wood, metal, glass, and acrylic. Perfect for personalized awards, gifts, and industrial marking.",
     icon: <Hammer className="w-6 h-6" />,
-    tag: "Woodcraft",
-    image: "https://images.unsplash.com/photo-1582652509080-4c0e9e37e83d?q=80&w=800&auto=format&fit=crop",
-    features: ["Deep Engraving", "Clean Cutting", "3D Texturing"]
+    tag: "Premium",
+    image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=800",
+    features: ["Custom Designs", "Multi-Material", "Precision Accuracy"]
   },
   {
-    title: "Metal Marking",
-    desc: "Industrial-grade fiber laser marking on steel, brass, and aluminum.",
-    longDesc: "Permanent, high-contrast marking ideal for industrial serial numbers, QR codes, and premium metallic branding that never fades or peels off.",
+    title: "Web Developer",
+    desc: "Modern and professional website development using latest technologies.",
+    longDesc: "Full-stack web development specializing in Next.js, React, and Node.js. We build lightning-fast, SEO-optimized, and scalable web apps.",
     icon: <Cpu className="w-6 h-6" />,
-    tag: "Industrial",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop",
-    features: ["Fiber Laser", "NFC/QR Ready", "Rust Resistant"]
+    tag: "Digital",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=800",
+    features: ["Next.js/React", "Custom CMS", "Responsive Design"]
   },
   {
-    title: "Glass Etching",
-    desc: "Elegant frosted finishes on glass and crystal for corporate gifts.",
-    longDesc: "Create a lasting impression with sand-blast style laser etching. Perfect for luxury trophies, personalized bottles, and decorative glass partitions.",
-    icon: <Sparkles className="w-6 h-6" />,
-    tag: "Luxury",
-    image: "https://images.unsplash.com/photo-1614203611861-9e2e4ddb1168?q=80&w=800&auto=format&fit=crop",
-    features: ["Frosted Finish", "Bottle Marking", "Crystal Clear"]
+    title: "Digital Marketing",
+    desc: "Strategic marketing campaigns to grow your brand and reach new customers.",
+    longDesc: "Comprehensive digital strategies including SEO, PPC, and social media management to maximize your online footprint and ROI.",
+    icon: <Zap className="w-6 h-6" />,
+    tag: "Growth",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800",
+    features: ["SEO Strategies", "Social Ads", "Email Marketing"]
   },
   {
-    title: "Acrylic Cutting",
-    desc: "Sharp, clean acrylic cutting with smooth polished edges.",
-    longDesc: "High-speed laser cutting for 3D signage, display stands, and architectural prototypes. Multiple colors and thicknesses supported with perfect edge clarity.",
-    icon: <Layers className="w-6 h-6" />,
-    tag: "Signage",
-    image: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=800&auto=format&fit=crop",
-    features: ["Polished Edges", "LED Ready", "Precision Fit"]
-  },
-  {
-    title: "Brand Engraving",
-    desc: "Professional branding on corporate gifts and tech accessories.",
-    longDesc: "Build your brand identity with custom engraving on leather diaries, power banks, pens, and corporate merchandise with bulk processing capabilities.",
+    title: "Graphic Designer",
+    desc: "Stunning visual designs that speak your brand's unique story.",
+    longDesc: "High-quality creative services for branding, logos, print media, and digital assets that capture attention and leave an impression.",
     icon: <PenTool className="w-6 h-6" />,
-    tag: "Branding",
-    image: "https://images.unsplash.com/photo-1542744094-24638eff58bb?q=80&w=800&auto=format&fit=crop",
-    features: ["Logo Design", "Bulk Orders", "Multi-Material"]
+    tag: "Creative",
+    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800",
+    features: ["Logo Design", "Branding", "Illustrations"]
   },
   {
-    title: "CNC Fabrication",
-    desc: "Heavy-duty CNC laser cutting for large-scale industrial projects.",
-    longDesc: "Advanced CNC routing and laser cutting for thick sheets, furniture components, and custom metal fabrication with industrial accuracy.",
-    icon: <Settings className="w-6 h-6" />,
-    tag: "CNC Works",
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=800&auto=format&fit=crop",
-    features: ["Heavy Duty", "Large Scale", "Material Versatility"]
+    title: "UI/UX Design",
+    desc: "User-centric design focused on intuitive and beautiful user journeys.",
+    longDesc: "Crafting seamless user experiences and professional interfaces to ensure your product is as functional as it is aesthetic.",
+    icon: <Layers className="w-6 h-6" />,
+    tag: "Modern",
+    image: "https://images.unsplash.com/photo-1541462608141-ad4d157ee9f8?q=80&w=800",
+    features: ["Figma Experts", "User Testing", "Prototyping"]
   },
+  {
+    title: "App Development",
+    desc: "High-performance mobile applications for iOS and Android.",
+    longDesc: "Building native and cross-platform mobile apps that provide a smooth user experience and high functionality on all devices.",
+    icon: <Sparkles className="w-6 h-6" />,
+    tag: "Mobile",
+    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=800",
+    features: ["iOS & Android", "Native Performance", "Push Notifications"]
+  }
 ];
 
-export default function Services() {
+export default function Services({ initialServices }: ServicesProps) {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
+  const [data, setData] = useState<any[]>(initialServices && initialServices.length > 0 ? initialServices : services);
+
+  useEffect(() => {
+    // Only fetch if no initial services provided
+    if (!initialServices || initialServices.length === 0) {
+      fetch("/api/services")
+        .then(res => res.json())
+        .then(resData => {
+           if (resData && resData.length > 0) {
+              setData(resData);
+           }
+        })
+        .catch(err => console.error("Error fetching services:", err));
+    }
+  }, [initialServices]);
+
+  const displayServices = data;
   return (
     <section
       id="services"
@@ -128,14 +185,16 @@ export default function Services() {
 
         {/* 🔥 Service Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => (
+          {displayServices.map((service, index) => (
             <motion.div
-              key={index}
+              key={service.id || index}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="group relative flex flex-col h-full rounded-[2.5rem] overflow-hidden border border-white/5 transition-all duration-500 hover:border-orange-500/30 bg-zinc-900/40 backdrop-blur-xl shadow-2xl"
+              className={`group relative flex flex-col h-full rounded-[2.5rem] overflow-hidden border transition-all duration-500 hover:border-orange-500/30 backdrop-blur-xl shadow-2xl ${
+                isLight ? "bg-white border-zinc-200" : "bg-zinc-900/40 border-white/5"
+              }`}
             >
               {/* Image Header */}
               <div className="relative h-64 overflow-hidden">
@@ -150,34 +209,44 @@ export default function Services() {
                 
                 {/* Float Badge */}
                 <div className="absolute top-6 left-6 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
-                  <span className="text-orange-400">{service.icon}</span>
+                  <span className="text-orange-400">{service.icon || getIcon(service.iconName)}</span>
                   <span className="text-[10px] text-white font-black uppercase tracking-wider">{service.tag}</span>
                 </div>
               </div>
 
               {/* Content Body */}
               <div className="p-8 flex-1 flex flex-col">
-                <h3 className="text-2xl font-black text-white group-hover:text-orange-500 transition-colors mb-4">
+                <h3 className={`text-2xl font-black transition-colors mb-4 ${
+                  isLight ? "text-zinc-900 group-hover:text-orange-600" : "text-white group-hover:text-orange-500"
+                }`}>
                   {service.title}
                 </h3>
-                <p className="text-sm text-zinc-400 mb-6 flex-1 leading-relaxed">
+                <p className={`text-sm mb-6 flex-1 leading-relaxed ${
+                  isLight ? "text-zinc-600" : "text-zinc-400"
+                }`}>
                   {service.longDesc}
                 </p>
 
                 {/* Feature List */}
                 <div className="space-y-3 mb-8">
-                  {service.features.map((feature, fidx) => (
+                  {service.features.map((feature: string, fidx: number) => (
                     <div key={fidx} className="flex items-center gap-2.5">
                       <div className="w-5 h-5 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
                         <CheckCircle2 size={12} className="text-orange-500" />
                       </div>
-                      <span className="text-xs font-semibold text-zinc-300">{feature}</span>
+                      <span className={`text-xs font-semibold ${
+                        isLight ? "text-zinc-700" : "text-zinc-300"
+                      }`}>{feature}</span>
                     </div>
                   ))}
                 </div>
 
                 <Link href="/#contact" className="w-full">
-                  <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-orange-600 hover:border-orange-600 text-white font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+                  <button className={`w-full py-4 rounded-2xl border font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
+                    isLight 
+                    ? "bg-zinc-100 border-zinc-200 text-zinc-900 hover:bg-orange-600 hover:text-white hover:border-orange-600" 
+                    : "bg-white/5 border-white/10 text-white hover:bg-orange-600 hover:border-orange-600"
+                  }`}>
                     Get a Quote <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                   </button>
                 </Link>

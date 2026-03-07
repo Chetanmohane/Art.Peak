@@ -54,9 +54,9 @@ export default function About() {
           </h2>
 
           <p className="mt-6 text-base sm:text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            Art.Peak provides high-precision laser engraving and CNC cutting
-            services using advanced laser technology. We specialize in custom
-            designs for wood, metal, glass, acrylic, and industrial materials.
+            ArtPeak.Shop is your premium destination for high-precision laser engraving and CNC cutting
+            services in India. We specialize in creating high-end customized products on wood, metal, glass, 
+            and acrylic for both personal gifts and industrial company branding.
           </p>
 
           <p className="mt-4 text-sm sm:text-base" style={{ color: "var(--text-muted)" }}>

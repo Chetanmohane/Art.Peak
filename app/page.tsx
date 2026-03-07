@@ -7,6 +7,24 @@ import Offers from "./components/Offers";
 import Services from "./components/Services";
 import Products from "./components/products/Products";
 import { prisma } from "../lib/prisma";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [products, services] = await Promise.all([
+    prisma.product.findMany({ select: { name: true, category: true }, take: 20 }),
+    prisma.service.findMany({ select: { title: true }, take: 10 })
+  ]);
+  
+  const productNames = (products as any[]).map(p => p.name).join(", ");
+  const productCategories = Array.from(new Set((products as any[]).map(p => p.category))).join(", ");
+  const serviceNames = (services as any[]).map(s => s.title).join(", ");
+
+  return {
+    title: "ArtPeak.Shop | Buy Personalized " + (productCategories || "Products") + " & Professional Services",
+    description: "Explore " + (productNames.slice(0, 80) || "premium products") + " and expert services like " + (serviceNames || "Laser Engraving") + ". India's top destination for customization, web development, and digital marketing at ArtPeak.Shop.",
+    keywords: "customized gifts, ArtPeak products, " + productNames + ", " + productCategories + ", " + serviceNames + ", digital marketing agency, web development India, laser engraving shop",
+  };
+}
 
 async function getProducts() {
   try {
@@ -37,10 +55,26 @@ async function getOffers() {
   }
 }
 
+async function getServices() {
+  try {
+    const services = await prisma.service.findMany({
+      orderBy: { createdAt: "desc" }
+    });
+    return services.map((s: any) => ({
+      ...s,
+      features: JSON.parse(s.features || "[]")
+    }));
+  } catch (e) {
+    console.error("SSR Services Fetch Error:", e);
+    return [];
+  }
+}
+
 export default async function Home() { 
-  const [products, offers] = await Promise.all([
+  const [products, offers, services] = await Promise.all([
     getProducts(),
-    getOffers()
+    getOffers(),
+    getServices()
   ]);
 
   return (
@@ -49,7 +83,7 @@ export default async function Home() {
       <Hero />
       <Offers initialOffers={offers as any} />
       <Products initialProducts={products as any} />
-      <Services />
+      <Services initialServices={services as any} />
       <About />
       <Contact />
       <Footer />
