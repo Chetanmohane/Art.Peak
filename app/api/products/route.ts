@@ -7,14 +7,24 @@ export async function GET() {
             orderBy: { createdAt: "desc" },
         });
 
-        // Parse JSON strings back to objects
-        const parsedProducts = products.map((p: any) => ({
-            ...p,
-            images: JSON.parse(p.images || "[]"),
-            bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : [],
-            sizes: p.sizes ? JSON.parse(p.sizes) : [],
-            minQuantity: p.minQuantity ?? 1
-        }));
+        // Parse JSON strings back to objects safely
+        const parsedProducts = products.map((p: any) => {
+            let images = [];
+            let bulkPricing = [];
+            let sizes = [];
+
+            try { images = JSON.parse(p.images || "[]"); } catch (e) { images = [p.image || "/placeholder.png"]; }
+            try { bulkPricing = p.bulkPricing ? JSON.parse(p.bulkPricing) : []; } catch (e) { bulkPricing = []; }
+            try { sizes = p.sizes ? JSON.parse(p.sizes) : []; } catch (e) { sizes = []; }
+
+            return {
+                ...p,
+                images,
+                bulkPricing,
+                sizes,
+                minQuantity: p.minQuantity ?? 1
+            };
+        });
 
         return NextResponse.json(parsedProducts);
     } catch (error) {
