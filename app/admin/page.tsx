@@ -12,6 +12,8 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 interface ContactMessage {
   id: string;
@@ -133,6 +135,9 @@ export default function AdminPage() {
   const [showCustomCategory, setShowCustomCategory] = useState(false);
 
   // Cropper State
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const imgRef = useRef<HTMLImageElement>(null);
   const [cropModal, setCropModal] = useState<{ show: boolean, img: string, isMain: boolean, index?: number }>({
     show: false, img: "", isMain: true
   });
@@ -587,6 +592,8 @@ export default function AdminPage() {
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
+        setCrop(undefined);
+        setCompletedCrop(undefined);
         setCropModal({ show: true, img: reader.result as string, isMain, index });
       };
       reader.readAsDataURL(file);
@@ -596,27 +603,45 @@ export default function AdminPage() {
   const finalizeImage = async () => {
     setPageStatus("loading");
     try {
-      // In a real app we'd use a library like react-easy-crop, 
-      // here we do a high-quality compression + square check
-      const img = new window.Image();
-      img.src = cropModal.img;
+      if (!imgRef.current || !completedCrop || completedCrop.width === 0 || completedCrop.height === 0) {
+        setCropModal({ ...cropModal, show: false });
+        setPageStatus("ready");
+        return;
+      }
       
+      const img = imgRef.current;
+      const scaleX = img.naturalWidth / img.width;
+      const scaleY = img.naturalHeight / img.height;
+
       const compressed = await new Promise<string>((resolve) => {
-        img.onload = () => {
           const canvas = document.createElement("canvas");
-          const size = Math.min(img.width, img.height);
-          canvas.width = 1000;
-          canvas.height = 1000;
+          let targetWidth = completedCrop.width * scaleX;
+          let targetHeight = completedCrop.height * scaleY;
+          
+          if (targetWidth > 1200 || targetHeight > 1200) {
+              const ratio = Math.min(1200 / targetWidth, 1200 / targetHeight);
+              targetWidth *= ratio;
+              targetHeight *= ratio;
+          }
+          
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
           const ctx = canvas.getContext("2d");
           
-          // Draw a center-cropped square
-          ctx?.drawImage(
+          if (!ctx) {
+            resolve(cropModal.img);
+            return;
+          }
+
+          ctx.drawImage(
             img, 
-            (img.width - size) / 2, (img.height - size) / 2, size, size, // source
-            0, 0, 1000, 1000 // destination
+            completedCrop.x * scaleX, 
+            completedCrop.y * scaleY, 
+            completedCrop.width * scaleX, 
+            completedCrop.height * scaleY,
+            0, 0, targetWidth, targetHeight
           );
           resolve(canvas.toDataURL("image/jpeg", 0.7));
-        };
       });
 
       if (cropModal.isMain) {
@@ -1622,22 +1647,20 @@ export default function AdminPage() {
                     <div className="p-3 bg-orange-500 rounded-2xl shadow-lg shadow-orange-500/20"><ImageIcon className="text-white w-6 h-6" /></div>
                     <div>
                       <h2 className={`text-2xl font-black ${isLight ? "text-zinc-900" : "text-white"}`}>Crop Image</h2>
-                      <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1 underline decoration-orange-500/30 underline-offset-4">Auto Square Center Crop</p>
+                      <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1 underline decoration-orange-500/30 underline-offset-4">Custom Drag Crop</p>
                     </div>
                   </div>
                   <button onClick={() => setCropModal({ ...cropModal, show: false })} className="p-3 hover:bg-zinc-500/10 rounded-2xl transition-all"><X size={20}/></button>
                 </div>
 
-                <div className="relative aspect-square w-full rounded-3xl overflow-hidden bg-zinc-800 shadow-inner group">
-                   <Image src={cropModal.img} alt="Crop Preview" fill className="object-contain" unoptimized />
-                   {/* Visual Crop Guide */}
-                   <div className="absolute inset-0 border-[3rem] border-black/40 pointer-events-none">
-                      <div className="w-full h-full border-2 border-orange-500 border-dashed opacity-50"></div>
-                   </div>
+                <div className="relative w-full rounded-3xl overflow-hidden bg-zinc-800 shadow-inner flex justify-center max-h-[50vh]">
+                   <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)}>
+                     <img ref={imgRef} src={cropModal.img} alt="Crop Preview" className="max-h-[50vh] object-contain" />
+                   </ReactCrop>
                 </div>
 
                 <p className="mt-6 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em] text-center leading-relaxed">
-                  Image will be automatically cropped from the center to a perfect square for consistency.
+                  Drag on the image to select a cropping area. Leave uncropped to cancel changes.
                 </p>
 
                 <div className="grid grid-cols-2 gap-4 mt-10">
