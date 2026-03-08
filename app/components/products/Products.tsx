@@ -29,7 +29,7 @@ interface Product {
   category: string;
   images?: string[];
   bulkPricing?: { qty: number; price: number }[];
-  sizes?: string[];
+  sizes?: { size: string; price: number }[];
 }
 
 function ProductCard({
@@ -329,15 +329,29 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
     }
   };
 
-  /* ── Bulk price calc ── */
-  const getBulkPrice = (product: Product | null, qty: number) => {
+  /* ── Bulk/Size price calc ── */
+  const getBulkPrice = (product: Product | null, qty: number, selectedSizeName: string | null) => {
     if (!product) return 0;
-    if (!product.bulkPricing || !Array.isArray(product.bulkPricing) || product.bulkPricing.length === 0) return product.price;
     
-    const applicable = [...product.bulkPricing]
+    // 1. Get Base Price (Priority to Size Price if selected)
+    let basePrice = product.price;
+    if (selectedSizeName && product.sizes && Array.isArray(product.sizes)) {
+      const sizeObj = product.sizes.find(s => s.size === selectedSizeName);
+      if (sizeObj) basePrice = sizeObj.price;
+    }
+
+    // 2. Check for Bulk Discounts
+    if (!product.bulkPricing || !Array.isArray(product.bulkPricing) || product.bulkPricing.length === 0) {
+      return basePrice;
+    }
+    
+    const applicableBulk = [...product.bulkPricing]
       .filter((t) => qty >= t.qty)
       .sort((a, b) => b.qty - a.qty);
-    return applicable[0]?.price ?? product.price;
+      
+    // If bulk is applied, we usually override the base (or we could calculate a % discount).
+    // For now, let's assume bulk tiers are absolute prices.
+    return applicableBulk[0]?.price ?? basePrice;
   };
 
   return (
@@ -588,18 +602,19 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                         Select Size <span className="text-red-500">*</span>
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        {customizingProduct.sizes.map((s) => (
+                        {customizingProduct.sizes.map((sObj: any) => (
                            <button
-                            key={s}
+                            key={sObj.size}
                             type="button"
-                            onClick={() => setSelectedSize(s)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
-                              selectedSize === s
+                            onClick={() => setSelectedSize(sObj.size)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 flex flex-col items-center gap-0.5 ${
+                              selectedSize === sObj.size
                                 ? "bg-orange-600 border-orange-600 text-white shadow-lg shadow-orange-600/20"
                                 : "bg-black/40 border-white/10 text-zinc-400 hover:border-orange-500/50"
                             }`}
                           >
-                            {s}
+                            <span>{sObj.size}</span>
+                            <span className={`text-[9px] ${selectedSize === sObj.size ? "text-orange-200" : "text-zinc-500"}`}>₹{sObj.price}</span>
                           </button>
                         ))}
                       </div>
@@ -724,9 +739,9 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                         <div className="space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-zinc-500">Unit Price:</span>
-                            <span className={`font-bold ${getBulkPrice(customizingProduct, customQty) < customizingProduct.price ? "text-emerald-400" : "text-white"}`}>
-                              ₹{getBulkPrice(customizingProduct, customQty)}
-                              {getBulkPrice(customizingProduct, customQty) < customizingProduct.price && 
+                            <span className={`font-bold ${getBulkPrice(customizingProduct, customQty, selectedSize) < customizingProduct.price ? "text-emerald-400" : "text-white"}`}>
+                              ₹{getBulkPrice(customizingProduct, customQty, selectedSize)}
+                              {getBulkPrice(customizingProduct, customQty, selectedSize) < customizingProduct.price && 
                                 <span className="text-[10px] line-through text-zinc-600 ml-1.5 opacity-50">₹{customizingProduct.price}</span>
                               }
                             </span>
@@ -735,7 +750,7 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                           <div className="flex justify-between items-center pt-1 border-t border-white/5">
                             <span className="text-zinc-400 font-bold">Total:</span>
                             <span className="text-orange-400 font-black text-xl">
-                              ₹{getBulkPrice(customizingProduct, customQty) * customQty}
+                              ₹{getBulkPrice(customizingProduct, customQty, selectedSize) * customQty}
                             </span>
                           </div>
                         </div>

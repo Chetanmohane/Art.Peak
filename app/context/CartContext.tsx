@@ -10,7 +10,7 @@ interface Product {
   category: string;
   images?: string[];
   bulkPricing?: { qty: number; price: number }[];
-  sizes?: string[];
+  sizes?: { size: string; price: number }[];
 }
 
 export interface CartItem {
@@ -141,6 +141,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!item.product) return total;
     let currentPrice = item.product.price;
     
+    // 1. Check if a size is selected and if it has a custom price
+    if (item.selectedSize && item.product.sizes && Array.isArray(item.product.sizes)) {
+      const sizeObj = item.product.sizes.find(s => s.size === item.selectedSize);
+      if (sizeObj) {
+        currentPrice = sizeObj.price;
+      }
+    }
+    
+    // 2. Apply Bulk Pricing if applicable
     if (item.product.bulkPricing && Array.isArray(item.product.bulkPricing) && item.product.bulkPricing.length > 0) {
       const applicableTier = [...item.product.bulkPricing]
         .sort((a, b) => b.qty - a.qty)
