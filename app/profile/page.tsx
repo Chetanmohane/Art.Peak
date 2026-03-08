@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { User, Package, Settings, LogOut, Loader2, KeyRound, ArrowLeft, MessageSquare, ShieldCheck, Mail, Calendar } from "lucide-react";
+import { User, Package, Settings, LogOut, Loader2, KeyRound, ArrowLeft, MessageSquare, ShieldCheck, Mail, Calendar, CheckCircle } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
@@ -397,6 +397,11 @@ export default function ProfilePage() {
                                     }`}>
                                       {order.status.replace('_', ' ')}
                                     </span>
+                                    {['COMPLETED', 'completed', 'processing', 'shipped', 'delivered'].includes(order.status) && (
+                                       <span className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.1em] rounded-xl shadow-lg shadow-emerald-500/30">
+                                         <CheckCircle size={10} className="mr-0.5" /> PAID
+                                       </span>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="p-4 rounded-3xl bg-orange-500/5 border border-orange-500/10 text-left sm:text-right">

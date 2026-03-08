@@ -979,7 +979,7 @@ export default function AdminPage() {
                       }`}>
                         {order.status.replace('_', ' ')}
                       </span>
-                      {["processing", "shipped", "delivered"].includes(order.status) && (
+                      {["completed", "COMPLETED", "processing", "shipped", "delivered"].includes(order.status) && (
                         <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-full shadow-lg shadow-emerald-500/30 border border-emerald-400/50">
                           <CheckCircle size={10} /> PAID
                         </span>
@@ -1007,9 +1007,9 @@ export default function AdminPage() {
                 </div>
 
                 <div className="flex flex-col xl:items-end gap-3 min-w-[200px]">
-                  <span className={`text-3xl font-black text-transparent bg-clip-text ${["processing", "shipped", "delivered"].includes(order.status) ? "bg-gradient-to-r from-emerald-400 to-emerald-600" : "bg-gradient-to-r from-orange-400 to-orange-600"}`}>
+                  <span className={`text-3xl font-black text-transparent bg-clip-text ${["completed", "COMPLETED", "processing", "shipped", "delivered"].includes(order.status) ? "bg-gradient-to-r from-emerald-400 to-emerald-600" : "bg-gradient-to-r from-orange-400 to-orange-600"}`}>
                     ₹{order.totalAmount.toLocaleString()}
-                    {["processing", "shipped", "delivered"].includes(order.status) && <span className="ml-2 text-emerald-500 text-xl inline-block">✓</span>}
+                    {["completed", "COMPLETED", "processing", "shipped", "delivered"].includes(order.status) && <span className="ml-2 text-emerald-500 text-xl inline-block">✓</span>}
                   </span>
                   <div className={`w-full xl:w-auto px-4 py-2 rounded-xl border flex items-center justify-between gap-3 ${isLight ? "bg-white border-zinc-200" : "bg-black/40 border-white/10"}`}>
                     <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Status</span>
