@@ -45,9 +45,9 @@ function ProductCard({
   const isLight = theme === "light";
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const images =
-    product.images && product.images.length > 0
+    product.images && Array.isArray(product.images) && product.images.length > 0
       ? product.images
-      : [product.image];
+      : [product.image || "/placeholder.png"];
 
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -667,7 +667,7 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                         <Tag size={10} className="text-orange-500"/> Volume Discounts
                       </p>
                       <div className="grid grid-cols-3 gap-2">
-                        {[...customizingProduct.bulkPricing].sort((a,b) => a.qty - b.qty).map((tier, tidx) => (
+                        {[...(customizingProduct.bulkPricing || [])].sort((a,b) => a.qty - b.qty).map((tier, tidx) => (
                           <div key={tidx} className={`p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${customQty >= tier.qty ? "bg-orange-600/10 border-orange-500/30 ring-1 ring-orange-500/20" : "bg-black/20 border-white/5"}`}>
                             <span className={`text-[10px] font-bold ${customQty >= tier.qty ? "text-orange-400" : "text-zinc-500"}`}>{tier.qty}+ Pcs</span>
                             <span className={`text-xs font-black ${customQty >= tier.qty ? "text-white" : "text-zinc-300"}`}>₹{tier.price}</span>

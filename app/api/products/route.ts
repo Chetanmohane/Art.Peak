@@ -11,7 +11,8 @@ export async function GET() {
         const parsedProducts = products.map((p: any) => ({
             ...p,
             images: JSON.parse(p.images || "[]"),
-            bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : []
+            bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : [],
+            sizes: p.sizes ? JSON.parse(p.sizes) : []
         }));
 
         return NextResponse.json(parsedProducts);
