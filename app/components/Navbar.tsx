@@ -76,6 +76,14 @@ export default function Navbar() {
   const [dynamicQrCode, setDynamicQrCode] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const shippingCost = (() => {
+    if (!shippingDetails.state) return 0;
+    const s = shippingDetails.state.toLowerCase().trim();
+    return (s.includes("maharashtra") || s === "mh" || s === "maharastra") ? 50 : 100;
+  })();
+  
+  const finalAmountToPay = checkoutStep === "cart" ? totalPrice : totalPrice + shippingCost;
+
   // Poll for Cashfree Order Status
   useEffect(() => {
     if ((!upiRequestSent && checkoutStep !== "qr") || !currentOrderId) return;
@@ -255,7 +263,7 @@ export default function Navbar() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: JSON.stringify(cart),
-          totalAmount: totalPrice,
+          totalAmount: finalAmountToPay,
           transactionId: utr,
           shipping: shippingDetails
         }),
@@ -1077,9 +1085,16 @@ export default function Navbar() {
                       </div>
                     )}
 
+                    {checkoutStep !== "cart" && shippingDetails.state && (
+                      <div className="flex justify-between text-sm font-semibold" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
+                        <span>Shipping ({shippingDetails.state})</span>
+                        <span>+₹{shippingCost}</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between font-bold text-lg pt-2 border-t" style={{ color: isLight ? "#18181b" : "#ffffff", borderColor: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.1)" }}>
                       <span>Total</span>
-                      <span className="text-orange-600">₹{totalPrice ? totalPrice.toLocaleString() : "0"}</span>
+                      <span className="text-orange-600">₹{finalAmountToPay ? finalAmountToPay.toLocaleString() : "0"}</span>
                     </div>
                   </div>
                   
@@ -1121,7 +1136,7 @@ export default function Navbar() {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
                                     body: JSON.stringify({
-                                    amount: totalPrice,
+                                    amount: finalAmountToPay,
                                     customer_phone: shippingDetails.phone || "9999999999",
                                     customer_email: shippingDetails.email || "test@example.com",
                                     items: JSON.stringify(cart),
