@@ -7,3 +7,5 @@ export const prisma =
     new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+console.log(`Prisma: Initialized in ${process.env.NODE_ENV} mode using ${process.env.DATABASE_URL?.split('@')[1] ? 'Remote' : 'Local'} DB`);

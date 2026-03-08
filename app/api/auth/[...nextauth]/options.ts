@@ -12,35 +12,49 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Invalid credentials");
-                }
+                try {
+                    console.log("Auth: Authorize callback started for:", credentials?.email);
 
-                const user = await prisma.user.findUnique({
-                    where: {
-                        email: credentials.email
+                    if (!prisma) {
+                        console.error("Auth: Prisma client is not initialized!");
+                        throw new Error("Database client error");
                     }
-                });
 
-                if (!user || !user?.password) {
-                    throw new Error("Invalid credentials");
+                    if (!credentials?.email || !credentials?.password) {
+                        throw new Error("Missing email or password");
+                    }
+
+                    const user = await prisma.user.findUnique({
+                        where: {
+                            email: credentials.email
+                        }
+                    });
+
+                    if (!user || !user?.password) {
+                        console.error("Auth: User not found or no password set for:", credentials.email);
+                        throw new Error("Invalid credentials");
+                    }
+
+                    const isCorrectPassword = await bcrypt.compare(
+                        credentials.password,
+                        user.password
+                    );
+
+                    if (!isCorrectPassword) {
+                        console.error("Auth: Password mismatch for:", credentials.email);
+                        throw new Error("Invalid credentials");
+                    }
+
+                    return {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role
+                    };
+                } catch (error: any) {
+                    console.error("NextAuth authorize error:", error);
+                    throw new Error(error.message || "Auth error");
                 }
-
-                const isCorrectPassword = await bcrypt.compare(
-                    credentials.password,
-                    user.password
-                );
-
-                if (!isCorrectPassword) {
-                    throw new Error("Invalid credentials");
-                }
-
-                return {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role
-                };
             }
         })
     ],

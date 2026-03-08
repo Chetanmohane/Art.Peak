@@ -12,7 +12,8 @@ export async function GET() {
             ...p,
             images: JSON.parse(p.images || "[]"),
             bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : [],
-            sizes: p.sizes ? JSON.parse(p.sizes) : []
+            sizes: p.sizes ? JSON.parse(p.sizes) : [],
+            minQuantity: p.minQuantity ?? 1
         }));
 
         return NextResponse.json(parsedProducts);
