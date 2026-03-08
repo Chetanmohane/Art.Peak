@@ -74,7 +74,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem("artpeak_cart", JSON.stringify(cart));
+      try {
+        localStorage.setItem("artpeak_cart", JSON.stringify(cart));
+      } catch (e) {
+        console.error("Failed to save cart. It might exceed the 5MB localStorage limit.", e);
+        // Alert the user if space is full or clear out old items 
+        alert("Warning: Cart is too large to save. Try removing some large images.");
+      }
     }
   }, [cart, isLoaded]);
 
