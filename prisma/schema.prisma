@@ -3,11 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String?
   email     String   @unique
   password  String
@@ -18,8 +19,8 @@ model User {
 }
 
 model Order {
-  id            String   @id @default(cuid())
-  userId        String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
   totalAmount   Float
   items         String
   paymentMethod String   @default("paytm")
@@ -38,7 +39,7 @@ model Order {
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   email     String
   message   String
@@ -46,7 +47,7 @@ model ContactMessage {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   price       Float
   image       String
@@ -58,7 +59,7 @@ model Product {
 }
 
 model Offer {
-  id              String   @id @default(cuid())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   festival        String
   title           String
   subtitle        String
@@ -79,7 +80,7 @@ model Offer {
 }
 
 model Service {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   title     String
   desc      String
   longDesc  String

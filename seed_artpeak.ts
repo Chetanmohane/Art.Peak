@@ -1,14 +1,9 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import pg from 'pg'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
 
-const connectionString = process.env.DATABASE_URL as string
-const pool = new pg.Pool({ connectionString })
-const adapter = new PrismaPg(pool)
-const prisma = new PrismaClient({ adapter })
+const prisma = new PrismaClient()
 
 const products = [
     {
@@ -99,9 +94,8 @@ const products = [
 
 async function main() {
     try {
-        console.log("🌱 Seeding Art.peak products...\n")
+        console.log("🚀 Seeding Art.peak products to MongoDB...\n")
 
-        // ✅ Only ADD products — never delete existing ones
         for (const product of products) {
             const created = await prisma.product.create({ data: product })
             console.log(`✅ Created: ${created.name} (₹${created.price})`)
@@ -112,7 +106,6 @@ async function main() {
         console.error("❌ SEED ERROR:", e.message)
     } finally {
         await prisma.$disconnect()
-        await pool.end()
     }
 }
 
