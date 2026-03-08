@@ -773,16 +773,23 @@ export default function AdminPage() {
     setProductForm(prev => ({ ...prev, bulkPricing: prev.bulkPricing.filter((_, i) => i !== index) }));
   };
 
-  const addSize = () => {
-    const s = prompt("Enter size name (e.g. S, M, L, 8x10):");
+  const addSize = (unit: string = "") => {
+    const s = prompt(`Enter ${unit || "size"} value:`);
     if (s && s.trim()) {
-      const p = prompt(`Enter price for ${s.trim()}:`, productForm.price || "0");
+      const fullSize = unit ? `${s.trim()} ${unit}` : s.trim();
+      const p = prompt(`Enter price for ${fullSize}:`, productForm.price || "0");
       const priceVal = parseFloat(p || "0");
       setProductForm(prev => ({ 
         ...prev, 
-        sizes: [...prev.sizes, { size: s.trim(), price: isNaN(priceVal) ? 0 : priceVal }] 
+        sizes: [...prev.sizes, { size: fullSize, price: isNaN(priceVal) ? 0 : priceVal }] 
       }));
     }
+  };
+
+  const updateSizeValue = (index: number, newValue: string) => {
+    const newSizes = [...productForm.sizes];
+    newSizes[index].size = newValue;
+    setProductForm(prev => ({ ...prev, sizes: newSizes }));
   };
 
   const updateSizePrice = (index: number, price: string) => {
@@ -1657,35 +1664,68 @@ export default function AdminPage() {
                         </div>
                      </div>
 
-                     {/* Sizes Section */}
-                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                           <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Product Sizes (Optional)</label>
-                           <button type="button" onClick={addSize} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-400 transition-colors">
-                              <Plus size={14}/> Add Size
-                           </button>
-                         </div>
-                         <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                            {productForm.sizes.map((sizeObj, idx) => (
-                               <div key={idx} className="flex gap-2 items-center">
-                                  <div className={`flex-[3] px-4 py-2.5 rounded-xl border flex items-center justify-between ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
-                                     <span className="text-xs font-bold">{sizeObj.size}</span>
-                                     <span className="text-[10px] uppercase font-black text-zinc-500">Fixed</span>
-                                  </div>
-                                  <div className={`flex-[2] px-4 rounded-xl border flex items-center gap-2 transition-colors focus-within:border-orange-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
-                                     <span className="text-[10px] uppercase font-bold text-zinc-500">₹</span>
-                                     <input 
-                                        type="number" 
-                                        value={sizeObj.price} 
-                                        onChange={e => updateSizePrice(idx, e.target.value)} 
-                                        className="w-full bg-transparent outline-none py-2.5 text-xs font-bold text-orange-500" 
-                                     />
-                                  </div>
-                                  <button type="button" onClick={() => removeSize(idx)} className="p-3 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
-                               </div>
-                            ))}
-                            {productForm.sizes.length === 0 && <p className="text-[10px] text-zinc-500 italic text-center py-2">No sizes added. Recommended for products with variants.</p>}
-                         </div>
+                      {/* Sizes Section */}
+                      <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                           <div>
+                              <label className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                                <Plus size={14} className="text-orange-500" /> Variations & Pricing
+                              </label>
+                              <p className="text-[10px] text-zinc-400 mt-1 font-bold uppercase tracking-tighter">Add sizes in CM, INCHES or custom units</p>
+                           </div>
+                           <div className="flex gap-2">
+                              {["CM", "INCHES", "PCS", "Custom"].map((unit) => (
+                                 <button 
+                                    key={unit}
+                                    type="button" 
+                                    onClick={() => addSize(unit === "Custom" ? "" : unit)} 
+                                    className="px-3 py-1.5 bg-orange-500/10 text-orange-600 text-[10px] font-black rounded-lg border border-orange-500/20 hover:bg-orange-500 hover:text-white transition-all uppercase tracking-widest"
+                                 >
+                                    + {unit}
+                                 </button>
+                              ))}
+                           </div>
+                        </div>
+
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                           {productForm.sizes.map((sizeObj, idx) => (
+                              <div key={idx} className={`p-3 rounded-2xl border flex flex-col sm:flex-row gap-3 items-center transition-all ${isLight ? "bg-white border-zinc-200" : "bg-black/40 border-white/10 focus-within:border-orange-500/50"}`}>
+                                 <div className="flex-[3] w-full relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-zinc-500 uppercase">Size</span>
+                                    <input 
+                                       type="text" 
+                                       value={sizeObj.size} 
+                                       onChange={e => updateSizeValue(idx, e.target.value)}
+                                       className="w-full bg-transparent outline-none pl-12 pr-4 py-2 text-xs font-bold" 
+                                    />
+                                 </div>
+                                 <div className="flex-[2] w-full relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-orange-500 uppercase">Price ₹</span>
+                                    <input 
+                                       type="number" 
+                                       value={sizeObj.price} 
+                                       onChange={e => updateSizePrice(idx, e.target.value)} 
+                                       className="w-full bg-transparent outline-none pl-14 pr-4 py-2 text-xs font-black text-orange-500" 
+                                    />
+                                 </div>
+                                 <button 
+                                    type="button" 
+                                    onClick={() => removeSize(idx)} 
+                                    className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                                 >
+                                    <Trash2 size={16}/>
+                                 </button>
+                              </div>
+                           ))}
+                           {productForm.sizes.length === 0 && (
+                              <div className="py-10 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                 <Plus size={24} className="mx-auto text-zinc-700 mb-2 opacity-20" />
+                                 <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest leading-relaxed">
+                                    No variations added.<br/>Use the buttons above to add sizes.
+                                 </p>
+                              </div>
+                           )}
+                        </div>
                       </div>
 
                     <button type="submit" className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black rounded-2xl shadow-xl shadow-orange-500/25 transition-all active:scale-[0.98] uppercase tracking-widest mt-6 text-sm">
