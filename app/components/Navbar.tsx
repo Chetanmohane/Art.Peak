@@ -735,7 +735,10 @@ export default function Navbar() {
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                               <div>
                                 <p className="font-semibold text-xs truncate" style={{ color: isLight ? "#18181b" : "#ffffff" }}>{item?.product?.name || 'Unknown Product'}</p>
-                                <p className="text-orange-500 text-[10px] mt-0.5 uppercase tracking-wider">{item?.product?.category || ''}</p>
+                                <p className="text-orange-500 text-[10px] mt-0.5 uppercase tracking-wider">
+                                  {item?.product?.category || ''}
+                                  {item.selectedSize && <span className="ml-2 px-1.5 py-0.5 bg-orange-500/10 rounded text-[9px] font-bold">Size: {item.selectedSize}</span>}
+                                </p>
                               </div>
                               <div className="flex items-center justify-between mt-2">
                                 <div className="flex flex-col gap-2 flex-1">

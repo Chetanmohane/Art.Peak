@@ -54,6 +54,7 @@ model Product {
   category    String
   images      String
   bulkPricing String?
+  sizes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

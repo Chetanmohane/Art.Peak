@@ -43,7 +43,8 @@ async function getProducts() {
     return products.map((p: any) => ({
       ...p,
       images: JSON.parse(p.images || "[]"),
-      bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : []
+      bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : [],
+      sizes: p.sizes ? JSON.parse(p.sizes) : []
     }));
   } catch (e) {
     console.error("SSR Products Fetch Error:", e);

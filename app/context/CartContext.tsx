@@ -10,6 +10,7 @@ interface Product {
   category: string;
   images?: string[];
   bulkPricing?: { qty: number; price: number }[];
+  sizes?: string[];
 }
 
 export interface CartItem {
@@ -18,11 +19,12 @@ export interface CartItem {
   qty: number;
   customText?: string;
   customImage?: string | null;
+  selectedSize?: string | null;
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product, customText?: string, customImage?: string | null, qty?: number) => void;
+  addToCart: (product: Product, customText?: string, customImage?: string | null, qty?: number, selectedSize?: string | null) => void;
   increaseQty: (id: string) => void;
   decreaseQty: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
@@ -84,12 +86,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cart, isLoaded]);
 
-  const addToCart = (product: Product, customText?: string, customImage?: string | null, qty: number = 1) => {
+  const addToCart = (product: Product, customText?: string, customImage?: string | null, qty: number = 1, selectedSize: string | null = null) => {
     const existing = cart.find(
       (item) => 
         item?.product?.id === product.id && 
         item?.customText === customText && 
-        item?.customImage === customImage
+        item?.customImage === customImage &&
+        item?.selectedSize === selectedSize
     );
 
     if (existing) {
@@ -98,7 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ));
     } else {
       const newItemId = `${product.id}-${Date.now()}`;
-      setCart([...cart, { id: newItemId, product, qty, customText, customImage }]);
+      setCart([...cart, { id: newItemId, product, qty, customText, customImage, selectedSize }]);
     }
   };
 

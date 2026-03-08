@@ -44,6 +44,7 @@ interface Product {
   category: string;
   images: string[];
   bulkPricing: BulkTier[];
+  sizes: string[];
   createdAt: string;
 }
 
@@ -151,7 +152,8 @@ export default function AdminPage() {
     category: "Wood",
     image: "",
     images: [] as string[],
-    bulkPricing: [] as BulkTier[]
+    bulkPricing: [] as BulkTier[],
+    sizes: [] as string[]
   });
 
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -536,13 +538,17 @@ export default function AdminPage() {
         category: product.category,
         image: product.image,
         images: product.images || [],
-        bulkPricing: product.bulkPricing || []
+        bulkPricing: product.bulkPricing || [],
+        sizes: product.sizes || []
       });
     } else {
       setEditingProduct(null);
       setProductForm({
         name: "", price: "", category: "Wood",
-        image: "", images: [], bulkPricing: []
+        image: "",
+        images: [],
+        bulkPricing: [],
+        sizes: []
       });
     }
     setShowProductModal(true);
@@ -759,9 +765,18 @@ export default function AdminPage() {
   };
 
   const removeBulkTier = (index: number) => {
-    const newPricing = [...productForm.bulkPricing];
-    newPricing.splice(index, 1);
-    setProductForm({ ...productForm, bulkPricing: newPricing });
+    setProductForm(prev => ({ ...prev, bulkPricing: prev.bulkPricing.filter((_, i) => i !== index) }));
+  };
+
+  const addSize = () => {
+    const s = prompt("Enter size (e.g. S, M, L, XL, 8x10, etc):");
+    if (s && s.trim()) {
+      setProductForm(prev => ({ ...prev, sizes: [...prev.sizes, s.trim()] }));
+    }
+  };
+
+  const removeSize = (index: number) => {
+    setProductForm(prev => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== index) }));
   };
 
   const updateBulkTier = (index: number, field: "qty" | "price", value: string) => {
@@ -1576,7 +1591,7 @@ export default function AdminPage() {
                            {productForm.images.map((url, idx) => (
                               <div key={idx} className="relative group aspect-square rounded-xl border border-white/10 overflow-hidden bg-black/20">
                                  <Image src={url} alt="" fill className="object-cover" unoptimized />
-                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2">
                                     <button 
                                        type="button" 
                                        onClick={() => {
@@ -1622,9 +1637,28 @@ export default function AdminPage() {
                                 <button type="button" onClick={() => removeBulkTier(idx)} className="p-3 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
                              </div>
                           ))}
-                          {productForm.bulkPricing.length === 0 && <p className="text-xs text-zinc-500 text-center py-4 italic font-medium">No bulk pricing tiers defined.</p>}
-                       </div>
-                    </div>
+                           {productForm.bulkPricing.length === 0 && <p className="text-xs text-zinc-500 text-center py-4 italic font-medium">No bulk pricing tiers defined.</p>}
+                        </div>
+                     </div>
+
+                     {/* Sizes Section */}
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                           <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Product Sizes (Optional)</label>
+                           <button type="button" onClick={addSize} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-400 transition-colors">
+                              <Plus size={14}/> Add Size
+                           </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                           {productForm.sizes.map((size, idx) => (
+                              <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
+                                 <span>{size}</span>
+                                 <button type="button" onClick={() => removeSize(idx)} className="text-zinc-500 hover:text-red-500 transition-colors"><X size={12}/></button>
+                              </div>
+                           ))}
+                           {productForm.sizes.length === 0 && <p className="text-[10px] text-zinc-500 italic">No sizes added. Recommended for products with variants.</p>}
+                        </div>
+                     </div>
 
                     <button type="submit" className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black rounded-2xl shadow-xl shadow-orange-500/25 transition-all active:scale-[0.98] uppercase tracking-widest mt-6 text-sm">
                        {editingProduct ? "Update Product" : "Save Product"}

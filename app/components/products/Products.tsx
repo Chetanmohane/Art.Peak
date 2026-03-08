@@ -29,6 +29,7 @@ interface Product {
   category: string;
   images?: string[];
   bulkPricing?: { qty: number; price: number }[];
+  sizes?: string[];
 }
 
 function ProductCard({
@@ -241,6 +242,7 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
   const [customText, setCustomText] = useState("");
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [customQty, setCustomQty] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -317,11 +319,12 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
       return;
     }
     if (customizingProduct) {
-      addToCart(customizingProduct, customText, customImage, customQty);
+      addToCart(customizingProduct, customText, customImage, customQty, selectedSize);
       setCustomizingProduct(null);
       setCustomText("");
       setCustomImage(null);
       setCustomQty(1);
+      setSelectedSize(null);
       window.dispatchEvent(new Event("open-cart-modal"));
     }
   };
@@ -578,6 +581,31 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                     />
                   </div>
 
+                  {/* Size Selection */}
+                  {customizingProduct.sizes && customizingProduct.sizes.length > 0 && (
+                    <div className="mt-2">
+                       <label className="block text-sm font-semibold text-zinc-300 mb-3">
+                        Select Size <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {customizingProduct.sizes.map((s) => (
+                           <button
+                            key={s}
+                            type="button"
+                            onClick={() => setSelectedSize(s)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
+                              selectedSize === s
+                                ? "bg-orange-600 border-orange-600 text-white shadow-lg shadow-orange-600/20"
+                                : "bg-black/40 border-white/10 text-zinc-400 hover:border-orange-500/50"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Image Upload */}
                   <div>
                     <label className="block text-sm font-semibold text-zinc-300 mb-2">
@@ -721,10 +749,11 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                   {/* Add to Cart CTA */}
                   <button
                     onClick={handleAddToCart}
-                    className="w-full mt-2 bg-orange-600 hover:bg-orange-500 active:scale-95 py-4 rounded-xl text-white font-black text-base shadow-lg shadow-orange-900/30 transition-all flex items-center justify-center gap-2.5"
+                    disabled={customizingProduct.sizes && customizingProduct.sizes.length > 0 && !selectedSize}
+                    className="w-full mt-2 bg-orange-600 hover:bg-orange-500 active:scale-95 py-4 rounded-xl text-white font-black text-base shadow-lg shadow-orange-900/30 transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                   >
                     <ShoppingCart size={18} />
-                    Add to Cart
+                    {customizingProduct.sizes && customizingProduct.sizes.length > 0 && !selectedSize ? "Please Select Size" : "Add to Cart"}
                   </button>
                 </div>
               </motion.div>

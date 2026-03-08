@@ -30,7 +30,8 @@ export async function GET() {
         const parsedProducts = products.map((p: any) => ({
             ...p,
             images: JSON.parse(p.images || "[]"),
-            bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : []
+            bulkPricing: p.bulkPricing ? JSON.parse(p.bulkPricing) : [],
+            sizes: p.sizes ? JSON.parse(p.sizes) : []
         }));
 
         return NextResponse.json(parsedProducts);
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { name, price, image, category, images, bulkPricing } = body;
+        const { name, price, image, category, images, bulkPricing, sizes } = body;
 
         const product = await prisma.product.create({
             data: {
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
                 category,
                 images: JSON.stringify(images || []),
                 bulkPricing: JSON.stringify(bulkPricing || []),
+                sizes: JSON.stringify(sizes || []),
             },
         });
 
@@ -80,7 +82,7 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { id, name, price, image, category, images, bulkPricing } = body;
+        const { id, name, price, image, category, images, bulkPricing, sizes } = body;
 
         const product = await prisma.product.update({
             where: { id },
@@ -91,6 +93,7 @@ export async function PUT(req: Request) {
                 category,
                 images: JSON.stringify(images || []),
                 bulkPricing: JSON.stringify(bulkPricing || []),
+                sizes: JSON.stringify(sizes || []),
             },
         });
 
