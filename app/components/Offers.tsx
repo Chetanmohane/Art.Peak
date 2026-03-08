@@ -172,15 +172,34 @@ export default function Offers({ initialOffers }: { initialOffers?: Offer[] }) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: -16 }}
               transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="rounded-[2rem] overflow-hidden relative"
+              className="rounded-[2.5rem] overflow-hidden relative group"
               style={{
                 background: bg,
                 boxShadow: isLight
-                  ? `0 4px 40px ${offer.glow}25, 0 12px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)`
-                  : `0 0 80px ${offer.glow}18, 0 24px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
-                border: isLight ? `1px solid ${offer.glow}30` : "1px solid rgba(255,255,255,0.06)",
+                  ? `0 20px 60px -12px ${offer.glow}30, 0 12px 40px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.8)`
+                  : `0 30px 100px -20px ${offer.glow}25, 0 0 1px rgba(255,255,255,0.2), inset 0 1px 1px rgba(255,255,255,0.1)`,
+                border: isLight ? `1px solid ${offer.glow}20` : "1px solid rgba(255,255,255,0.08)",
               }}
             >
+              {/* ── Animated Background Reflection ── */}
+              <motion.div
+                animate={{
+                  x: ["-100%", "200%"],
+                  opacity: [0, 0.15, 0]
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "linear",
+                  repeatDelay: 2
+                }}
+                className="absolute inset-y-0 w-1/3 skew-x-[-25deg] pointer-events-none z-0"
+                style={{
+                  background: isLight 
+                    ? `linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)`
+                    : `linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)`
+                }}
+              />
               {/* Dot grid (light: faint, dark: faint white) */}
               <div
                 className="absolute inset-0 pointer-events-none"

@@ -18,6 +18,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'instagram.fbho*.fna.fbcdn.net' },
     ],
   },
+  serverExternalPackages: ['better-sqlite3'],
 };
 
 export default nextConfig;

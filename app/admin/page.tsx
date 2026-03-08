@@ -124,6 +124,7 @@ export default function AdminPage() {
   const [filteredServices, setFilteredServices] = useState<ServiceAdmin[]>([]);
   
   const [pageStatus, setPageStatus] = useState<"loading" | "forbidden" | "ready">("loading");
+  const [dbError, setDbError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [deletingId, setDeletingId ] = useState<string | null>(null);
@@ -194,16 +195,22 @@ export default function AdminPage() {
     try {
       if (!skipAdminCheck) {
         const checkRes = await fetch("/api/admin/check", { credentials: "include" });
-        const { isAdmin, role } = await checkRes.json();
+        const data = await checkRes.json();
 
-        if (!isAdmin) {
+        if (checkRes.status === 500 && data.error === "Database error") {
+          setDbError(data.message || "Database quota exceeded or connection failed.");
+          setPageStatus("ready"); // Show the UI with the error message
+          return;
+        }
+
+        if (!data.isAdmin) {
           setPageStatus("forbidden");
           return;
         }
-        setUserRole(role);
+        setUserRole(data.role);
         
         // If editor, default to products tab
-        if (role === "editor") {
+        if (data.role === "editor") {
            setActiveTab("products");
         }
       } else {
@@ -337,7 +344,11 @@ export default function AdminPage() {
     } else if (activeTab === "orders") {
       let filtered = [...orders];
       if (orderStatusFilter !== "all") {
-        filtered = filtered.filter(o => o.status === orderStatusFilter);
+        if (orderStatusFilter === "paid") {
+          filtered = filtered.filter(o => ["processing", "shipped", "delivered"].includes(o.status));
+        } else {
+          filtered = filtered.filter(o => o.status === orderStatusFilter);
+        }
       }
       if (q) {
         filtered = filtered.filter(o => o.transactionId?.toLowerCase().includes(q) || o.user.email.toLowerCase().includes(q) || o.id.toLowerCase().includes(q));
@@ -968,6 +979,11 @@ export default function AdminPage() {
                       }`}>
                         {order.status.replace('_', ' ')}
                       </span>
+                      {["processing", "shipped", "delivered"].includes(order.status) && (
+                        <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-full shadow-lg shadow-emerald-500/30 border border-emerald-400/50">
+                          <CheckCircle size={10} /> PAID
+                        </span>
+                      )}
                       {order.status === 'awaiting_verification' && (
                         <button onClick={() => handleUpdateOrderStatus(order.id, 'processing')} className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] uppercase tracking-widest font-bold rounded-md transition shadow-md shadow-emerald-500/20">
                           <CheckCircle size={12}/> Verify
@@ -991,7 +1007,10 @@ export default function AdminPage() {
                 </div>
 
                 <div className="flex flex-col xl:items-end gap-3 min-w-[200px]">
-                  <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">₹{order.totalAmount.toLocaleString()}</span>
+                  <span className={`text-3xl font-black text-transparent bg-clip-text ${["processing", "shipped", "delivered"].includes(order.status) ? "bg-gradient-to-r from-emerald-400 to-emerald-600" : "bg-gradient-to-r from-orange-400 to-orange-600"}`}>
+                    ₹{order.totalAmount.toLocaleString()}
+                    {["processing", "shipped", "delivered"].includes(order.status) && <span className="ml-2 text-emerald-500 text-xl inline-block">✓</span>}
+                  </span>
                   <div className={`w-full xl:w-auto px-4 py-2 rounded-xl border flex items-center justify-between gap-3 ${isLight ? "bg-white border-zinc-200" : "bg-black/40 border-white/10"}`}>
                     <span className={`text-[10px] font-bold uppercase tracking-widest ${isLight ? "text-zinc-500" : "text-zinc-500"}`}>Status</span>
                     <select value={order.status} onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer">
@@ -1323,7 +1342,7 @@ export default function AdminPage() {
 
           {activeTab === "orders" && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {["all", "pending", "awaiting_verification", "processing", "shipped", "delivered", "failed"].map((status) => (
+              {["all", "paid", "pending", "awaiting_verification", "processing", "shipped", "delivered", "failed"].map((status) => (
                 <button
                   key={status}
                   onClick={() => setOrderStatusFilter(status)}
@@ -1380,6 +1399,7 @@ export default function AdminPage() {
               {activeTab === "orders" && (
                 <select value={orderStatusFilter} onChange={(e) => setOrderStatusFilter(e.target.value)} className={`px-4 py-3 rounded-2xl outline-none font-bold text-sm cursor-pointer border ${isLight ? "bg-white border-zinc-200" : "bg-[#111] border-white/10 text-white"}`}>
                    <option value="all">All Statuses</option>
+                   <option value="paid">Payment Success (PAID)</option>
                    <option value="pending">Pending</option>
                    <option value="awaiting_verification">Awaiting Verification</option>
                    <option value="processing">Processing</option>
@@ -1393,6 +1413,23 @@ export default function AdminPage() {
 
         {/* Content View */}
         <div className="flex-1 p-5 md:p-10 overflow-y-auto custom-scrollbar relative z-10 pb-32 md:pb-10">
+           {dbError && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className={`mb-8 p-6 rounded-3xl border flex flex-col sm:flex-row items-center gap-6 ${isLight ? "bg-red-50 border-red-200" : "bg-red-500/10 border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]"}`}>
+                 <div className="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-8 h-8 text-red-500" />
+                 </div>
+                 <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-lg font-black text-red-500 tracking-tight mb-1">Database Quota Exceeded</h3>
+                    <p className={`text-sm font-medium leading-relaxed ${isLight ? "text-red-700" : "text-red-400/80"}`}>
+                       Your database (Neon/Vercel) has hit its free tier limit. You must upgrade your plan or create a new database to use the Admin Panel.
+                    </p>
+                    <p className="text-[10px] mt-2 opacity-60 font-mono truncate max-w-xs sm:max-w-none">{dbError}</p>
+                 </div>
+                 <a href="https://console.neon.tech" target="_blank" rel="noreferrer" className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-red-500/20 whitespace-nowrap">
+                    Upgrade Now
+                 </a>
+              </motion.div>
+           )}
            <AnimatePresence mode="wait">
               <motion.div key={activeTab} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.2 }}>
                  {activeTab === "messages" && renderMessages()}

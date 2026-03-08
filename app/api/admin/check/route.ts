@@ -21,8 +21,14 @@ export async function GET() {
             isAdmin: user?.role === "admin" || user?.role === "editor",
             role: user?.role
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Admin check error:", error);
-        return NextResponse.json({ isAdmin: false, role: "user" });
+        // Distinguish between database errors (like quota/connection) and normal check failures
+        return NextResponse.json({
+            isAdmin: false,
+            role: "user",
+            error: "Database error",
+            message: error.message
+        }, { status: 500 });
     }
 }

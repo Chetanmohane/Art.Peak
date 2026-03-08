@@ -10,20 +10,29 @@ import { prisma } from "../lib/prisma";
 import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [products, services] = await Promise.all([
-    prisma.product.findMany({ select: { name: true, category: true }, take: 20 }),
-    prisma.service.findMany({ select: { title: true }, take: 10 })
-  ]);
-  
-  const productNames = (products as any[]).map(p => p.name).join(", ");
-  const productCategories = Array.from(new Set((products as any[]).map(p => p.category))).join(", ");
-  const serviceNames = (services as any[]).map(s => s.title).join(", ");
+  try {
+    const [products, services] = await Promise.all([
+      prisma.product.findMany({ select: { name: true, category: true }, take: 20 }),
+      prisma.service.findMany({ select: { title: true }, take: 10 })
+    ]);
+    
+    const productNames = (products as any[]).map(p => p.name).join(", ");
+    const productCategories = Array.from(new Set((products as any[]).map(p => p.category))).join(", ");
+    const serviceNames = (services as any[]).map(s => s.title).join(", ");
 
-  return {
-    title: "ArtPeak.Shop | Buy Personalized " + (productCategories || "Products") + " & Professional Services",
-    description: "Explore " + (productNames.slice(0, 80) || "premium products") + " and expert services like " + (serviceNames || "Laser Engraving") + ". India's top destination for customization, web development, and digital marketing at ArtPeak.Shop.",
-    keywords: "customized gifts, ArtPeak products, " + productNames + ", " + productCategories + ", " + serviceNames + ", digital marketing agency, web development India, laser engraving shop",
-  };
+    return {
+      title: "ArtPeak.Shop | Buy Personalized " + (productCategories || "Products") + " & Professional Services",
+      description: "Explore " + (productNames.slice(0, 80) || "premium products") + " and expert services like " + (serviceNames || "Laser Engraving") + ". India's top destination for customization, web development, and digital marketing at ArtPeak.Shop.",
+      keywords: "customized gifts, ArtPeak products, " + (productNames ? productNames + ", " : "") + (productCategories ? productCategories + ", " : "") + (serviceNames ? serviceNames + ", " : "") + "digital marketing agency, web development India, laser engraving shop",
+    };
+  } catch (error) {
+    console.error("SSR Metadata Fetch Error:", error);
+    return {
+      title: "ArtPeak.Shop | Buy Personalized Products & Professional Services",
+      description: "Explore premium products and expert services like Laser Engraving. India's top destination for customization, web development, and digital marketing at ArtPeak.Shop.",
+      keywords: "customized gifts, ArtPeak products, digital marketing agency, web development India, laser engraving shop",
+    };
+  }
 }
 
 async function getProducts() {
