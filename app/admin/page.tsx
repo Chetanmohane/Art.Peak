@@ -960,8 +960,8 @@ export default function AdminPage() {
                 <div className="flex gap-4 items-start">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg shrink-0 ${
                     order.status === 'awaiting_verification' ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-500/20' : 
-                    order.status === 'processing' ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-blue-500/20' :
-                    order.status === 'delivered' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-500/20' :
+                    ['processing', 'shipped'].includes(order.status) ? 'bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-blue-500/20' :
+                    ['delivered', 'completed', 'COMPLETED'].includes(order.status) ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-500/20' :
                     order.status === 'failed' ? 'bg-gradient-to-br from-red-400 to-red-600 text-white shadow-red-500/20' :
                     'bg-gradient-to-br from-zinc-400 to-zinc-600 text-white shadow-zinc-500/20'
                   }`}>
@@ -972,9 +972,9 @@ export default function AdminPage() {
                       <span className={`text-lg font-black tracking-wide ${isLight ? "text-zinc-900" : "text-white"}`}>#{order.id.slice(-6).toUpperCase()}</span>
                       <span className={`text-[10px] px-3 py-1 rounded-md font-bold uppercase tracking-widest ${
                         order.status === 'awaiting_verification' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' :
-                        order.status === 'processing' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
+                        ['processing', 'shipped'].includes(order.status) ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' :
                         order.status === 'failed' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
-                        order.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
+                        ['delivered', 'completed', 'COMPLETED'].includes(order.status) ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
                         'bg-zinc-500/20 text-zinc-600 dark:text-zinc-400'
                       }`}>
                         {order.status.replace('_', ' ')}

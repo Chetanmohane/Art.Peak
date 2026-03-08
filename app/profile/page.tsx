@@ -390,9 +390,11 @@ export default function ProfilePage() {
                                   </p>
                                   <div className="flex gap-2 mt-3">
                                     <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${
-                                      order.status === 'pending' || order.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500' : 
+                                      ['pending', 'PENDING'].includes(order.status) ? 'bg-yellow-500/10 text-yellow-500' : 
+                                      order.status === 'awaiting_verification' ? 'bg-amber-500/10 text-amber-500' :
                                       order.status === 'failed' ? 'bg-red-500/10 text-red-500' :
-                                      order.status === 'completed' || order.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500' : 
+                                      ['processing', 'shipped'].includes(order.status) ? 'bg-blue-500/10 text-blue-500' :
+                                      ['completed', 'COMPLETED', 'delivered'].includes(order.status) ? 'bg-emerald-500/10 text-emerald-500' : 
                                       'bg-zinc-500/10 text-zinc-500'
                                     }`}>
                                       {order.status.replace('_', ' ')}
