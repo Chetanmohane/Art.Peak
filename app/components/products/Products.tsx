@@ -30,6 +30,7 @@ interface Product {
   images?: string[];
   bulkPricing?: { qty: number; price: number }[];
   sizes?: { size: string; price: number }[];
+  minQuantity?: number;
 }
 
 function ProductCard({
@@ -100,7 +101,13 @@ function ProductCard({
         </div>
 
         {/* Bulk badge */}
-        {hasBulk && (
+        {((product.minQuantity || 1) > 1) && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-red-600/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-lg">
+            <Layers size={10} className="text-white" />
+            <span className="text-[10px] text-white font-black uppercase tracking-tighter">Bulk Only ({product.minQuantity}+)</span>
+          </div>
+        )}
+        {hasBulk && !((product.minQuantity || 1) > 1) && (
           <div className="absolute top-3 right-3 flex items-center gap-1 bg-green-600/90 backdrop-blur-sm px-2.5 py-1 rounded-full">
             <Layers size={10} className="text-white" />
             <span className="text-[10px] text-white font-bold">Bulk</span>
@@ -165,6 +172,33 @@ function ProductCard({
           >
             {product.name}
           </h3>
+
+          {/* Sizes Display */}
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="mt-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500/90 flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  Available Sizes
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {product.sizes.map((s, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] font-black px-2.5 py-1 rounded-lg border shadow-sm transition-all duration-300 hover:scale-105 active:scale-95 cursor-default hover:border-orange-500/50"
+                    style={{ 
+                      backgroundColor: isLight ? "#ffffff" : "rgba(255,255,255,0.03)", 
+                      borderColor: "var(--border-strong)",
+                      color: "var(--text-primary)" 
+                    }}
+                  >
+                    {s.size}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bulk Pricing Table */}
@@ -242,6 +276,14 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
   const [customText, setCustomText] = useState("");
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [customQty, setCustomQty] = useState(1);
+  
+  // Set initial quantity based on product's minQuantity
+  useEffect(() => {
+    if (customizingProduct) {
+      setCustomQty(customizingProduct.minQuantity || 1);
+    }
+  }, [customizingProduct]);
+
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -694,14 +736,19 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
 
                   {/* Quantity */}
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-300 mb-3">
-                      Quantity
+                    <label className="block text-sm font-semibold text-zinc-300 mb-3 flex items-center justify-between">
+                      <span>Quantity</span>
+                      {(customizingProduct.minQuantity || 1) > 1 && (
+                        <span className="text-[10px] font-black text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
+                          Min. Order: {customizingProduct.minQuantity} Pcs
+                        </span>
+                      )}
                     </label>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center bg-black/40 border border-white/10 rounded-xl overflow-hidden">
                         <button
                           onClick={() =>
-                            setCustomQty((prev) => Math.max(1, prev - 1))
+                            setCustomQty((prev) => Math.max(customizingProduct.minQuantity || 1, prev - 1))
                           }
                           className="px-4 py-3 text-zinc-400 hover:text-white hover:bg-white/5 transition"
                         >
@@ -713,7 +760,10 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                           value={customQty}
                           onChange={(e) => {
                             const val = parseInt(e.target.value);
-                            if (!isNaN(val) && val > 0) setCustomQty(val);
+                            const minVal = customizingProduct.minQuantity || 1;
+                            if (!isNaN(val)) {
+                              setCustomQty(Math.max(minVal, val));
+                            }
                           }}
                           className="w-14 text-center text-white font-bold bg-transparent outline-none border-none hide-number-spinners"
                         />

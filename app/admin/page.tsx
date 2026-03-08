@@ -50,6 +50,7 @@ interface Product {
   images: string[];
   bulkPricing: BulkTier[];
   sizes: SizePrice[];
+  minQuantity: number;
   createdAt: string;
 }
 
@@ -158,7 +159,8 @@ export default function AdminPage() {
     image: "",
     images: [] as string[],
     bulkPricing: [] as BulkTier[],
-    sizes: [] as SizePrice[]
+    sizes: [] as SizePrice[],
+    minQuantity: "1"
   });
 
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -544,7 +546,8 @@ export default function AdminPage() {
         image: product.image,
         images: product.images || [],
         bulkPricing: product.bulkPricing || [],
-        sizes: product.sizes || []
+        sizes: product.sizes || [],
+        minQuantity: (product.minQuantity || 1).toString()
       });
     } else {
       setEditingProduct(null);
@@ -553,7 +556,8 @@ export default function AdminPage() {
         image: "",
         images: [],
         bulkPricing: [],
-        sizes: []
+        sizes: [],
+        minQuantity: "1"
       });
     }
     setShowProductModal(true);
@@ -678,7 +682,8 @@ export default function AdminPage() {
       const body = {
         ...productForm,
         id: editingProduct?.id,
-        price: parseFloat(productForm.price)
+        price: parseFloat(productForm.price),
+        minQuantity: parseInt(productForm.minQuantity) || 1
       };
 
       const res = await fetch("/api/admin/products", {
@@ -1524,6 +1529,9 @@ export default function AdminPage() {
                        </FormGroup>
                        <FormGroup label="Base Price (₹)" icon={<IndianRupee size={14}/>} isLight={isLight}>
                           <input required type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="999" />
+                       </FormGroup>
+                       <FormGroup label="Min. Quantity" icon={<Layers size={14}/>} isLight={isLight}>
+                          <input required type="number" min="1" value={productForm.minQuantity} onChange={e => setProductForm({...productForm, minQuantity: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="1" />
                        </FormGroup>
                         <FormGroup label="Category" icon={<Package size={14}/>} isLight={isLight}>
                            <div className="flex flex-col gap-2 py-1 w-full">

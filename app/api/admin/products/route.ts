@@ -51,8 +51,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { name, price, image, category, images, bulkPricing, sizes } = body;
-
+        const { name, price, image, category, images, bulkPricing, sizes, minQuantity } = body;
         const product = await prisma.product.create({
             data: {
                 name,
@@ -62,6 +61,7 @@ export async function POST(req: Request) {
                 images: JSON.stringify(images || []),
                 bulkPricing: JSON.stringify(bulkPricing || []),
                 sizes: JSON.stringify(sizes || []),
+                minQuantity: parseInt(minQuantity) || 1
             },
         });
 
@@ -82,8 +82,7 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { id, name, price, image, category, images, bulkPricing, sizes } = body;
-
+        const { id, name, price, image, category, images, bulkPricing, sizes, minQuantity } = body;
         const product = await prisma.product.update({
             where: { id },
             data: {
@@ -94,6 +93,7 @@ export async function PUT(req: Request) {
                 images: JSON.stringify(images || []),
                 bulkPricing: JSON.stringify(bulkPricing || []),
                 sizes: JSON.stringify(sizes || []),
+                minQuantity: parseInt(minQuantity) || 1
             },
         });
 
