@@ -786,6 +786,16 @@ export default function Navbar() {
                                  ₹{(() => {
                                    if (!item?.product) return "0";
                                    let price = item.product.price || 0;
+                                   
+                                   // 1. Check for Size Price
+                                   if (item.selectedSize && item.product.sizes && Array.isArray(item.product.sizes)) {
+                                     const sizeObj: any = item.product.sizes.find((s: any) => (s?.size || s) === item.selectedSize);
+                                     if (sizeObj && typeof sizeObj === 'object' && sizeObj.price) {
+                                       price = sizeObj.price;
+                                     }
+                                   }
+
+                                   // 2. Check for Bulk Pricing
                                    if (item.product.bulkPricing && Array.isArray(item.product.bulkPricing)) {
                                      const tier = [...item.product.bulkPricing]
                                        .sort((a,b) => b.qty - a.qty)

@@ -1671,10 +1671,10 @@ export default function AdminPage() {
                               <label className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                                 <Plus size={14} className="text-orange-500" /> Variations & Pricing
                               </label>
-                              <p className="text-[10px] text-zinc-400 mt-1 font-bold uppercase tracking-tighter">Add sizes in CM, INCHES or custom units</p>
+                              <p className="text-[10px] text-zinc-400 mt-1 font-bold uppercase tracking-tighter">Add sizes in CM or INCHES</p>
                            </div>
                            <div className="flex gap-2">
-                              {["CM", "INCHES", "PCS", "Custom"].map((unit) => (
+                              {["CM", "INCHES"].map((unit) => (
                                  <button 
                                     key={unit}
                                     type="button" 
