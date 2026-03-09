@@ -181,17 +181,27 @@ export async function POST(req: Request) {
             } catch { /* use fallback */ }
         }
 
-        // 4. Fallback: zone-based pricing
+        // 4. Fallback: zone-based pricing with weight factor
         const pincodeNum = parseInt(pincode);
-        let fallbackCost = 150;
-        if (pincodeNum >= 400000 && pincodeNum <= 431000) fallbackCost = 60;  // Maharashtra
-        else if (pincodeNum >= 110000 && pincodeNum <= 110099) fallbackCost = 100; // Delhi
-        else if (pincodeNum >= 380000 && pincodeNum <= 396999) fallbackCost = 80;  // Gujarat
+        let baseCost = 150;
+
+        // Accurate zone detection
+        if (pincodeNum >= 450000 && pincodeNum <= 489999) baseCost = 60;   // Madhya Pradesh (Local)
+        else if (pincodeNum >= 400000 && pincodeNum <= 431000) baseCost = 70;  // Maharashtra
+        else if (pincodeNum >= 380000 && pincodeNum <= 396999) baseCost = 85;  // Gujarat
+        else if (pincodeNum >= 110000 && pincodeNum <= 110099) baseCost = 110; // Delhi
+        else if (pincodeNum >= 300000 && pincodeNum <= 349999) baseCost = 90;  // Rajasthan
+        else if (pincodeNum >= 500000 && pincodeNum <= 539999) baseCost = 130; // Telangana/Andhra
+        else if (pincodeNum >= 560000 && pincodeNum <= 599999) baseCost = 140; // Karnataka
+
+        // Adjust for weight (every 500g extra adds 50% of base)
+        const weightFactor = Math.ceil(totalWeight / 500);
+        const finalFallback = baseCost + (weightFactor - 1) * (baseCost * 0.5);
 
         return NextResponse.json({
             success: true,
-            shippingCost: fallbackCost,
-            courier: 'Standard Rate',
+            shippingCost: Math.ceil(finalFallback),
+            courier: 'Express Delivery',
             fallback: true
         });
 
