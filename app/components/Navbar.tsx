@@ -74,9 +74,48 @@ export default function Navbar() {
   const [utr, setUtr] = useState("");
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [dynamicQrCode, setDynamicQrCode] = useState<string | null>(null);
+  const [liveShippingCost, setLiveShippingCost] = useState<number | null>(null);
+  const [liveCourierName, setLiveCourierName] = useState<string | null>(null);
+  const [loadingShipping, setLoadingShipping] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Fetch Live Shipping Cost from iCarry
+  useEffect(() => {
+    const fetchShipping = async () => {
+      if (shippingDetails.pincode.length === 6 && cart.length > 0) {
+        setLoadingShipping(true);
+        setLiveCourierName(null);
+        try {
+          // Strip customImage (large base64) from cart before sending to avoid large request body
+          const lightCart = cart.map(({ customImage, ...rest }) => rest);
+          const res = await fetch("/api/shipping/estimate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              pincode: shippingDetails.pincode, 
+              items: lightCart 
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            setLiveShippingCost(data.shippingCost);
+            setLiveCourierName(data.courier || null);
+          }
+        } catch (err) {
+          console.error("Shipping fetch error:", err);
+        } finally {
+          setLoadingShipping(false);
+        }
+      } else {
+        setLiveShippingCost(null);
+        setLiveCourierName(null);
+      }
+    };
+    fetchShipping();
+  }, [shippingDetails.pincode, cart]);
+
   const shippingCost = (() => {
+    if (liveShippingCost !== null) return liveShippingCost;
     if (!shippingDetails.state) return 0;
     const s = shippingDetails.state.toLowerCase().trim();
     return (s.includes("maharashtra") || s === "mh" || s === "maharastra") ? 50 : 100;
@@ -1098,10 +1137,17 @@ export default function Navbar() {
                       </div>
                     )}
 
-                    {checkoutStep !== "cart" && shippingDetails.state && (
+                    {checkoutStep !== "cart" && shippingDetails.pincode.length === 6 && (
                       <div className="flex justify-between text-sm font-semibold" style={{ color: isLight ? "#52525b" : "#a1a1aa" }}>
-                        <span>Shipping ({shippingDetails.state})</span>
-                        <span>+₹{shippingCost}</span>
+                        <span className="flex flex-col gap-0.5">
+                          <span className="flex items-center gap-2">
+                            Shipping {loadingShipping && <span className="w-3 h-3 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></span>}
+                          </span>
+                          {!loadingShipping && liveCourierName && (
+                            <span className="text-[10px] font-medium text-orange-400">{liveCourierName}</span>
+                          )}
+                        </span>
+                        <span>{loadingShipping ? "..." : `+₹${shippingCost}`}</span>
                       </div>
                     )}
 

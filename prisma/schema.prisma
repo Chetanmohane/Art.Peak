@@ -56,6 +56,10 @@ model Product {
   bulkPricing String?
   sizes       String?
   minQuantity Int?     @default(1)
+  weight      Float?   @default(500)
+  length      Float?   @default(10)
+  breadth     Float?   @default(10)
+  height      Float?   @default(10)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

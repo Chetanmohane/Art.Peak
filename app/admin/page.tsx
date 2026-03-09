@@ -34,6 +34,10 @@ interface UserData {
 interface BulkTier {
   qty: number;
   price: number;
+  weight?: number;
+  length?: number;
+  breadth?: number;
+  height?: number;
 }
 
 interface SizePrice {
@@ -51,6 +55,10 @@ interface Product {
   bulkPricing: BulkTier[];
   sizes: SizePrice[];
   minQuantity: number;
+  weight?: number;
+  length?: number;
+  breadth?: number;
+  height?: number;
   createdAt: string;
 }
 
@@ -160,7 +168,11 @@ export default function AdminPage() {
     images: [] as string[],
     bulkPricing: [] as BulkTier[],
     sizes: [] as SizePrice[],
-    minQuantity: "1"
+    minQuantity: "1",
+    weight: "500",
+    length: "10",
+    breadth: "10",
+    height: "10"
   });
 
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -547,7 +559,11 @@ export default function AdminPage() {
         images: product.images || [],
         bulkPricing: product.bulkPricing || [],
         sizes: product.sizes || [],
-        minQuantity: (product.minQuantity || 1).toString()
+        minQuantity: (product.minQuantity || 1).toString(),
+        weight: (product.weight || 500).toString(),
+        length: (product.length || 10).toString(),
+        breadth: (product.breadth || 10).toString(),
+        height: (product.height || 10).toString()
       });
     } else {
       setEditingProduct(null);
@@ -557,7 +573,11 @@ export default function AdminPage() {
         images: [],
         bulkPricing: [],
         sizes: [],
-        minQuantity: "1"
+        minQuantity: "1",
+        weight: "500",
+        length: "10",
+        breadth: "10",
+        height: "10"
       });
     }
     setShowProductModal(true);
@@ -683,7 +703,11 @@ export default function AdminPage() {
         ...productForm,
         id: editingProduct?.id,
         price: parseFloat(productForm.price),
-        minQuantity: parseInt(productForm.minQuantity) || 1
+        minQuantity: parseInt(productForm.minQuantity) || 1,
+        weight: parseFloat(productForm.weight) || 500,
+        length: parseFloat(productForm.length) || 10,
+        breadth: parseFloat(productForm.breadth) || 10,
+        height: parseFloat(productForm.height) || 10
       };
 
       const res = await fetch("/api/admin/products", {
@@ -770,7 +794,7 @@ export default function AdminPage() {
   const addBulkTier = () => {
     setProductForm({
       ...productForm,
-      bulkPricing: [...productForm.bulkPricing, { qty: 0, price: 0 }]
+      bulkPricing: [...productForm.bulkPricing, { qty: 0, price: 0, weight: 0, length: 0, breadth: 0, height: 0 }]
     });
   };
 
@@ -807,7 +831,7 @@ export default function AdminPage() {
     setProductForm(prev => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== index) }));
   };
 
-  const updateBulkTier = (index: number, field: "qty" | "price", value: string) => {
+  const updateBulkTier = (index: number, field: "qty" | "price" | "weight" | "length" | "breadth" | "height", value: string) => {
     const newPricing = [...productForm.bulkPricing];
     newPricing[index] = { ...newPricing[index], [field]: parseFloat(value) || 0 };
     setProductForm({ ...productForm, bulkPricing: newPricing });
@@ -1603,6 +1627,25 @@ export default function AdminPage() {
                         </div>
                      </div>
 
+                     {/* Base Shipping Dimensions */}
+                     <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                        <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2 mb-4"><Package size={14}/> Shipping Dimensions (Single Item)</label>
+                        <div className="grid grid-cols-4 gap-3">
+                           <FormGroup label="Length (cm)" icon={<span />} isLight={isLight}>
+                              <input required type="number" min="1" value={productForm.length} onChange={e => setProductForm({...productForm, length: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="10" />
+                           </FormGroup>
+                           <FormGroup label="Breadth (cm)" icon={<span />} isLight={isLight}>
+                              <input required type="number" min="1" value={productForm.breadth} onChange={e => setProductForm({...productForm, breadth: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="10" />
+                           </FormGroup>
+                           <FormGroup label="Height (cm)" icon={<span />} isLight={isLight}>
+                              <input required type="number" min="1" value={productForm.height} onChange={e => setProductForm({...productForm, height: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="10" />
+                           </FormGroup>
+                           <FormGroup label="Weight (g)" icon={<span />} isLight={isLight}>
+                              <input required type="number" min="1" value={productForm.weight} onChange={e => setProductForm({...productForm, weight: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="500" />
+                           </FormGroup>
+                        </div>
+                     </div>
+
                     {/* Additional Images Section */}
                      <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
                         <div className="flex items-center justify-between mb-4">
@@ -1655,19 +1698,39 @@ export default function AdminPage() {
                           <button type="button" onClick={addBulkTier} className="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-500/20 transition flex items-center gap-1.5 border border-emerald-500/20"><Plus size={12}/> ADD TIER</button>
                        </div>
                        <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                          {productForm.bulkPricing.map((tier, idx) => (
-                             <div key={idx} className="flex gap-2 items-center">
-                                <div className={`flex-[2] px-4 rounded-xl border flex items-center gap-2 transition-colors focus-within:border-emerald-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
-                                   <span className="text-[10px] uppercase font-bold text-zinc-500">Qty</span>
-                                   <input type="number" value={tier.qty} onChange={e => updateBulkTier(idx, "qty", e.target.value)} className="w-full bg-transparent outline-none py-2.5 text-xs font-bold" />
-                                </div>
-                                <div className={`flex-[3] px-4 rounded-xl border flex items-center gap-2 transition-colors focus-within:border-emerald-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
-                                   <span className="text-[10px] uppercase font-bold text-zinc-500">Price ₹</span>
-                                   <input type="number" value={tier.price} onChange={e => updateBulkTier(idx, "price", e.target.value)} className="w-full bg-transparent outline-none py-2.5 text-xs font-bold text-emerald-500" />
-                                </div>
-                                <button type="button" onClick={() => removeBulkTier(idx)} className="p-3 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
-                             </div>
-                          ))}
+                           {productForm.bulkPricing.map((tier, idx) => (
+                              <div key={idx} className={`p-4 rounded-xl border flex flex-col gap-3 transition-colors focus-within:border-emerald-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
+                                 <div className="flex gap-2 items-center">
+                                    <div className="flex-[2] px-4 rounded-xl border flex items-center gap-2 border-transparent bg-black/10">
+                                       <span className="text-[10px] uppercase font-bold text-zinc-500">Qty</span>
+                                       <input type="number" value={tier.qty} onChange={e => updateBulkTier(idx, "qty", e.target.value)} className="w-full bg-transparent outline-none py-2 text-xs font-bold" />
+                                    </div>
+                                    <div className="flex-[3] px-4 rounded-xl border flex items-center gap-2 border-transparent bg-black/10">
+                                       <span className="text-[10px] uppercase font-bold text-zinc-500">Price ₹</span>
+                                       <input type="number" value={tier.price} onChange={e => updateBulkTier(idx, "price", e.target.value)} className="w-full bg-transparent outline-none py-2 text-xs font-bold text-emerald-500" />
+                                    </div>
+                                    <button type="button" onClick={() => removeBulkTier(idx)} className="p-2.5 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
+                                 </div>
+                                 <div className="grid grid-cols-4 gap-2 border-t border-white/5 pt-3">
+                                    <div className="flex flex-col">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">L(cm)</span>
+                                       <input type="number" value={tier.length || ""} onChange={e => updateBulkTier(idx, "length", e.target.value)} placeholder={productForm.length} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">B(cm)</span>
+                                       <input type="number" value={tier.breadth || ""} onChange={e => updateBulkTier(idx, "breadth", e.target.value)} placeholder={productForm.breadth} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">H(cm)</span>
+                                       <input type="number" value={tier.height || ""} onChange={e => updateBulkTier(idx, "height", e.target.value)} placeholder={productForm.height} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">W(g)</span>
+                                       <input type="number" value={tier.weight || ""} onChange={e => updateBulkTier(idx, "weight", e.target.value)} placeholder={productForm.weight} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                    </div>
+                                 </div>
+                              </div>
+                           ))}
                            {productForm.bulkPricing.length === 0 && <p className="text-xs text-zinc-500 text-center py-4 italic font-medium">No bulk pricing tiers defined.</p>}
                         </div>
                      </div>
