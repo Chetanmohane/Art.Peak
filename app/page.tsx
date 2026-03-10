@@ -9,6 +9,15 @@ import Products from "./components/products/Products";
 import { prisma } from "../lib/prisma";
 import { Metadata } from "next";
 
+const SEO_KEYWORDS = [
+  "ArtPeak", "ArtPeak.shop", "artpeak shop", "laser engraving India", "laser engraving Indore",
+  "custom engraving India", "personalized gifts India", "wooden keychain India", "custom wooden keychain",
+  "metal engraving", "acrylic engraving", "glass engraving", "corporate gifts India",
+  "personalized corporate gifts", "customized products India", "laser cutting services India",
+  "engraved keychains", "name plate engraving", "trophy engraving", "custom logo engraving",
+  "Art Peak Shop", "laser engraving MP", "Indore laser engraving", "best laser engraving India"
+];
+
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const [products, services] = await Promise.all([
@@ -16,21 +25,32 @@ export async function generateMetadata(): Promise<Metadata> {
       prisma.service.findMany({ select: { title: true }, take: 10 })
     ]);
     
-    const productNames = (products as any[]).map(p => p.name).join(", ");
-    const productCategories = Array.from(new Set((products as any[]).map(p => p.category))).join(", ");
-    const serviceNames = (services as any[]).map(s => s.title).join(", ");
+    const productNames = (products as any[]).map(p => p.name).slice(0, 5).join(", ");
+    const productCategories = Array.from(new Set((products as any[]).map(p => p.category))).slice(0, 5).join(", ");
+    const serviceNames = (services as any[]).map(s => s.title).slice(0, 4).join(", ");
+
+    const dynamicKeywords = [
+      ...SEO_KEYWORDS,
+      ...(productNames ? productNames.split(", ") : []),
+      ...(productCategories ? productCategories.split(", ") : []),
+      ...(serviceNames ? serviceNames.split(", ") : []),
+    ].filter(Boolean);
 
     return {
-      title: "ArtPeak.Shop | Buy Personalized " + (productCategories || "Products") + " & Professional Services",
-      description: "Explore " + (productNames.slice(0, 80) || "premium products") + " and expert services like " + (serviceNames || "Laser Engraving") + ". India's top destination for customization, web development, and digital marketing at ArtPeak.Shop.",
-      keywords: "customized gifts, ArtPeak products, " + (productNames ? productNames + ", " : "") + (productCategories ? productCategories + ", " : "") + (serviceNames ? serviceNames + ", " : "") + "digital marketing agency, web development India, laser engraving shop",
+      title: "ArtPeak.Shop | Laser Engraving India | " + (productCategories || "Custom Gifts & Engraved Products"),
+      description: "Shop " + (productNames || "laser engraved products") + " at ArtPeak.shop. " + (productCategories ? productCategories + ". " : "") + "Services: " + (serviceNames || "Laser Engraving") + ". India delivery. 500+ projects. Indore, MP. Order now!",
+      keywords: [...new Set(dynamicKeywords)].join(", "),
+      openGraph: {
+        title: "ArtPeak.Shop | Laser Engraving India | Custom Gifts",
+        description: "Premium laser engraving. Custom wooden keychains, metal engraving, personalized gifts. artpeak.shop",
+      },
     };
   } catch (error) {
     console.error("SSR Metadata Fetch Error:", error);
     return {
-      title: "ArtPeak.Shop | Buy Personalized Products & Professional Services",
-      description: "Explore premium products and expert services like Laser Engraving. India's top destination for customization, web development, and digital marketing at ArtPeak.Shop.",
-      keywords: "customized gifts, ArtPeak products, digital marketing agency, web development India, laser engraving shop",
+      title: "ArtPeak.Shop | Laser Engraving India | Custom Gifts & Engraved Products",
+      description: "India's best laser engraving shop. Custom wooden keychains, metal engraving, personalized gifts, corporate branding. Order at artpeak.shop. Indore, MP.",
+      keywords: SEO_KEYWORDS.join(", "),
     };
   }
 }
