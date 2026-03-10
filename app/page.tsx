@@ -60,6 +60,11 @@ async function getProducts() {
     const products = await prisma.product.findMany({
       orderBy: { createdAt: "desc" },
     });
+    products.sort((a: any, b: any) => {
+      const sa = a.sortOrder ?? 999;
+      const sb = b.sortOrder ?? 999;
+      return sa - sb;
+    });
     return products.map((p: any) => {
       let images = [];
       let bulkPricing = [];

@@ -102,16 +102,32 @@ export default function Footer() {
 
             {/* Social */}
             <div className="flex gap-4 mt-6">
-              {[Facebook, Instagram, Linkedin].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="p-2 rounded-full hover:bg-orange-600 hover:text-white transition duration-300"
-                  style={{ backgroundColor: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
-                >
-                  <Icon size={18} />
-                </a>
-              ))}
+              <a
+                href="https://www.instagram.com/art.peak_/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="ArtPeak on Instagram"
+                className="p-2 rounded-full hover:bg-orange-600 hover:text-white transition duration-300"
+                style={{ backgroundColor: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+              >
+                <Instagram size={18} />
+              </a>
+              <a
+                href="#"
+                className="p-2 rounded-full hover:bg-orange-600 hover:text-white transition duration-300 opacity-50"
+                style={{ backgroundColor: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+                aria-label="Facebook (coming soon)"
+              >
+                <Facebook size={18} />
+              </a>
+              <a
+                href="#"
+                className="p-2 rounded-full hover:bg-orange-600 hover:text-white transition duration-300 opacity-50"
+                style={{ backgroundColor: "var(--bg-tertiary)", color: "var(--text-secondary)" }}
+                aria-label="LinkedIn (coming soon)"
+              >
+                <Linkedin size={18} />
+              </a>
             </div>
           </div>
         </div>

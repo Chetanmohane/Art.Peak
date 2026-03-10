@@ -55,6 +55,7 @@ interface Product {
   bulkPricing: BulkTier[];
   sizes: SizePrice[];
   minQuantity: number;
+  sortOrder?: number;
   weight?: number;
   length?: number;
   breadth?: number;
@@ -148,6 +149,8 @@ export default function AdminPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminCategoryFilter, setAdminCategoryFilter] = useState("all");
   const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [top4Order, setTop4Order] = useState<[string, string, string, string]>(["", "", "", ""]);
+  const [savingTop4, setSavingTop4] = useState(false);
 
   // Cropper State
   const [crop, setCrop] = useState<Crop>();
@@ -390,6 +393,20 @@ export default function AdminPage() {
       );
     }
   }, [search, messages, users, products, orders, offers, services, activeTab, orderStatusFilter, adminCategoryFilter]);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    const p1 = products.find(p => (p as any).sortOrder === 1);
+    const p2 = products.find(p => (p as any).sortOrder === 2);
+    const p3 = products.find(p => (p as any).sortOrder === 3);
+    const p4 = products.find(p => (p as any).sortOrder === 4);
+    setTop4Order([
+      p1?.id || "",
+      p2?.id || "",
+      p3?.id || "",
+      p4?.id || "",
+    ]);
+  }, [products]);
 
   const handleDeleteMessage = async (id: string) => {
     if (!confirm("Is message ko delete karna chahte hain?")) return;
@@ -982,11 +999,93 @@ export default function AdminPage() {
     );
   };
 
+  const handleSaveTop4Order = async () => {
+    const ids = top4Order.filter(Boolean);
+    if (ids.length === 0) {
+      showToast("Select at least one product", "error");
+      return;
+    }
+    setSavingTop4(true);
+    try {
+      const res = await fetch("/api/admin/products/order", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          position1: ids[0],
+          position2: ids[1],
+          position3: ids[2],
+          position4: ids[3],
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast("Top 4 product order saved!");
+        await fetchProducts();
+      } else {
+        showToast(data.error || data.message || "Failed to save order", "error");
+      }
+    } catch (e) {
+      showToast("Failed to save order. Check connection.", "error");
+    } finally {
+      setSavingTop4(false);
+    }
+  };
+
   const renderProducts = () => {
     const uniqueCategories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
     
     return (
       <div className="space-y-6">
+        {/* Top 4 Order */}
+        <div className={`p-5 rounded-2xl border ${isLight ? "bg-orange-50/80 border-orange-200/80" : "bg-orange-500/5 border-orange-500/20"}`}>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-orange-600 mb-3 flex items-center gap-2">
+            <Star size={14} /> Top 4 Product Sequence
+          </h3>
+          <p className="text-xs font-medium mb-4" style={{ color: isLight ? "#52525b" : "rgba(255,255,255,0.6)" }}>
+            Website ke product section mein 4 sections hain (pehli row). Har section ke liye ek product choose karein — Section 1 = sabse pehle (leftmost), Section 4 = sabse aakhri (rightmost).
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            {([
+              { pos: 1, label: "Section 1 — Pehla (leftmost)" },
+              { pos: 2, label: "Section 2 — Doosra" },
+              { pos: 3, label: "Section 3 — Teesra" },
+              { pos: 4, label: "Section 4 — Chautha (rightmost)" },
+            ] as const).map(({ pos, label }) => (
+              <div key={pos} className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-orange-500">{label}</label>
+                <select
+                  value={top4Order[pos - 1]}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setTop4Order(prev => {
+                      const next = [...prev] as [string, string, string, string];
+                      next[pos - 1] = v;
+                      return next;
+                    });
+                  }}
+                  className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium outline-none border ${isLight ? "bg-white border-zinc-200" : "bg-black/30 border-white/10 text-white"}`}
+                >
+                  <option value="">— Select —</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id} disabled={top4Order.includes(p.id) && top4Order[pos - 1] !== p.id}>
+                      {p.name} {top4Order.includes(p.id) && top4Order[pos - 1] !== p.id ? "(already used)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleSaveTop4Order}
+            disabled={savingTop4}
+            className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+          >
+            {savingTop4 ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+            {savingTop4 ? "Saving..." : "Save Order"}
+          </button>
+        </div>
+
         {/* Category Filter */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2">
           {uniqueCategories.map(cat => (

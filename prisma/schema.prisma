@@ -56,6 +56,7 @@ model Product {
   bulkPricing String?
   sizes       String?
   minQuantity Int?     @default(1)
+  sortOrder   Int?     @default(999)  // 1=first, 2=second, 3=third, 4=fourth; 999=not in top 4
   weight      Float?   @default(500)
   length      Float?   @default(10)
   breadth     Float?   @default(10)

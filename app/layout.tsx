@@ -117,7 +117,7 @@ export default function RootLayout({
       "closes": "18:00"
     },
     "priceRange": "₹₹",
-    "sameAs": ["https://www.instagram.com/artpeak.shop"],
+    "sameAs": ["https://www.instagram.com/art.peak_/"],
     "knowsAbout": ["Laser Engraving", "Custom Gifts", "Wood Engraving", "Metal Engraving", "Acrylic Cutting", "Personalized Products"]
   };
 

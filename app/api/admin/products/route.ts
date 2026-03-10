@@ -67,6 +67,7 @@ export async function POST(req: Request) {
                 length: parseFloat(length) || 10,
                 breadth: parseFloat(breadth) || 10,
                 height: parseFloat(height) || 10,
+                sortOrder: 999,
             },
         });
 
@@ -87,23 +88,25 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { id, name, price, image, category, images, bulkPricing, sizes, minQuantity, weight, length, breadth, height } = body;
+        const { id, name, price, image, category, images, bulkPricing, sizes, minQuantity, weight, length, breadth, height, sortOrder } = body;
+        const data: Record<string, unknown> = {
+            name,
+            price: parseFloat(price),
+            image,
+            category,
+            images: JSON.stringify(images || []),
+            bulkPricing: JSON.stringify(bulkPricing || []),
+            sizes: JSON.stringify(sizes || []),
+            minQuantity: parseInt(minQuantity) || 1,
+            weight: parseFloat(weight) || 500,
+            length: parseFloat(length) || 10,
+            breadth: parseFloat(breadth) || 10,
+            height: parseFloat(height) || 10,
+        };
+        if (sortOrder !== undefined) data.sortOrder = sortOrder === "" || sortOrder === null ? 999 : parseInt(String(sortOrder));
         const product = await prisma.product.update({
             where: { id },
-            data: {
-                name,
-                price: parseFloat(price),
-                image,
-                category,
-                images: JSON.stringify(images || []),
-                bulkPricing: JSON.stringify(bulkPricing || []),
-                sizes: JSON.stringify(sizes || []),
-                minQuantity: parseInt(minQuantity) || 1,
-                weight: parseFloat(weight) || 500,
-                length: parseFloat(length) || 10,
-                breadth: parseFloat(breadth) || 10,
-                height: parseFloat(height) || 10,
-            },
+            data,
         });
 
         return NextResponse.json(product);
