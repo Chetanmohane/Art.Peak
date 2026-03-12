@@ -143,8 +143,7 @@ export default function Services({ initialServices }: ServicesProps) {
   return (
     <section
       id="services"
-      style={{ background: "linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary))" }}
-      className="py-12 relative overflow-hidden"
+      className="py-12 relative overflow-hidden bg-transparent"
     >
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-orange-600/5 blur-[120px] rounded-full" />

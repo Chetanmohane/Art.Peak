@@ -171,19 +171,19 @@ export default function PremiumBackground() {
   }, []);
 
   return (
-    <div className="fixed inset-0 -z-50 pointer-events-none w-full h-full overflow-hidden" 
+    <div className="fixed inset-0 -z-30 pointer-events-none w-full h-full overflow-hidden" 
          style={{ backgroundColor: "var(--bg-primary)" }}>
-      {/* Dark background base */}
-      <div className="hidden dark:block absolute inset-0 bg-[#020617] opacity-80" />
+      {/* Dark background base - reduced opacity for visibility */}
+      <div className="hidden dark:block absolute inset-0 bg-[#020617] opacity-65" />
       
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       
-      {/* Vignette smoothing */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,var(--bg-primary)_100%)] opacity-70" />
+      {/* Vignette smoothing - reduced opacity */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,var(--bg-primary)_100%)] opacity-40" />
       
       {/* Fade borders */}
-      <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-[var(--bg-primary)] to-transparent" />
-      <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[var(--bg-primary)] to-transparent" />
+      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[var(--bg-primary)] to-transparent opacity-50" />
+      <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[var(--bg-primary)] to-transparent opacity-50" />
     </div>
   );
 }

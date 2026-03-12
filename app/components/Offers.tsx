@@ -93,8 +93,7 @@ export default function Offers({ initialOffers }: { initialOffers?: Offer[] }) {
   return (
     <section
       id="offers"
-      className="relative py-12 overflow-hidden"
-      style={{ background: isLight ? "var(--bg-secondary, #f8fafc)" : "var(--bg-secondary, #09090b)" }}
+      className="relative py-12 overflow-hidden bg-transparent"
     >
       {/* ── Ambient Glow ── */}
       <motion.div
