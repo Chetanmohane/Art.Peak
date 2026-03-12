@@ -13,44 +13,7 @@ export default function Hero() {
       id="home"
       className="relative min-h-[85dvh] pt-20 pb-10 flex flex-col items-center justify-center overflow-hidden"
     >
-      {/* ── DARK MODE: Photo background ── */}
-      {!isLight && (
-        <>
-          <div
-            className="absolute inset-0 bg-cover bg-center scale-110 transition-all duration-700"
-            style={{
-              backgroundImage: `url(https://images.unsplash.com/photo-1581091215367-9b6c00b3035b?q=80&w=1600&auto=format&fit=crop)`,
-            }}
-          />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.50), rgba(0,0,0,0.75))" }} />
-        </>
-      )}
-
-      {/* ── LIGHT MODE: Vibrant gradient background ── */}
-      {isLight && (
-        <div
-          className="absolute inset-0 transition-all duration-700"
-          style={{
-            background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 30%, #fed7aa 60%, #fff7ed 100%)",
-          }}
-        >
-          {/* Decorative circles */}
-          <div className="absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl opacity-60"
-            style={{ background: "radial-gradient(circle, #fb923c44, #f9731622)" }} />
-          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl opacity-50"
-            style={{ background: "radial-gradient(circle, #ea580c33, #9a340011)" }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl opacity-30"
-            style={{ background: "radial-gradient(circle, #fdba7444, transparent)" }} />
-
-          {/* Subtle grid pattern */}
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage: "linear-gradient(#f97316 1px, transparent 1px), linear-gradient(90deg, #f97316 1px, transparent 1px)",
-              backgroundSize: "60px 60px"
-            }}
-          />
-        </div>
-      )}
+      {/* Background is now handled by PremiumBackground entirely */}
 
       {/* 🔥 Animated Laser Line */}
       <motion.div
