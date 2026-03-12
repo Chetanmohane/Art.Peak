@@ -15,10 +15,10 @@ export default function PremiumBackground() {
     canvas.width = width;
     canvas.height = height;
 
-    // Configuration
-    const SEPARATION = 55;
-    const AMOUNTX = 65;
-    const AMOUNTY = 65;
+    // Configuration - Increased density
+    const SEPARATION = 48;
+    const AMOUNTX = 75;
+    const AMOUNTY = 75;
     
     let count = 0;
     let mouseX = 0;
@@ -30,8 +30,8 @@ export default function PremiumBackground() {
     const halfHeight = height / 2;
 
     const onDocumentMouseMove = (event: MouseEvent) => {
-      mouseX = (event.clientX - halfWidth) * 0.05;
-      mouseY = (event.clientY - halfHeight) * 0.05; 
+      mouseX = (event.clientX - halfWidth) * 0.08;
+      mouseY = (event.clientY - halfHeight) * 0.08; 
     };
 
     window.addEventListener('mousemove', onDocumentMouseMove);
@@ -51,14 +51,14 @@ export default function PremiumBackground() {
       
       const isHtmlDark = document.documentElement.classList.contains("dark");
       
-      // Premium colors
-      // Dark mode: Cyan/Sky Blue
-      // Light mode: Sunset Orange
-      const color = isHtmlDark ? { r: 56, g: 189, b: 248 } : { r: 234, g: 88, b: 12 };
+      // Premium colors - Brighter
+      // Dark mode: Vivid Cyan
+      // Light mode: Deep Electric Orange
+      const color = isHtmlDark ? { r: 6, g: 182, b: 212 } : { r: 249, g: 115, b: 22 };
       const rgbStr = `${color.r}, ${color.g}, ${color.b}`;
 
-      autoRotateX += 0.002;
-      autoRotateY += 0.0015;
+      autoRotateX += 0.0025;
+      autoRotateY += 0.002;
 
       // Draw particles
       for (let ix = 0; ix < AMOUNTX; ix++) {
@@ -67,50 +67,45 @@ export default function PremiumBackground() {
           let x = ix * SEPARATION - ((AMOUNTX * SEPARATION) / 2);
           let z = iy * SEPARATION - ((AMOUNTY * SEPARATION) / 2);
           
-          // Apply some auto-rotation to the points themselves for extra depth
           let rx = x * Math.cos(autoRotateX) - z * Math.sin(autoRotateX);
           let rz = x * Math.sin(autoRotateX) + z * Math.cos(autoRotateX);
           
-          // Globe/Bowl geometry
           let dist = Math.sqrt(rx * rx + rz * rz);
-          // Wave logic
-          let wave = Math.sin(dist * 0.035 - count) * 45;
-          let y = (dist * dist) * 0.0007 + wave;
+          let wave = Math.sin(dist * 0.035 - count) * 55;
+          let y = (dist * dist) * 0.00075 + wave;
           
-          let focalLength = 400;
-          let zOffset = 1400; 
+          let focalLength = 450;
+          let zOffset = 1500; 
           
           let zPos = rz + zOffset;
           
           if (zPos > 0) {
             let scale = focalLength / zPos;
             
-            // Interaction + Auto-rotation shift
-            let xPos = (rx - (mouseX + Math.sin(autoRotateY) * 20)) * scale + halfWidth;
-            let yPos = (y - (mouseY + Math.cos(autoRotateY) * 15) + 250) * scale + halfHeight; 
+            let xPos = (rx - (mouseX + Math.sin(autoRotateY) * 25)) * scale + halfWidth;
+            let yPos = (y - (mouseY + Math.cos(autoRotateY) * 20) + 200) * scale + halfHeight; 
 
-            if (xPos >= -50 && xPos <= width + 50 && yPos >= -50 && yPos <= height + 50) {
-              let opacity = Math.max(0, 1 - (zPos / 2500));
+            if (xPos >= -100 && xPos <= width + 100 && yPos >= -100 && yPos <= height + 100) {
+              let opacity = Math.max(0, 1.1 - (zPos / 2200));
               
               if(opacity > 0.05) {
-                // Adjusting size for better visibility
-                let size = scale * 3.5;
+                // Increased size multiplier to 5.5 for "bold" look
+                let size = scale * 5.5;
                 
-                // Add a glow/bloom effect to the dot if it's closer
-                if (opacity > 0.6) {
-                   ctx.shadowBlur = size * 1.5;
-                   ctx.shadowColor = `rgba(${rgbStr}, ${opacity * 0.5})`;
+                // Enhanced glow/bloom
+                if (opacity > 0.5) {
+                   ctx.shadowBlur = size * 2;
+                   ctx.shadowColor = `rgba(${rgbStr}, ${opacity * 0.7})`;
                 } else {
                    ctx.shadowBlur = 0;
                 }
 
                 ctx.fillStyle = `rgba(${rgbStr}, ${opacity})`;
                 ctx.beginPath();
-                // Performance: small squares for far away, circles for close
-                if (size < 2) {
+                if (size < 2.5) {
                    ctx.fillRect(xPos, yPos, size, size);
                 } else {
-                   ctx.arc(xPos, yPos, size / 2, 0, Math.PI * 2);
+                   ctx.arc(xPos, yPos, size / 2.2, 0, Math.PI * 2);
                    ctx.fill();
                 }
               }
@@ -119,7 +114,7 @@ export default function PremiumBackground() {
         }
       }
 
-      count += 0.03;
+      count += 0.035;
       animationId = requestAnimationFrame(draw);
     };
 
@@ -134,17 +129,17 @@ export default function PremiumBackground() {
 
   return (
     <div className="fixed inset-0 -z-50 pointer-events-none w-full h-full overflow-hidden" style={{ backgroundColor: "var(--bg-primary)" }}>
-      {/* Visual Tuning Overlay */}
-      <div className="hidden dark:block absolute inset-0 bg-[#020617] opacity-85" />
+      {/* Background base layer */}
+      <div className="hidden dark:block absolute inset-0 bg-[#020617] opacity-75" />
       
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       
-      {/* Heavy Vignette for focus */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,var(--bg-primary)_95%)] opacity-80" />
+      {/* Reduced Vignette for more visibility */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,var(--bg-primary)_100%)] opacity-65" />
       
-      {/* Edge smoothing */}
-      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[var(--bg-primary)] to-transparent" />
-      <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[var(--bg-primary)] to-transparent" />
+      {/* Refined Edge smoothing */}
+      <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-[var(--bg-primary)] to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-[var(--bg-primary)] to-transparent" />
     </div>
   );
 }
