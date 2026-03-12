@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import Offers from "./components/Offers";
 import Services from "./components/Services";
 import Products from "./components/products/Products";
+import PremiumBackground from "./components/PremiumBackground";
 import { prisma } from "../lib/prisma";
 import { Metadata } from "next";
 
@@ -125,16 +126,8 @@ export default async function Home() {
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden">
-      {/* ── Dynamic Background ── */}
-      <div className="fixed inset-0 -z-50 pointer-events-none overflow-hidden" style={{ backgroundColor: "var(--bg-primary)" }}>
-        {/* Animated Blobs */}
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-orange-600/20 blur-[120px] mix-blend-screen animate-blob" />
-        <div className="absolute top-[20%] right-[-10%] w-[35%] h-[40%] rounded-full bg-pink-600/20 blur-[120px] mix-blend-screen animate-blob animation-delay-2000" />
-        <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[45%] rounded-full bg-blue-600/20 blur-[120px] mix-blend-screen animate-blob animation-delay-4000" />
-        {/* Subtle noise/grid overlay (optional premium feel) */}
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay" />
-      </div>
-
+      <PremiumBackground />
+      
       <Navbar />
       <div className="relative z-10">
         <Hero />
