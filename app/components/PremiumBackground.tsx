@@ -15,20 +15,23 @@ export default function PremiumBackground() {
     canvas.width = width;
     canvas.height = height;
 
-    const SEPARATION = 60;
-    const AMOUNTX = 60;
-    const AMOUNTY = 60;
+    // Configuration
+    const SEPARATION = 55;
+    const AMOUNTX = 65;
+    const AMOUNTY = 65;
     
     let count = 0;
     let mouseX = 0;
     let mouseY = 0;
+    let autoRotateX = 0;
+    let autoRotateY = 0;
 
     const halfWidth = width / 2;
     const halfHeight = height / 2;
 
     const onDocumentMouseMove = (event: MouseEvent) => {
-      mouseX = (event.clientX - halfWidth) * 0.1;
-      mouseY = (event.clientY - halfHeight) * 0.1; 
+      mouseX = (event.clientX - halfWidth) * 0.05;
+      mouseY = (event.clientY - halfHeight) * 0.05; 
     };
 
     window.addEventListener('mousemove', onDocumentMouseMove);
@@ -46,52 +49,77 @@ export default function PremiumBackground() {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
       
-      // Check theme dynamically so we don't have to force unmount it
       const isHtmlDark = document.documentElement.classList.contains("dark");
       
-      // Bright neon blue (like the screenshot) in dark mode, and vibrant orange in light mode
-      const rgb = isHtmlDark ? '56, 189, 248' : '234, 88, 12'; 
+      // Premium colors
+      // Dark mode: Cyan/Sky Blue
+      // Light mode: Sunset Orange
+      const color = isHtmlDark ? { r: 56, g: 189, b: 248 } : { r: 234, g: 88, b: 12 };
+      const rgbStr = `${color.r}, ${color.g}, ${color.b}`;
 
+      autoRotateX += 0.002;
+      autoRotateY += 0.0015;
+
+      // Draw particles
       for (let ix = 0; ix < AMOUNTX; ix++) {
         for (let iy = 0; iy < AMOUNTY; iy++) {
           
           let x = ix * SEPARATION - ((AMOUNTX * SEPARATION) / 2);
           let z = iy * SEPARATION - ((AMOUNTY * SEPARATION) / 2);
           
-          // Calculate distance from center to make a globe/bowl shape
-          let dist = Math.sqrt(x * x + z * z);
+          // Apply some auto-rotation to the points themselves for extra depth
+          let rx = x * Math.cos(autoRotateX) - z * Math.sin(autoRotateX);
+          let rz = x * Math.sin(autoRotateX) + z * Math.cos(autoRotateX);
           
-          // Apply a moving sine wave ripple onto a curved surface
-          let y = (dist * dist) * 0.0006 + Math.sin(dist * 0.04 - count) * 40;
+          // Globe/Bowl geometry
+          let dist = Math.sqrt(rx * rx + rz * rz);
+          // Wave logic
+          let wave = Math.sin(dist * 0.035 - count) * 45;
+          let y = (dist * dist) * 0.0007 + wave;
           
-          let focalLength = 350;
-          let zOffset = 1200; 
+          let focalLength = 400;
+          let zOffset = 1400; 
           
-          let zPos = z + zOffset;
+          let zPos = rz + zOffset;
+          
           if (zPos > 0) {
             let scale = focalLength / zPos;
             
-            // Camera perspective shift based on mouse
-            let xPos = (x - mouseX) * scale + halfWidth;
-            // Shift the whole globe shape downwards towards the bottom of the screen
-            let yPos = (y - mouseY + 200) * scale + halfHeight; 
+            // Interaction + Auto-rotation shift
+            let xPos = (rx - (mouseX + Math.sin(autoRotateY) * 20)) * scale + halfWidth;
+            let yPos = (y - (mouseY + Math.cos(autoRotateY) * 15) + 250) * scale + halfHeight; 
 
-            // Only draw if visible on screen
-            if (xPos >= 0 && xPos <= width && yPos >= 0 && yPos <= height) {
-              let opacity = Math.max(0, 1 - (zPos / 3000));
+            if (xPos >= -50 && xPos <= width + 50 && yPos >= -50 && yPos <= height + 50) {
+              let opacity = Math.max(0, 1 - (zPos / 2500));
               
-              if(opacity > 0.1) {
-                let size = scale * 2.5;
-                ctx.fillStyle = `rgba(${rgb}, ${opacity})`;
-                // fillRect is much faster than drawing arcs for thousands of points
-                ctx.fillRect(xPos, yPos, size, size);
+              if(opacity > 0.05) {
+                // Adjusting size for better visibility
+                let size = scale * 3.5;
+                
+                // Add a glow/bloom effect to the dot if it's closer
+                if (opacity > 0.6) {
+                   ctx.shadowBlur = size * 1.5;
+                   ctx.shadowColor = `rgba(${rgbStr}, ${opacity * 0.5})`;
+                } else {
+                   ctx.shadowBlur = 0;
+                }
+
+                ctx.fillStyle = `rgba(${rgbStr}, ${opacity})`;
+                ctx.beginPath();
+                // Performance: small squares for far away, circles for close
+                if (size < 2) {
+                   ctx.fillRect(xPos, yPos, size, size);
+                } else {
+                   ctx.arc(xPos, yPos, size / 2, 0, Math.PI * 2);
+                   ctx.fill();
+                }
               }
             }
           }
         }
       }
 
-      count += 0.035;
+      count += 0.03;
       animationId = requestAnimationFrame(draw);
     };
 
@@ -106,16 +134,17 @@ export default function PremiumBackground() {
 
   return (
     <div className="fixed inset-0 -z-50 pointer-events-none w-full h-full overflow-hidden" style={{ backgroundColor: "var(--bg-primary)" }}>
-      {/* Deep blue/black overlay for dark mode to match the exact aesthetic of the screenshot */}
-      <div className="hidden dark:block absolute inset-0 bg-[#020617] opacity-90" />
+      {/* Visual Tuning Overlay */}
+      <div className="hidden dark:block absolute inset-0 bg-[#020617] opacity-85" />
       
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       
-      {/* Vignette effect so the particle wave fades out beautifully near the edges */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,var(--bg-primary)_100%)] opacity-95" />
+      {/* Heavy Vignette for focus */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,var(--bg-primary)_95%)] opacity-80" />
       
-      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-[var(--bg-primary)] to-transparent" />
-      <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-[var(--bg-primary)] to-transparent" />
+      {/* Edge smoothing */}
+      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[var(--bg-primary)] to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[var(--bg-primary)] to-transparent" />
     </div>
   );
 }
