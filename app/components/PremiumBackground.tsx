@@ -55,9 +55,11 @@ export default function PremiumBackground() {
     window.addEventListener('resize', handleResize);
 
     // ── DARK MODE CONFIG: Particles ──
-    const SEPARATION = 46;
-    const AMOUNTX = 75;
-    const AMOUNTY = 75;
+    // Adaptive density: fewer particles on mobile for performance
+    const isMobile = width < 768;
+    const SEPARATION = isMobile ? 42 : 46;
+    const AMOUNTX = isMobile ? 50 : 75;
+    const AMOUNTY = isMobile ? 50 : 75;
 
     let animationId: number;
 
@@ -80,27 +82,32 @@ export default function PremiumBackground() {
             let rz = x * Math.sin(autoRotateX) + z * Math.cos(autoRotateX);
             
             let dist = Math.sqrt(rx * rx + rz * rz);
-            let wave = Math.sin(dist * 0.035 - count) * 60;
-            let y = (dist * dist) * 0.0006 + wave;
+            let wave = Math.sin(dist * 0.035 - count) * (isMobile ? 35 : 60);
+            let y = (dist * dist) * (isMobile ? 0.001 : 0.0006) + wave;
             
-            let focalLength = 480;
-            let zOffset = 1500; 
+            // Adjust perspective for mobile: closer focal length
+            let focalLength = isMobile ? 350 : 480;
+            let zOffset = isMobile ? 1200 : 1500; 
             let zPos = rz + zOffset;
             
             if (zPos > 0) {
               let scale = focalLength / zPos;
-              let xPos = (rx - (mouseX + Math.sin(autoRotateY) * 25)) * scale + halfWidth;
-              // Higher position for Hero focus in Dark Mode
-              let yPos = (y - (mouseY + Math.cos(autoRotateY) * 20) + 150) * scale + (height * 0.4); 
+              let xPos = (rx - (mouseX + Math.sin(autoRotateY) * 20)) * scale + halfWidth;
+              // Responsive Vertical Shift: Move it up more on mobile so it sits behind the hero text
+              const verticalShift = isMobile ? 50 : 150;
+              let yPos = (y - (mouseY + Math.cos(autoRotateY) * 20) + verticalShift) * scale + (height * (isMobile ? 0.45 : 0.4)); 
 
               if (xPos >= -100 && xPos <= width + 100 && yPos >= -100 && yPos <= height + 100) {
-                let opacity = Math.max(0, 1.2 - (zPos / 2200));
+                let opacity = Math.max(0, 1.3 - (zPos / (isMobile ? 1800 : 2200)));
                 if(opacity > 0.05) {
-                  let size = scale * 6.0;
+                  // Bold particles on mobile: larger multiplier
+                  let size = scale * (isMobile ? 8.0 : 6.0);
+                  
                   if (opacity > 0.5) {
-                     ctx.shadowBlur = size * 2;
+                     ctx.shadowBlur = size * 1.5;
                      ctx.shadowColor = `rgba(${rgbStr}, ${opacity * 0.6})`;
                   } else { ctx.shadowBlur = 0; }
+                  
                   ctx.fillStyle = `rgba(${rgbStr}, ${opacity})`;
                   ctx.beginPath();
                   ctx.arc(xPos, yPos, size / 2.2, 0, Math.PI * 2);
