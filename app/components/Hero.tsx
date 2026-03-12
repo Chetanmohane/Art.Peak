@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import Link from "next/link";
+import PremiumBackground from "./PremiumBackground";
 
 export default function Hero() {
   const { theme } = useTheme();
@@ -13,6 +14,8 @@ export default function Hero() {
       id="home"
       className="relative min-h-[85dvh] pt-20 pb-10 flex flex-col items-center justify-center overflow-hidden"
     >
+      <PremiumBackground />
+
       {/* Background is now handled by PremiumBackground entirely */}
 
       {/* 🔥 Animated Laser Line */}

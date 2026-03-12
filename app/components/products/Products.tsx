@@ -422,7 +422,8 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
   return (
     <section
       id="products"
-      className="py-12 min-h-screen bg-transparent"
+      className="py-12 min-h-screen"
+      style={{ backgroundColor: "var(--bg-primary)" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* ── Section Header ── */}

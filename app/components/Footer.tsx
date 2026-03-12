@@ -16,8 +16,9 @@ export default function Footer() {
 
   return (
     <footer
-      className="relative pt-12 pb-10 overflow-hidden bg-transparent"
+      className="relative pt-12 pb-10 overflow-hidden"
       style={{
+        background: "linear-gradient(to bottom, var(--bg-secondary), var(--bg-primary))",
         color: "var(--text-secondary)",
       }}
     >
