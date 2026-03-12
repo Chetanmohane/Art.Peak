@@ -60,6 +60,7 @@ interface Product {
   length?: number;
   breadth?: number;
   height?: number;
+  inStock?: boolean;
   createdAt: string;
 }
 
@@ -175,7 +176,8 @@ export default function AdminPage() {
     weight: "500",
     length: "10",
     breadth: "10",
-    height: "10"
+    height: "10",
+    inStock: true
   });
 
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -580,7 +582,8 @@ export default function AdminPage() {
         weight: (product.weight || 500).toString(),
         length: (product.length || 10).toString(),
         breadth: (product.breadth || 10).toString(),
-        height: (product.height || 10).toString()
+        height: (product.height || 10).toString(),
+        inStock: product.inStock ?? true
       });
     } else {
       setEditingProduct(null);
@@ -594,7 +597,8 @@ export default function AdminPage() {
         weight: "500",
         length: "10",
         breadth: "10",
-        height: "10"
+        height: "10",
+        inStock: true
       });
     }
     setShowProductModal(true);
@@ -724,7 +728,8 @@ export default function AdminPage() {
         weight: parseFloat(productForm.weight) || 500,
         length: parseFloat(productForm.length) || 10,
         breadth: parseFloat(productForm.breadth) || 10,
-        height: parseFloat(productForm.height) || 10
+        height: parseFloat(productForm.height) || 10,
+        inStock: productForm.inStock
       };
 
       const res = await fetch("/api/admin/products", {
@@ -1120,7 +1125,10 @@ export default function AdminPage() {
                     unoptimized={p.image.startsWith('data:')}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60"></div>
-                  <div className="absolute top-3 left-3 bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] text-white font-bold tracking-widest uppercase border border-white/10">{p.category}</div>
+                  <div className="absolute top-3 left-3 flex flex-col gap-2">
+                    <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] text-white font-bold tracking-widest uppercase border border-white/10 w-fit">{p.category}</div>
+                    {!p.inStock && <div className="bg-red-500/90 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] text-white font-bold tracking-widest uppercase shadow-lg w-fit">Out of Stock</div>}
+                  </div>
                   <div className="absolute bottom-3 right-3 bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-black shadow-lg shadow-orange-500/30">₹{p.price.toLocaleString()}</div>
                 </div>
                 <div className="p-5">
@@ -1669,16 +1677,12 @@ export default function AdminPage() {
                                     }
                                  }} 
                                  className={`w-full bg-transparent outline-none py-1 text-sm appearance-none font-bold ${isLight ? "" : "[&>option]:bg-zinc-900"}`}
-                              >
-                                 <option value="Personalized">Personalized</option>
-                                 <option value="Keychain">Keychain</option>
-                                 <option value="Home Decor">Home Decor</option>
-                                 <option value="Corporate">Corporate</option>
-                                 <option value="Gift Set">Gift Set</option>
-                                 <option value="Office">Office</option>
-                                 <option value="other">Other</option>
-                                 <option value="custom">+ New Category...</option>
-                              </select>
+                               >
+                                  {Array.from(new Set([...products.map(p => p.category)])).map(cat => (
+                                     <option key={cat} value={cat}>{cat}</option>
+                                  ))}
+                                  <option value="custom">+ New Category...</option>
+                               </select>
                               {showCustomCategory && (
                                  <input 
                                     autoFocus
@@ -1690,6 +1694,13 @@ export default function AdminPage() {
                               )}
                            </div>
                         </FormGroup>
+                        <div className={`flex flex-col gap-2 p-3 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-white/5 border-white/10"}`}>
+                           <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Availablity</label>
+                           <div className="flex items-center gap-3 mt-1">
+                              <input type="checkbox" id="inStock" checked={productForm.inStock} onChange={e => setProductForm({...productForm, inStock: e.target.checked})} className="w-5 h-5 accent-orange-500 cursor-pointer" />
+                              <label htmlFor="inStock" className={`text-sm font-bold cursor-pointer ${isLight ? "text-zinc-800" : "text-zinc-200"}`}>In Stock (Active Product)</label>
+                           </div>
+                        </div>
                         <div className="space-y-1.5 row-span-2">
                            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5 focus-within:text-orange-500 transition-colors">
                               <ImageIcon size={14}/> Main Image
@@ -1727,9 +1738,9 @@ export default function AdminPage() {
                      </div>
 
                      {/* Base Shipping Dimensions */}
-                     <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                     <div className={`p-4 sm:p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
                         <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2 mb-4"><Package size={14}/> Shipping Dimensions (Single Item)</label>
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                            <FormGroup label="Length (cm)" icon={<span />} isLight={isLight}>
                               <input required type="number" min="1" value={productForm.length} onChange={e => setProductForm({...productForm, length: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="10" />
                            </FormGroup>
@@ -1791,41 +1802,41 @@ export default function AdminPage() {
                      </div>
 
                     {/* Bulk Pricing Section */}
-                    <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
-                       <div className="flex items-center justify-between mb-4">
+                    <div className={`p-4 sm:p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                           <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2"><Layers size={14}/> Bulk Pricing Tiers</label>
-                          <button type="button" onClick={addBulkTier} className="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-500/20 transition flex items-center gap-1.5 border border-emerald-500/20"><Plus size={12}/> ADD TIER</button>
+                          <button type="button" onClick={addBulkTier} className="text-[10px] bg-emerald-500/10 text-emerald-500 px-3 py-2 sm:py-1.5 rounded-lg font-bold hover:bg-emerald-500/20 transition flex items-center justify-center gap-1.5 border border-emerald-500/20 w-full sm:w-auto"><Plus size={12}/> ADD TIER</button>
                        </div>
-                       <div className="space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                       <div className="space-y-3 max-h-56 sm:max-h-40 overflow-y-auto overflow-x-auto pr-2 pb-2 custom-scrollbar">
                            {productForm.bulkPricing.map((tier, idx) => (
-                              <div key={idx} className={`p-4 rounded-xl border flex flex-col gap-3 transition-colors focus-within:border-emerald-500 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
-                                 <div className="flex gap-2 items-center">
-                                    <div className="flex-[2] px-4 rounded-xl border flex items-center gap-2 border-transparent bg-black/10">
-                                       <span className="text-[10px] uppercase font-bold text-zinc-500">Qty</span>
-                                       <input type="number" value={tier.qty} onChange={e => updateBulkTier(idx, "qty", e.target.value)} className="w-full bg-transparent outline-none py-2 text-xs font-bold" />
+                              <div key={idx} className={`p-4 rounded-xl border flex flex-col gap-3 transition-colors focus-within:border-emerald-500 min-w-0 ${isLight ? "bg-white border-zinc-200" : "bg-black/50 border-white/10"}`}>
+                                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                                    <div className="flex-1 min-w-0 px-4 rounded-xl border flex items-center gap-2 border-transparent bg-black/10">
+                                       <span className="text-[10px] uppercase font-bold text-zinc-500 shrink-0">Qty</span>
+                                       <input type="number" value={tier.qty} onChange={e => updateBulkTier(idx, "qty", e.target.value)} className="w-full min-w-0 bg-transparent outline-none py-2 text-sm font-bold" placeholder="0" />
                                     </div>
-                                    <div className="flex-[3] px-4 rounded-xl border flex items-center gap-2 border-transparent bg-black/10">
-                                       <span className="text-[10px] uppercase font-bold text-zinc-500">Price ₹</span>
-                                       <input type="number" value={tier.price} onChange={e => updateBulkTier(idx, "price", e.target.value)} className="w-full bg-transparent outline-none py-2 text-xs font-bold text-emerald-500" />
+                                    <div className="flex-1 min-w-0 px-4 rounded-xl border flex items-center gap-2 border-transparent bg-black/10">
+                                       <span className="text-[10px] uppercase font-bold text-zinc-500 shrink-0">Price ₹</span>
+                                       <input type="number" value={tier.price} onChange={e => updateBulkTier(idx, "price", e.target.value)} className="w-full min-w-0 bg-transparent outline-none py-2 text-sm font-bold text-emerald-500" placeholder="0" />
                                     </div>
-                                    <button type="button" onClick={() => removeBulkTier(idx)} className="p-2.5 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors"><Trash2 size={16}/></button>
+                                    <button type="button" onClick={() => removeBulkTier(idx)} className="p-2.5 text-zinc-500 hover:text-white hover:bg-red-500 rounded-xl transition-colors shrink-0 self-end sm:self-center" aria-label="Remove tier"><Trash2 size={16}/></button>
                                  </div>
-                                 <div className="grid grid-cols-4 gap-2 border-t border-white/5 pt-3">
-                                    <div className="flex flex-col">
-                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">L(cm)</span>
-                                       <input type="number" value={tier.length || ""} onChange={e => updateBulkTier(idx, "length", e.target.value)} placeholder={productForm.length} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-white/5 pt-3">
+                                    <div className="flex flex-col min-w-0">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1 mb-0.5">L(cm)</span>
+                                       <input type="number" value={tier.length || ""} onChange={e => updateBulkTier(idx, "length", e.target.value)} placeholder={productForm.length} className="w-full min-w-0 bg-black/10 outline-none px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs" />
                                     </div>
-                                    <div className="flex flex-col">
-                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">B(cm)</span>
-                                       <input type="number" value={tier.breadth || ""} onChange={e => updateBulkTier(idx, "breadth", e.target.value)} placeholder={productForm.breadth} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                    <div className="flex flex-col min-w-0">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1 mb-0.5">B(cm)</span>
+                                       <input type="number" value={tier.breadth || ""} onChange={e => updateBulkTier(idx, "breadth", e.target.value)} placeholder={productForm.breadth} className="w-full min-w-0 bg-black/10 outline-none px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs" />
                                     </div>
-                                    <div className="flex flex-col">
-                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">H(cm)</span>
-                                       <input type="number" value={tier.height || ""} onChange={e => updateBulkTier(idx, "height", e.target.value)} placeholder={productForm.height} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                    <div className="flex flex-col min-w-0">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1 mb-0.5">H(cm)</span>
+                                       <input type="number" value={tier.height || ""} onChange={e => updateBulkTier(idx, "height", e.target.value)} placeholder={productForm.height} className="w-full min-w-0 bg-black/10 outline-none px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs" />
                                     </div>
-                                    <div className="flex flex-col">
-                                       <span className="text-[9px] text-zinc-500 font-bold ml-1">W(g)</span>
-                                       <input type="number" value={tier.weight || ""} onChange={e => updateBulkTier(idx, "weight", e.target.value)} placeholder={productForm.weight} className="w-full bg-black/10 outline-none px-3 py-1.5 rounded-lg text-xs" />
+                                    <div className="flex flex-col min-w-0">
+                                       <span className="text-[9px] text-zinc-500 font-bold ml-1 mb-0.5">W(g)</span>
+                                       <input type="number" value={tier.weight || ""} onChange={e => updateBulkTier(idx, "weight", e.target.value)} placeholder={productForm.weight} className="w-full min-w-0 bg-black/10 outline-none px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs" />
                                     </div>
                                  </div>
                               </div>
@@ -1835,21 +1846,21 @@ export default function AdminPage() {
                      </div>
 
                       {/* Sizes Section */}
-                      <div className={`p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                      <div className={`p-4 sm:p-5 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-black/20 border-white/5"}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
                            <div>
                               <label className="text-xs font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                                 <Plus size={14} className="text-orange-500" /> Variations & Pricing
                               </label>
                               <p className="text-[10px] text-zinc-400 mt-1 font-bold uppercase tracking-tighter">Add sizes in CM or INCHES</p>
                            </div>
-                           <div className="flex gap-2">
+                           <div className="flex gap-2 flex-wrap">
                               {["CM", "INCHES"].map((unit) => (
                                  <button 
                                     key={unit}
                                     type="button" 
                                     onClick={() => addSize(unit === "Custom" ? "" : unit)} 
-                                    className="px-3 py-1.5 bg-orange-500/10 text-orange-600 text-[10px] font-black rounded-lg border border-orange-500/20 hover:bg-orange-500 hover:text-white transition-all uppercase tracking-widest"
+                                    className="px-4 py-2 sm:py-1.5 bg-orange-500/10 text-orange-600 text-[10px] font-black rounded-lg border border-orange-500/20 hover:bg-orange-500 hover:text-white transition-all uppercase tracking-widest"
                                  >
                                     + {unit}
                                  </button>
@@ -1857,31 +1868,34 @@ export default function AdminPage() {
                            </div>
                         </div>
 
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-2 max-h-60 overflow-y-auto overflow-x-auto pr-2 custom-scrollbar">
                            {productForm.sizes.map((sizeObj, idx) => (
-                              <div key={idx} className={`p-3 rounded-2xl border flex flex-col sm:flex-row gap-3 items-center transition-all ${isLight ? "bg-white border-zinc-200" : "bg-black/40 border-white/10 focus-within:border-orange-500/50"}`}>
-                                 <div className="flex-[3] w-full relative">
+                              <div key={idx} className={`p-3 rounded-2xl border flex flex-col sm:flex-row gap-3 items-stretch sm:items-center transition-all min-w-0 ${isLight ? "bg-white border-zinc-200" : "bg-black/40 border-white/10 focus-within:border-orange-500/50"}`}>
+                                 <div className="flex-1 min-w-0 relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-zinc-500 uppercase">Size</span>
                                     <input 
                                        type="text" 
                                        value={sizeObj.size} 
                                        onChange={e => updateSizeValue(idx, e.target.value)}
-                                       className="w-full bg-transparent outline-none pl-12 pr-4 py-2 text-xs font-bold" 
+                                       className="w-full min-w-0 bg-transparent outline-none pl-12 pr-4 py-2.5 sm:py-2 text-sm sm:text-xs font-bold" 
+                                       placeholder="e.g. 5x7"
                                     />
                                  </div>
-                                 <div className="flex-[2] w-full relative">
+                                 <div className="flex-1 min-w-0 relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-orange-500 uppercase">Price ₹</span>
                                     <input 
                                        type="number" 
                                        value={sizeObj.price} 
                                        onChange={e => updateSizePrice(idx, e.target.value)} 
-                                       className="w-full bg-transparent outline-none pl-14 pr-4 py-2 text-xs font-black text-orange-500" 
+                                       className="w-full min-w-0 bg-transparent outline-none pl-14 pr-4 py-2.5 sm:py-2 text-sm sm:text-xs font-black text-orange-500" 
+                                       placeholder="0"
                                     />
                                  </div>
                                  <button 
                                     type="button" 
                                     onClick={() => removeSize(idx)} 
-                                    className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                                    className="p-2.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all shrink-0 self-end sm:self-center"
+                                    aria-label="Remove size"
                                  >
                                     <Trash2 size={16}/>
                                  </button>

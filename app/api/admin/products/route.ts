@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { name, price, image, category, images, bulkPricing, sizes, minQuantity, weight, length, breadth, height } = body;
+        const { name, price, image, category, images, bulkPricing, sizes, minQuantity, weight, length, breadth, height, inStock } = body;
         const product = await prisma.product.create({
             data: {
                 name,
@@ -67,6 +67,7 @@ export async function POST(req: Request) {
                 length: parseFloat(length) || 10,
                 breadth: parseFloat(breadth) || 10,
                 height: parseFloat(height) || 10,
+                inStock: inStock ?? true,
                 sortOrder: 999,
             },
         });
@@ -88,7 +89,7 @@ export async function PUT(req: Request) {
         }
 
         const body = await req.json();
-        const { id, name, price, image, category, images, bulkPricing, sizes, minQuantity, weight, length, breadth, height, sortOrder } = body;
+        const { id, name, price, image, category, images, bulkPricing, sizes, minQuantity, weight, length, breadth, height, sortOrder, inStock } = body;
         const data: Record<string, unknown> = {
             name,
             price: parseFloat(price),
@@ -103,6 +104,7 @@ export async function PUT(req: Request) {
             breadth: parseFloat(breadth) || 10,
             height: parseFloat(height) || 10,
         };
+        if (inStock !== undefined) data.inStock = inStock;
         if (sortOrder !== undefined) data.sortOrder = sortOrder === "" || sortOrder === null ? 999 : parseInt(String(sortOrder));
         const product = await prisma.product.update({
             where: { id },

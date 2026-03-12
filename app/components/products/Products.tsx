@@ -31,6 +31,7 @@ interface Product {
   bulkPricing?: { qty: number; price: number }[];
   sizes?: { size: string; price: number }[];
   minQuantity?: number;
+  inStock?: boolean;
 }
 
 function ProductCard({
@@ -83,7 +84,11 @@ function ProductCard({
           src={images[currentImageIndex]}
           alt={product.name}
           fill
-          className="object-contain transition-transform duration-700 group-hover:scale-105 p-2"
+          className={`object-contain transition-transform duration-700 p-2 ${
+            product.inStock === false 
+              ? "opacity-90 group-hover:scale-100" 
+              : "group-hover:scale-105"
+          }`}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           priority={index < 4}
           unoptimized={images[currentImageIndex]?.startsWith('data:')}
@@ -111,6 +116,14 @@ function ProductCard({
           <div className="absolute top-3 right-3 flex items-center gap-1 bg-green-600/90 backdrop-blur-sm px-2.5 py-1 rounded-full">
             <Layers size={10} className="text-white" />
             <span className="text-[10px] text-white font-bold">Bulk</span>
+          </div>
+        )}
+        {product.inStock === false && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+            <div className="bg-white/95 dark:bg-black/80 backdrop-blur-md px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 flex items-center gap-1.5">
+               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+               <span className="text-red-500 dark:text-red-400 font-bold tracking-widest uppercase text-[9px] whitespace-nowrap">Out of Stock</span>
+            </div>
           </div>
         )}
 
@@ -249,13 +262,23 @@ function ProductCard({
             </p>
           </div>
 
-          <button
-            onClick={() => onCustomize(product)}
-            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 active:scale-95 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition-all duration-200 shadow-lg shadow-orange-600/20 whitespace-nowrap"
-          >
-            <Sparkles size={14} />
-            Customize
-          </button>
+          {product.inStock === false ? (
+            <button
+              disabled
+              className="flex items-center gap-2 bg-zinc-400 hover:bg-zinc-400 cursor-not-allowed px-4 py-2.5 rounded-xl text-white font-semibold text-sm whitespace-nowrap"
+              style={{ backgroundColor: "var(--border-strong)", color: "var(--text-muted)" }}
+            >
+              Out of Stock
+            </button>
+          ) : (
+            <button
+              onClick={() => onCustomize(product)}
+              className="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 active:scale-95 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition-all duration-200 shadow-lg shadow-orange-600/20 whitespace-nowrap"
+            >
+              <Sparkles size={14} />
+              Customize
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

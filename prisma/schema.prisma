@@ -61,6 +61,7 @@ model Product {
   length      Float?   @default(10)
   breadth     Float?   @default(10)
   height      Float?   @default(10)
+  inStock     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
