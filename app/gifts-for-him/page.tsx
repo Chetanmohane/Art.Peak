@@ -44,7 +44,7 @@ export default async function GiftsForHimPage() {
         subtitle="Rugged, refined, and completely custom. Discover high-precision laser-engraved gear tailored for his unique style and journey."
       />
 
-      <div className="relative z-10 pb-16">
+      <div className="relative pb-16">
         <Products initialProducts={products as any} forcedCategory="Gifts For Him" />
       </div>
 

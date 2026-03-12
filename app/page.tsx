@@ -126,9 +126,8 @@ export default async function Home() {
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden">
-      <PremiumBackground />
       <Navbar />
-      <div className="relative z-10">
+      <div className="relative">
         <Hero />
         <Offers initialOffers={offers as any} />
         <Products initialProducts={products as any} />

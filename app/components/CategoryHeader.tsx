@@ -27,7 +27,7 @@ export default function CategoryHeader({ title, theme, subtitle }: CategoryHeade
     : "bg-blue-500/10 border-blue-500/20 text-blue-500";
 
   return (
-    <div className="relative z-10 pt-24 pb-4">
+    <div className="relative pt-24 pb-4">
       {/* Top Navigation Row */}
       <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center justify-between">
         <Link 

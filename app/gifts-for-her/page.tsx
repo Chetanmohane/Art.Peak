@@ -44,7 +44,7 @@ export default async function GiftsForHerPage() {
         subtitle="Make her feel extra special with our handpicked, precision-engraved treasures. From hearts to memories, we laser-etch your love with perfection."
       />
 
-      <div className="relative z-10 pb-16">
+      <div className="relative pb-16">
         <Products initialProducts={products as any} forcedCategory="Gifts For Her" />
       </div>
 
