@@ -475,20 +475,20 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
 
         {/* ── Quick Circular Filters ── */}
         {!loading && (
-          <div className="flex flex-wrap justify-center gap-8 sm:gap-20 mb-12">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-16 mb-12">
             {/* Gifts For Her */}
             <div 
               onClick={() => {
                 setActiveCategory("Gifts For Her");
                 setCurrentPage(1);
               }}
-              className={`flex flex-col items-center gap-4 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Her" ? "opacity-100" : "opacity-75 hover:opacity-100"}`}
+              className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Her" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
             >
-              <div className={`w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-2xl ${activeCategory === "Gifts For Her" ? "border-pink-500 shadow-pink-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
+              <div className={`w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] sm:border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl ${activeCategory === "Gifts For Her" ? "border-pink-500 shadow-pink-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
                 <Image src="/images/gifts_for_her.png" alt="Gifts For Her" width={200} height={200} className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-black flex items-center gap-2 tracking-tight" style={{ color: "var(--text-primary)" }}>
-                Gifts For Her! <span className="text-2xl">💗</span>
+              <h3 className="text-sm sm:text-lg font-black flex items-center gap-1.5 tracking-tight" style={{ color: "var(--text-primary)" }}>
+                Gifts For Her! <span className="text-base sm:text-lg">💗</span>
               </h3>
             </div>
 
@@ -498,13 +498,13 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                 setActiveCategory("Gifts For Him");
                 setCurrentPage(1);
               }}
-              className={`flex flex-col items-center gap-4 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Him" ? "opacity-100" : "opacity-75 hover:opacity-100"}`}
+              className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Him" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
             >
-              <div className={`w-36 h-36 sm:w-48 sm:h-48 rounded-full border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-2xl ${activeCategory === "Gifts For Him" ? "border-blue-500 shadow-blue-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
+              <div className={`w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] sm:border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl ${activeCategory === "Gifts For Him" ? "border-blue-500 shadow-blue-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
                 <Image src="/images/gifts_for_him.png" alt="Gifts For Him" width={200} height={200} className="w-full h-full object-cover" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-black flex items-center gap-2 tracking-tight" style={{ color: "var(--text-primary)" }}>
-                Gifts For Him! <span className="text-2xl">💙</span>
+              <h3 className="text-sm sm:text-lg font-black flex items-center gap-1.5 tracking-tight" style={{ color: "var(--text-primary)" }}>
+                Gifts For Him! <span className="text-base sm:text-lg">💙</span>
               </h3>
             </div>
           </div>
