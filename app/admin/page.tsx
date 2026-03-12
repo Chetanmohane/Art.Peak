@@ -167,7 +167,7 @@ export default function AdminPage() {
   const [productForm, setProductForm] = useState({
     name: "",
     price: "",
-    category: "Wood",
+    category: "Gifts For Her",
     image: "",
     images: [] as string[],
     bulkPricing: [] as BulkTier[],
@@ -1678,7 +1678,14 @@ export default function AdminPage() {
                                  }} 
                                  className={`w-full bg-transparent outline-none py-1 text-sm appearance-none font-bold ${isLight ? "" : "[&>option]:bg-zinc-900"}`}
                                >
-                                  {Array.from(new Set([...products.map(p => p.category)])).map(cat => (
+                                  <option value="Gifts For Her">Gifts For Her 💗</option>
+                                  <option value="Gifts For Him">Gifts For Him 💙</option>
+                                  <option value="Wood">Wood</option>
+                                  <option value="Metal">Metal</option>
+                                  <option value="Acrylic">Acrylic</option>
+                                  <option value="Glass">Glass</option>
+                                  <option value="Custom">Other (Custom)</option>
+                                  {Array.from(new Set([...products.map(p => p.category)])).filter(c => !["Gifts For Her", "Gifts For Him", "Wood", "Metal", "Acrylic", "Glass", "Custom"].includes(c)).map(cat => (
                                      <option key={cat} value={cat}>{cat}</option>
                                   ))}
                                   <option value="custom">+ New Category...</option>

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Plus,
   Minus,
@@ -285,14 +286,14 @@ function ProductCard({
   );
 }
 
-export default function Products({ initialProducts }: { initialProducts?: Product[] }) {
+export default function Products({ initialProducts, forcedCategory }: { initialProducts?: Product[], forcedCategory?: string }) {
   const { addToCart, totalPrice } = useCart();
   const { data: session, status } = useSession();
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [loading, setLoading] = useState(!initialProducts);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState(forcedCategory || "All");
   const [customizingProduct, setCustomizingProduct] = useState<Product | null>(
     null
   );
@@ -450,10 +451,11 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
             </p>
           </div>
 
-          {/* Product count badge */}
+          {/* Product count badge - Clickable return to home products */}
           {!loading && products.length > 0 && (
-            <div
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full border self-start sm:self-auto"
+            <Link
+              href="/#products"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full border self-start sm:self-auto transition-all duration-300 hover:scale-105 hover:shadow-lg active:scale-95 group cursor-pointer"
               style={{
                 borderColor: "var(--border-strong)",
                 backgroundColor: "var(--bg-secondary)",
@@ -461,7 +463,7 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
             >
               <ShoppingCart
                 size={16}
-                className="text-orange-500"
+                className="text-orange-500 group-hover:rotate-12 transition-transform"
               />
               <span
                 className="text-sm font-semibold"
@@ -469,49 +471,43 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
               >
                 {products.length} Products
               </span>
-            </div>
+            </Link>
           )}
         </div>
 
         {/* ── Quick Circular Filters ── */}
-        {!loading && (
+        {!loading && !forcedCategory && (
           <div className="flex flex-wrap justify-center gap-6 sm:gap-16 mb-12">
             {/* Gifts For Her */}
-            <div 
-              onClick={() => {
-                setActiveCategory("Gifts For Her");
-                setCurrentPage(1);
-              }}
+            <Link 
+              href="/gifts-for-her"
               className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Her" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
             >
               <div className={`w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] sm:border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl ${activeCategory === "Gifts For Her" ? "border-pink-500 shadow-pink-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
-                <Image src="/images/gifts_for_her.png" alt="Gifts For Her" width={200} height={200} className="w-full h-full object-cover" />
+                <Image src="/gifts-for-her_1773335313213.png" alt="Gifts For Her" width={200} height={200} className="w-full h-full object-cover" />
               </div>
               <h3 className="text-sm sm:text-lg font-black flex items-center gap-1.5 tracking-tight" style={{ color: "var(--text-primary)" }}>
                 Gifts For Her! <span className="text-base sm:text-lg">💗</span>
               </h3>
-            </div>
+            </Link>
 
             {/* Gifts For Him */}
-            <div 
-              onClick={() => {
-                setActiveCategory("Gifts For Him");
-                setCurrentPage(1);
-              }}
+            <Link 
+              href="/gifts-for-him"
               className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Him" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
             >
               <div className={`w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] sm:border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl ${activeCategory === "Gifts For Him" ? "border-blue-500 shadow-blue-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
-                <Image src="/images/gifts_for_him.png" alt="Gifts For Him" width={200} height={200} className="w-full h-full object-cover" />
+                <Image src="/gifts-for-him_1773335335915.png" alt="Gifts For Him" width={200} height={200} className="w-full h-full object-cover" />
               </div>
               <h3 className="text-sm sm:text-lg font-black flex items-center gap-1.5 tracking-tight" style={{ color: "var(--text-primary)" }}>
                 Gifts For Him! <span className="text-base sm:text-lg">💙</span>
               </h3>
-            </div>
+            </Link>
           </div>
         )}
 
         {/* ── Category Filter Tabs ── */}
-        {!loading && categories.length > 1 && (
+        {!loading && categories.length > 1 && !forcedCategory && (
           <div className="flex gap-3 sm:gap-4 flex-wrap mb-10 justify-center">
             {categories.map((cat) => (
               <button
