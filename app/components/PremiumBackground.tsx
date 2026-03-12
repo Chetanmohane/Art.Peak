@@ -57,9 +57,9 @@ export default function PremiumBackground() {
     // ── DARK MODE CONFIG: Particles ──
     // Adaptive density: even fewer particles on mobile for to make it 'light'
     const isMobile = width < 768;
-    const SEPARATION = isMobile ? 48 : 46;
-    const AMOUNTX = isMobile ? 35 : 75;
-    const AMOUNTY = isMobile ? 35 : 75;
+    const SEPARATION = isMobile ? 52 : 46; // More separation on mobile
+    const AMOUNTX = isMobile ? 30 : 75;
+    const AMOUNTY = isMobile ? 30 : 75;
 
     let animationId: number;
 
@@ -82,32 +82,32 @@ export default function PremiumBackground() {
             let rz = x * Math.sin(autoRotateX) + z * Math.cos(autoRotateX);
             
             let dist = Math.sqrt(rx * rx + rz * rz);
-            let wave = Math.sin(dist * 0.035 - count) * (isMobile ? 25 : 60);
-            let y = (dist * dist) * (isMobile ? 0.0012 : 0.0006) + wave;
+            let wave = Math.sin(dist * 0.035 - count) * (isMobile ? 20 : 60);
+            let y = (dist * dist) * (isMobile ? 0.0015 : 0.0006) + wave;
             
-            let focalLength = isMobile ? 320 : 480;
-            let zOffset = isMobile ? 1100 : 1500; 
+            let focalLength = isMobile ? 300 : 480;
+            let zOffset = isMobile ? 1000 : 1500; 
             let zPos = rz + zOffset;
             
             if (zPos > 0) {
               let scale = focalLength / zPos;
               let xPos = (rx - (mouseX + Math.sin(autoRotateY) * 20)) * scale + halfWidth;
-              const verticalShift = isMobile ? 30 : 150;
+              const verticalShift = isMobile ? 20 : 150;
               let yPos = (y - (mouseY + Math.cos(autoRotateY) * 20) + verticalShift) * scale + (height * (isMobile ? 0.4 : 0.4)); 
 
               if (xPos >= -100 && xPos <= width + 100 && yPos >= -100 && yPos <= height + 100) {
-                // Lower opacity on mobile (1.1 base instead of 1.3)
-                let opacity = Math.max(0, (isMobile ? 1.0 : 1.3) - (zPos / (isMobile ? 1600 : 2200)));
+                // Lower opacity on mobile (0.8 base instead of 1.3)
+                let opacity = Math.max(0, (isMobile ? 0.8 : 1.3) - (zPos / (isMobile ? 1400 : 2200)));
                 if(opacity > 0.05) {
-                  // Smaller particles on mobile (multiplier 5.0 instead of 8.0)
-                  let size = scale * (isMobile ? 5.0 : 6.0);
+                  // Smaller particles on mobile (multiplier 4.0 instead of 6.0)
+                  let size = scale * (isMobile ? 4.0 : 6.0);
                   
                   if (opacity > 0.6 && !isMobile) {
                      ctx.shadowBlur = size * 1.5;
                      ctx.shadowColor = `rgba(${rgbStr}, ${opacity * 0.5})`;
                   } else { ctx.shadowBlur = 0; }
                   
-                  ctx.fillStyle = `rgba(${rgbStr}, ${opacity * (isMobile ? 0.7 : 1)})`;
+                  ctx.fillStyle = `rgba(${rgbStr}, ${opacity * (isMobile ? 0.5 : 1)})`;
                   ctx.beginPath();
                   ctx.arc(xPos, yPos, size / 2.2, 0, Math.PI * 2);
                   ctx.fill();
@@ -133,8 +133,8 @@ export default function PremiumBackground() {
           const finalY = moveY + (mouseY * 0.2);
 
           const gradient = ctx.createRadialGradient(finalX, finalY, 0, finalX, finalY, w.r);
-          gradient.addColorStop(0, `rgba(${w.c}, ${isMobile ? 0.4 : 0.6})`);
-          gradient.addColorStop(0.5, `rgba(${w.c}, ${isMobile ? 0.1 : 0.2})`);
+          gradient.addColorStop(0, `rgba(${w.c}, ${isMobile ? 0.3 : 0.6})`);
+          gradient.addColorStop(0.5, `rgba(${w.c}, ${isMobile ? 0.05 : 0.2})`);
           gradient.addColorStop(1, 'transparent');
 
           ctx.fillStyle = gradient;
