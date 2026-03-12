@@ -21,7 +21,7 @@ function Sparks() {
   if (sparks.length === 0) return null;
 
   return (
-    <div className="absolute inset-0 overflow-hidden mix-blend-screen opacity-50 z-0">
+    <div className="absolute inset-0 overflow-hidden opacity-80 z-0">
       {sparks.map(s => (
         <motion.div
           key={s.id}
@@ -76,21 +76,21 @@ export default function PremiumBackground() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, x: [0, 60, -60, 0], y: [0, -60, 60, 0], scale: [1, 1.1, 0.9, 1] }}
         transition={{ opacity: { duration: 2 }, duration: 25, repeat: Infinity, ease: "linear" }}
-        className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vh] rounded-full bg-orange-600/15 blur-[120px] mix-blend-screen"
+        className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vh] rounded-full bg-orange-500/30 blur-[100px]"
       />
       
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, x: [0, -80, 80, 0], y: [0, 80, -80, 0], scale: [1, 1.05, 0.95, 1] }}
         transition={{ opacity: { duration: 2 }, duration: 30, repeat: Infinity, ease: "linear" }}
-        className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vh] rounded-full bg-red-600/10 blur-[140px] mix-blend-screen"
+        className="absolute top-[20%] right-[-10%] w-[50vw] h-[50vh] rounded-full bg-red-500/25 blur-[120px]"
       />
       
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, x: [0, 50, -50, 0], y: [0, -50, 50, 0], scale: [1, 1.1, 0.9, 1] }}
         transition={{ opacity: { duration: 2 }, duration: 22, repeat: Infinity, ease: "linear" }}
-        className="absolute bottom-[0%] left-[20%] w-[70vw] h-[60vh] rounded-full bg-amber-500/10 blur-[150px] mix-blend-screen"
+        className="absolute bottom-[0%] left-[20%] w-[70vw] h-[60vh] rounded-full bg-amber-500/25 blur-[120px]"
       />
 
       {/* Upward Laser Sparks */}
