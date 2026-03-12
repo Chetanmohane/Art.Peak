@@ -315,6 +315,17 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    if (customizingProduct) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [customizingProduct]);
+
   const fetchProducts = async () => {
     try {
       const res = await fetch("/api/products");
@@ -623,14 +634,14 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setCustomizingProduct(null)}
-                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100]"
+                className="fixed inset-0 bg-black/70 backdrop-blur-md z-[1000]"
               />
               <motion.div
                 initial={{ opacity: 0, scale: 0.94, y: 24 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.94, y: 24 }}
                 transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] sm:w-full max-w-lg max-h-[92vh] overflow-y-auto bg-zinc-900 border border-white/10 p-6 rounded-3xl shadow-2xl z-[110] hide-scrollbar"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] sm:w-full max-w-lg max-h-[92vh] overflow-y-auto bg-zinc-900 border border-white/10 p-6 rounded-3xl shadow-2xl z-[1010] hide-scrollbar"
               >
                 {/* Modal Header */}
                 <div className="flex justify-between items-center mb-5">
