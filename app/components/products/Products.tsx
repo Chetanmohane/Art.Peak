@@ -512,7 +512,7 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
 
         {/* ── Category Filter Tabs ── */}
         {!loading && categories.length > 1 && (
-          <div className="flex gap-2 flex-wrap mb-10">
+          <div className="flex gap-3 sm:gap-4 flex-wrap mb-10 justify-center">
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -520,15 +520,15 @@ export default function Products({ initialProducts }: { initialProducts?: Produc
                   setActiveCategory(cat);
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${
+                className={`px-5 py-2.5 sm:px-6 sm:py-3 rounded-full text-[11px] sm:text-xs font-black uppercase tracking-widest border transition-all duration-300 ${
                   activeCategory === cat
-                    ? "bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-600/20"
-                    : "border-transparent hover:border-orange-500/40"
+                    ? "bg-gradient-to-r from-orange-600 to-orange-400 text-white border-transparent shadow-[0_8px_20px_-6px_rgba(234,88,12,0.6)] scale-105"
+                    : "border-zinc-200 dark:border-zinc-800 hover:border-orange-500/50 hover:shadow-lg hover:-translate-y-1"
                 }`}
                 style={
                   activeCategory !== cat
                     ? {
-                        backgroundColor: "var(--bg-secondary)",
+                        backgroundColor: "var(--bg-card)",
                         color: "var(--text-secondary)",
                       }
                     : {}
