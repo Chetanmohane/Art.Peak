@@ -111,23 +111,43 @@ export default function PremiumBackground() {
           }
         }
       } else {
-        // ── LIGHT MODE ANIMATION: Soft Floating Bubbles ──
-        bubbles.forEach(b => {
-           b.x += b.vx + (mouseX * 0.02);
-           b.y += b.vy + (mouseY * 0.02);
-           if (b.x < -b.r) b.x = width + b.r;
-           if (b.x > width + b.r) b.x = -b.r;
-           if (b.y < -b.r) b.y = height + b.r;
-           if (b.y > height + b.r) b.y = -b.r;
+        // ── LIGHT MODE ANIMATION: Premium Mesh Gradient Waves ──
+        // Using a sophisticated drifting radial mesh for light mode
+        const waves = [
+          { x: 0.2, y: 0.3, r: width * 0.8, c: "255, 237, 213", speed: 0.005 }, // Peach
+          { x: 0.8, y: 0.2, r: width * 0.7, c: "254, 215, 170", speed: 0.007 }, // Apricot
+          { x: 0.5, y: 0.7, r: width * 0.9, c: "255, 247, 237", speed: 0.004 }, // Shell
+          { x: 0.3, y: 0.8, r: width * 0.6, c: "253, 186, 116", speed: 0.006 }  // Warm Orange
+        ];
 
-           ctx.beginPath();
-           const gradient = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-           gradient.addColorStop(0, b.color);
-           gradient.addColorStop(1, 'transparent');
-           ctx.fillStyle = gradient;
-           ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-           ctx.fill();
+        waves.forEach((w, i) => {
+          const moveX = Math.sin(count * w.speed + i) * (width * 0.1) + (width * w.x);
+          const moveY = Math.cos(count * (w.speed * 0.8) + i) * (height * 0.1) + (height * w.y);
+          
+          // Add subtle mouse lag/parallax
+          const finalX = moveX + (mouseX * 0.3);
+          const finalY = moveY + (mouseY * 0.3);
+
+          const gradient = ctx.createRadialGradient(finalX, finalY, 0, finalX, finalY, w.r);
+          gradient.addColorStop(0, `rgba(${w.c}, 0.6)`);
+          gradient.addColorStop(0.5, `rgba(${w.c}, 0.2)`);
+          gradient.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.fillRect(0, 0, width, height); // Fill entire canvas with blend
         });
+
+        // Add a very subtle moving pattern over the mesh
+        ctx.strokeStyle = "rgba(234, 88, 12, 0.03)";
+        ctx.lineWidth = 1;
+        for(let i = 0; i < width; i += 100) {
+           ctx.beginPath();
+           const xOff = Math.sin(count * 0.2 + i) * 10;
+           ctx.moveTo(i + xOff, 0);
+           ctx.lineTo(i - xOff, height);
+           ctx.stroke();
+        }
       }
 
       count += 0.035;
