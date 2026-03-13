@@ -23,8 +23,8 @@ export default function Hero() {
         initial={{ x: "-100%" }}
         animate={{ x: "100%" }}
         transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-        className="absolute top-1/2 w-full h-[2px] opacity-60 blur-sm"
-        style={{ backgroundColor: isLight ? "#ea580c" : "#f97316" }}
+        className="absolute top-1/2 w-full h-[1px] opacity-40 blur-[2px]"
+        style={{ backgroundColor: isLight ? "#fb923c" : "#f97316" }}
       />
 
       {/* Content */}
@@ -48,16 +48,16 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           className="text-5xl md:text-7xl font-extrabold leading-tight"
-          style={{ color: isLight ? "#18181b" : "#ffffff" }}
+          style={{ color: isLight ? "#111111" : "#ffffff" }}
         >
           Precision{" "}
           <span
-            className="drop-shadow-[0_0_20px_orange]"
+            className={isLight ? "drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]" : "drop-shadow-[0_0_20px_orange]"}
             style={{ color: "#f97316" }}
           >
             Laser Engraving
           </span>
-          <div className="text-2xl md:text-3xl mt-2 opacity-90 font-black tracking-[0.2em] uppercase">at ArtPeak.Shop</div>
+          <div className={`text-xl md:text-2xl mt-4 font-black tracking-[0.2em] uppercase ${isLight ? "text-zinc-900" : "text-zinc-400"}`}>at ArtPeak.Shop</div>
         </motion.h1>
 
         <motion.p
@@ -128,8 +128,8 @@ export default function Hero() {
               { value: "100%", label: "Quality" },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">
-                <p className="text-3xl font-black" style={{ color: "#ea580c" }}>{value}</p>
-                <p className="text-xs mt-1 font-medium uppercase tracking-wider" style={{ color: "#71717a" }}>{label}</p>
+                <p className="text-4xl font-black" style={{ color: "#ea580c" }}>{value}</p>
+                <p className="text-[10px] mt-1.5 font-bold uppercase tracking-[0.2em]" style={{ color: "#4b5563" }}>{label}</p>
               </div>
             ))}
           </motion.div>

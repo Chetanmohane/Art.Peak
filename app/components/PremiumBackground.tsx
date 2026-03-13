@@ -125,27 +125,33 @@ export default function PremiumBackground() {
           }
         }
       } else {
-        // ── LIGHT MODE ANIMATION: Premium Mesh Gradient Waves ──
-        const waves = [
-          { x: 0.2, y: 0.3, r: width * (isMobile ? 0.6 : 0.8), c: "255, 237, 213", speed: 0.005 }, 
-          { x: 0.8, y: 0.2, r: width * (isMobile ? 0.5 : 0.7), c: "254, 215, 170", speed: 0.007 }, 
-          { x: 0.5, y: 0.7, r: width * (isMobile ? 0.7 : 0.9), c: "255, 247, 237", speed: 0.004 }
+        // ── LIGHT MODE: Dynamic Orange Studio ──
+        // Using brand-consistent orange tones with active movement
+        const ambientBlobs = [
+          { x: 0.2, y: 0.3, r: width * 1.1, c: "255, 237, 213", speed: 0.005 }, // Soft Orange
+          { x: 0.8, y: 0.7, r: width * 0.9, c: "255, 247, 237", speed: 0.003 }, // Cream Orange
         ];
 
-        waves.forEach((w, i) => {
+        ambientBlobs.forEach((w, i) => {
           const moveX = Math.sin(count * w.speed + i) * (width * 0.1) + (width * w.x);
           const moveY = Math.cos(count * (w.speed * 0.8) + i) * (height * 0.1) + (height * w.y);
           
-          const finalX = moveX + (mouseX * 0.1);
-          const finalY = moveY + (mouseY * 0.1);
+          const finalX = moveX + (mouseX * 0.15);
+          const finalY = moveY + (mouseY * 0.15);
 
           const gradient = ctx.createRadialGradient(finalX, finalY, 0, finalX, finalY, w.r);
-          gradient.addColorStop(0, `rgba(${w.c}, ${isMobile ? 0.25 : 0.5})`);
-          gradient.addColorStop(1, 'transparent');
+          gradient.addColorStop(0, `rgba(${w.c}, ${isMobile ? 0.35 : 0.65})`);
+          gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
           ctx.fillStyle = gradient;
           ctx.fillRect(0, 0, width, height); 
         });
+
+        // Dynamic orange sparks
+        if (count % 3 < 0.1) {
+             ctx.fillStyle = "rgba(249, 115, 22, 0.08)";
+             ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
+        }
       }
 
       count += 0.03;
@@ -165,17 +171,18 @@ export default function PremiumBackground() {
   return (
     <div className="absolute inset-0 -z-30 pointer-events-none w-full h-full overflow-hidden will-change-transform" 
          style={{ backgroundColor: "var(--bg-primary)" }}>
-      {/* Dark background base */}
+      
+      {/* Dark background base - only visible in dark mode to prevent smudging */}
       <div className="hidden dark:block absolute inset-0 bg-[#020617] opacity-65" />
       
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       
-      {/* Vignette smoothing */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,var(--bg-primary)_100%)] opacity-40" />
+      {/* Vignette smoothing - Dark mode only for depth, Light mode stays pure and airy */}
+      <div className="hidden dark:block absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,var(--bg-primary)_100%)] opacity-40" />
       
-      {/* Fade borders */}
-      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[var(--bg-primary)] to-transparent opacity-60" />
-      <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[var(--bg-primary)] to-transparent opacity-60" />
+      {/* Fade borders - matching var(--bg-primary) exactly */}
+      <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[var(--bg-primary)] to-transparent opacity-80" />
+      <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-[var(--bg-primary)] to-transparent opacity-80" />
     </div>
   );
 }

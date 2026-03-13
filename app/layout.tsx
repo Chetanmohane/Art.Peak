@@ -48,11 +48,12 @@ export const metadata = {
   formatDetection: { email: false, address: false, telephone: false },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/images/logo/logo.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
     ],
     apple: [
-      { url: "/images/logo/logo.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     other: [
       {
@@ -145,6 +146,7 @@ export default function RootLayout({
     "@type": "WebSite",
     "@id": "https://artpeak.shop/#website",
     "name": "ArtPeak",
+    "alternateName": ["Art Peak", "ArtPeak.shop", "Art Peak Shop"],
     "url": "https://artpeak.shop",
     "potentialAction": {
       "@type": "SearchAction",

@@ -25,23 +25,35 @@ html.dark {
 }
 
 html.light {
-  --bg-primary: #f8f8f8;
-  --bg-secondary: #f0f0f0;
-  --bg-tertiary: #e4e4e7;
-  --bg-card: rgba(255, 255, 255, 0.95);
-  --bg-nav: rgba(255, 255, 255, 0.90);
-  --bg-input: rgba(255, 255, 255, 0.90);
+  /* Premium Light Palette (High-End Tech Aesthetic) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #fbfbfb;
+  --bg-tertiary: #f2f2f7;
+  --bg-card: rgba(255, 255, 255, 0.72);
+  --bg-nav: rgba(255, 255, 255, 0.82);
+  --bg-input: #ffffff;
   --bg-drawer: #ffffff;
-  --border: rgba(0, 0, 0, 0.09);
-  --border-strong: rgba(0, 0, 0, 0.18);
-  --text-primary: #09090b;
-  --text-secondary: #52525b;
-  --text-muted: #a1a1aa;
+  --border: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.08);
+  --text-primary: #111111;
+  --text-secondary: #48484a;
+  --text-muted: #8e8e93;
   --text-inverted: #ffffff;
-  --gradient-from: #f0f0f0;
-  --gradient-via: #f8f8f8;
-  --gradient-to: #f0f0f0;
-  --shadow-card: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+  --gradient-from: #ffffff;
+  --gradient-via: #f5f5f7;
+  --gradient-to: #ffffff;
+  --shadow-card: 0 12px 40px -10px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Light Mode Texture ── */
+html.light body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -50;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3column%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* ================================================================
@@ -109,19 +121,27 @@ html.light .bg-gray-950 {
 }
 
 html.light .bg-black\/40 {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+  background-color: rgba(234, 88, 12, 0.05) !important;
 }
 
 html.light .bg-black\/60 {
-  background-color: rgba(0, 0, 0, 0.06) !important;
+  background-color: rgba(234, 88, 12, 0.08) !important;
 }
 
 html.light .bg-white\/5 {
-  background-color: rgba(0, 0, 0, 0.04) !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
 }
 
 html.light .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.07) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light .bg-white\/5.backdrop-blur-md,
+html.light .bg-zinc-900\/40.backdrop-blur-xl {
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* ── Text ── */
@@ -211,9 +231,28 @@ html.light .from-black.to-gray-950 {
   background: linear-gradient(to bottom, var(--gradient-from), var(--gradient-via), var(--gradient-to)) !important;
 }
 
-/* ── Hero overlay in light mode — keep it subtle ── */
+/* ── Hero overlay in light mode — clean and airy ── */
 html.light #home .absolute.inset-0.from-black\/80 {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.60)) !important;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.1), 
+    rgba(255, 255, 255, 0.3), 
+    rgba(255, 255, 255, 0.6)
+  ) !important;
+}
+
+html.light .bg-black\/10,
+html.light .bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* ── About section background ── */
+html.light #about {
+  background: linear-gradient(to bottom, var(--bg-primary), #fafafa, var(--bg-primary)) !important;
+}
+
+html.light .bg-orange-600\/10,
+html.light .bg-orange-500\/20 {
+  background-color: rgba(234, 88, 12, 0.06) !important;
 }
 
 /* ── Scrollbar ── */

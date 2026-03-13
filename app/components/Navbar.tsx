@@ -342,8 +342,9 @@ export default function Navbar() {
         }`}
         style={{
           // Use completely (isLight ? 'rgba(255, 255, 255, 0)' : 'rgba(0, 0, 0, 0)') values with matching alpha (preventing iOS/Safari black interpolation smudges)
-          backgroundColor: scrolled ? (isLight ? "rgba(255, 255, 255, 0.95)" : "rgba(0, 0, 0, 0.85)") : (isLight ? "rgba(255, 255, 255, 0)" : "rgba(0, 0, 0, 0)"),
-          borderBottom: scrolled ? (isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)") : (isLight ? "1px solid rgba(0, 0, 0, 0)" : "1px solid rgba(255, 255, 255, 0)"),
+          backgroundColor: scrolled ? (isLight ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.85)") : "transparent",
+          borderBottom: scrolled ? (isLight ? "1px solid rgba(0, 0, 0, 0.05)" : "1px solid rgba(255, 255, 255, 0.08)") : "none",
+          backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
