@@ -32,25 +32,27 @@ export async function generateMetadata(): Promise<Metadata> {
 
     const dynamicKeywords = [
       ...SEO_KEYWORDS,
+      "ArtPeak", "Art Peak", "ArtPeak Shop", "ArtPeak India", "Wooden Keychain",
       ...(productNames ? productNames.split(", ") : []),
       ...(productCategories ? productCategories.split(", ") : []),
       ...(serviceNames ? serviceNames.split(", ") : []),
     ].filter(Boolean);
 
     return {
-      title: "ArtPeak.Shop | Laser Engraving India | " + (productCategories || "Custom Gifts & Engraved Products"),
-      description: "Shop " + (productNames || "laser engraved products") + " at ArtPeak.shop. " + (productCategories ? productCategories + ". " : "") + "Services: " + (serviceNames || "Laser Engraving") + ". India delivery. 500+ projects. Indore, MP. Order now!",
+      title: "ArtPeak | Best Laser Engraving India | " + (productCategories || "Custom Gifts & Engraved Products"),
+      description: "Looking for " + (productCategories || "custom gifts") + "? ArtPeak offers " + (productNames || "premium laser engraved products") + ". " + (productCategories ? "Top categories: " + productCategories + ". " : "") + "Expert services in " + (serviceNames || "Laser Engraving") + ". Best in India. Order now at ArtPeak.shop.",
       keywords: [...new Set(dynamicKeywords)].join(", "),
       openGraph: {
-        title: "ArtPeak.Shop | Laser Engraving India | Custom Gifts",
-        description: "Premium laser engraving. Custom wooden keychains, metal engraving, personalized gifts. artpeak.shop",
+        title: "ArtPeak | Laser Engraving India | Custom Gifts",
+        description: "Premium laser engraving on wood, metal, glass, acrylic. Personalized gifts, corporate branding. Visit ArtPeak.shop",
+        images: ["/images/logo/logo.png"],
       },
     };
   } catch (error) {
     console.error("SSR Metadata Fetch Error:", error);
     return {
-      title: "ArtPeak.Shop | Laser Engraving India | Custom Gifts & Engraved Products",
-      description: "India's best laser engraving shop. Custom wooden keychains, metal engraving, personalized gifts, corporate branding. Order at artpeak.shop. Indore, MP.",
+      title: "ArtPeak | Laser Engraving India | Custom Gifts & Engraved Products",
+      description: "ArtPeak is India's best laser engraving shop. Custom wooden keychains, metal engraving, personalized gifts, corporate branding. Order online at ArtPeak.shop. Indore, MP.",
       keywords: SEO_KEYWORDS.join(", "),
     };
   }

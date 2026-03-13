@@ -7,8 +7,9 @@ import CategoryHeader from "../components/CategoryHeader";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Gifts For Him 💙 | Custom Laser Engraved Gear | ArtPeak.Shop",
-  description: "Sophisticated and rugged personalized gifts for him. Metal wallets, wooden notebooks, and precision gear at ArtPeak.Shop. Premium laser engraving India.",
+  title: "Gifts For Him | Custom Laser Engraved Gear | ArtPeak",
+  description: "Explore sophisticated and rugged personalized gifts for him at ArtPeak. Custom engraved metal tools, wooden accessories, and unique gear. Best laser engraving services in India.",
+  keywords: ["gifts for him", "personalized gifts for him", "customized gifts for men", "engraved gifts for men", "ArtPeak India"],
 };
 
 async function getCategoryProducts() {

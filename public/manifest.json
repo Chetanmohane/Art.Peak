@@ -1,0 +1,21 @@
+{
+  "name": "ArtPeak | Best Laser Engraving India",
+  "short_name": "ArtPeak",
+  "description": "India's premium laser engraving shop for customized gifts and products.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "/images/logo/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/logo/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

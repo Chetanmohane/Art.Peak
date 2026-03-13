@@ -7,8 +7,9 @@ import CategoryHeader from "../components/CategoryHeader";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Gifts For Her 💗 | Personalized Laser Engraved Gifts | ArtPeak.Shop",
-  description: "Discover the most thoughtful personalized gifts for her. Custom engraved jewelry, wooden keepsakes, and more at ArtPeak.Shop. India's best laser engraving shop.",
+  title: "Gifts For Her | Personalized Laser Engraved Gifts | ArtPeak",
+  description: "Discover the perfect personalized gifts for her at ArtPeak. Custom engraved wooden keepsakes, jewelry, and unique treasures. Premium quality laser engraving in India. Order now!",
+  keywords: ["gifts for her", "personalized gifts for her", "customized gifts for women", "laser engraved gifts India", "ArtPeak gifts"],
 };
 
 async function getCategoryProducts() {
