@@ -129,13 +129,21 @@ export async function DELETE(req: Request) {
 
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
+        const category = searchParams.get("category");
 
-        if (!id) {
-            return new NextResponse("Missing id", { status: 400 });
+        if (id) {
+            await prisma.product.delete({ where: { id } });
+            return new NextResponse("Product Deleted", { status: 200 });
         }
 
-        await prisma.product.delete({ where: { id } });
-        return new NextResponse("Product Deleted", { status: 200 });
+        if (category) {
+            const result = await prisma.product.deleteMany({
+                where: { category: category }
+            });
+            return new NextResponse(`Deleted ${result.count} products in category: ${category}`, { status: 200 });
+        }
+
+        return new NextResponse("Missing id or category", { status: 400 });
     } catch (error) {
         console.error("Admin products DELETE error:", error);
         return new NextResponse("Internal Server Error", { status: 500 });

@@ -437,6 +437,26 @@ export default function AdminPage() {
       if (res.ok) setProducts(prev => prev.filter(p => p.id !== id));
     } finally { setDeletingId(null); }
   };
+
+  const handleDeleteCategory = async (categoryName: string) => {
+    if (!confirm(`Kya aap "${categoryName}" category ke sabhi products delete karna chahte hain? Ye action irreversible hai!`)) return;
+    setPageStatus("loading");
+    try {
+      const res = await fetch(`/api/admin/products?category=${encodeURIComponent(categoryName)}`, { method: "DELETE" });
+      if (res.ok) {
+        setProducts(prev => prev.filter(p => p.category !== categoryName));
+        setAdminCategoryFilter("all");
+        showToast(`Category "${categoryName}" deleted successfully!`, "success");
+      } else {
+        const txt = await res.text();
+        showToast(txt || "Failed to delete category", "error");
+      }
+    } catch (e) {
+      showToast("Something went wrong", "error");
+    } finally {
+      setPageStatus("ready");
+    }
+  };
   const handleUpdateOrderStatus = async (id: string, status: string) => {
     try {
       const res = await fetch("/api/admin/orders", {
@@ -1094,17 +1114,34 @@ export default function AdminPage() {
         {/* Category Filter */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2">
           {uniqueCategories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setAdminCategoryFilter(cat)}
-              className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
-                adminCategoryFilter === cat 
-                  ? "bg-orange-500 text-white border-transparent shadow-lg shadow-orange-500/20" 
-                  : isLight ? "bg-white border-zinc-200 text-zinc-500 hover:border-orange-200" : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10"
-              }`}
-            >
-              {cat}
-            </button>
+            <div key={cat} className="flex items-center gap-1 group/cat">
+              <button
+                onClick={() => setAdminCategoryFilter(cat)}
+                className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
+                  adminCategoryFilter === cat 
+                    ? "bg-orange-500 text-white border-transparent shadow-lg shadow-orange-500/20" 
+                    : isLight ? "bg-white border-zinc-200 text-zinc-500 hover:border-orange-200" : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10"
+                }`}
+              >
+                {cat}
+              </button>
+              {cat !== "all" && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCategory(cat);
+                  }}
+                  className={`p-2 rounded-lg transition-all opacity-0 group-hover/cat:opacity-100 ${
+                    isLight 
+                      ? "text-red-400 hover:text-red-600 hover:bg-red-50" 
+                      : "text-red-500/50 hover:text-red-500 hover:bg-red-500/10"
+                  }`}
+                  title={`Delete ${cat} Category`}
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
           ))}
         </div>
 
