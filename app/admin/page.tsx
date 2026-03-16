@@ -438,20 +438,24 @@ export default function AdminPage() {
     } finally { setDeletingId(null); }
   };
 
-  const handleDeleteCategory = async (categoryName: string) => {
-    if (!confirm(`Kya aap "${categoryName}" category ke sabhi products delete karna chahte hain? Ye action irreversible hai!`)) return;
+  const handleDeleteCategory = async (category: string) => {
+    if (!category || category === "all") return;
+    
+    const count = products.filter(p => p.category === category).length;
+    if (!confirm(`Kya aap puri category "${category}" aur uske saare ${count} products ko delete karna chahte hain?`)) return;
+    
     setPageStatus("loading");
     try {
-      const res = await fetch(`/api/admin/products?category=${encodeURIComponent(categoryName)}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/products?category=${encodeURIComponent(category)}`, { method: "DELETE" });
       if (res.ok) {
-        setProducts(prev => prev.filter(p => p.category !== categoryName));
+        showToast(`Category "${category}" deleted successfully`, "success");
+        await fetchProducts();
         setAdminCategoryFilter("all");
-        showToast(`Category "${categoryName}" deleted successfully!`, "success");
       } else {
-        const txt = await res.text();
-        showToast(txt || "Failed to delete category", "error");
+        showToast("Failed to delete category", "error");
       }
     } catch (e) {
+      console.error(e);
       showToast("Something went wrong", "error");
     } finally {
       setPageStatus("ready");
@@ -1111,11 +1115,12 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2">
-          {uniqueCategories.map(cat => (
-            <div key={cat} className="flex items-center gap-1 group/cat">
+        {/* Category Filter & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar px-2 flex-1">
+            {uniqueCategories.map(cat => (
               <button
+                key={cat}
                 onClick={() => setAdminCategoryFilter(cat)}
                 className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
                   adminCategoryFilter === cat 
@@ -1125,24 +1130,17 @@ export default function AdminPage() {
               >
                 {cat}
               </button>
-              {cat !== "all" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteCategory(cat);
-                  }}
-                  className={`p-2 rounded-lg transition-all opacity-0 group-hover/cat:opacity-100 ${
-                    isLight 
-                      ? "text-red-400 hover:text-red-600 hover:bg-red-50" 
-                      : "text-red-500/50 hover:text-red-500 hover:bg-red-500/10"
-                  }`}
-                  title={`Delete ${cat} Category`}
-                >
-                  <Trash2 size={12} />
-                </button>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          
+          {adminCategoryFilter !== "all" && (
+            <button 
+              onClick={() => handleDeleteCategory(adminCategoryFilter)}
+              className="shrink-0 px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+            >
+              <Trash2 size={14} /> Delete Category
+            </button>
+          )}
         </div>
 
         {filteredProducts.length === 0 ? (

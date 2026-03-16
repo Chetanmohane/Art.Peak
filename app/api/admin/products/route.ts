@@ -118,7 +118,7 @@ export async function PUT(req: Request) {
     }
 }
 
-// DELETE /api/admin/products?id=xxx — delete a product (admin only)
+// DELETE /api/admin/products — delete a product or whole category (admin only)
 export async function DELETE(req: Request) {
     try {
         const session = await getServerSession(authOptions);
@@ -137,10 +137,8 @@ export async function DELETE(req: Request) {
         }
 
         if (category) {
-            const result = await prisma.product.deleteMany({
-                where: { category: category }
-            });
-            return new NextResponse(`Deleted ${result.count} products in category: ${category}`, { status: 200 });
+            await prisma.product.deleteMany({ where: { category } });
+            return new NextResponse("Category Deleted", { status: 200 });
         }
 
         return new NextResponse("Missing id or category", { status: 400 });
