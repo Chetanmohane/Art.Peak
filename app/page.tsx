@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ]);
     
     const productNames = (products as any[]).map(p => p.name).slice(0, 5).join(", ");
-    const productCategories = Array.from(new Set((products as any[]).map(p => p.category))).slice(0, 5).join(", ");
+    const productCategories = Array.from(new Set((products as any[]).flatMap(p => p.category.split(",").map((c: string) => c.trim())))).slice(0, 6).join(", ");
     const serviceNames = (services as any[]).map(s => s.title).slice(0, 4).join(", ");
 
     const dynamicKeywords = [

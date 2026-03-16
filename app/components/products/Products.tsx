@@ -99,11 +99,15 @@ function ProductCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
         {/* Category badge */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-orange-600/90 backdrop-blur-sm px-3 py-1 rounded-full">
-          <Tag size={10} className="text-white" />
-          <span className="text-[10px] text-white font-bold uppercase tracking-widest">
-            {product.category}
-          </span>
+        <div className="absolute top-3 left-3 flex flex-wrap gap-1 max-w-[70%]">
+          {product.category.split(",").map((cat, i) => (
+            <div key={i} className="flex items-center gap-1.5 bg-orange-600/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+              <Tag size={10} className="text-white" />
+              <span className="text-[10px] text-white font-bold uppercase tracking-widest whitespace-nowrap">
+                {cat.trim()}
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* Bulk badge */}
@@ -342,13 +346,22 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
 
   const categories = [
     "All",
-    ...Array.from(new Set(products.map((p) => p.category))),
-  ].filter(cat => cat !== "Gifts For Her" && cat !== "Gifts For Him");
+    ...Array.from(
+      new Set(
+        products.flatMap((p) => p.category.split(",").map((c) => c.trim()))
+      )
+    ),
+  ].filter((cat) => cat !== "Gifts For Her" && cat !== "Gifts For Him");
 
   const filtered =
     activeCategory === "All"
       ? products
-      : products.filter((p) => p.category === activeCategory);
+      : products.filter((p) =>
+          p.category
+            .split(",")
+            .map((c) => c.trim())
+            .includes(activeCategory)
+        );
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const displayed = filtered.slice(

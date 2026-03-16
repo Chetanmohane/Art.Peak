@@ -366,7 +366,7 @@ export default function AdminPage() {
     } else if (activeTab === "products") {
       let filtered = [...products];
       if (adminCategoryFilter !== "all") {
-        filtered = filtered.filter(p => p.category === adminCategoryFilter);
+        filtered = filtered.filter(p => p.category.split(',').map(c => c.trim()).includes(adminCategoryFilter));
       }
       if (q) {
         filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
@@ -1062,7 +1062,7 @@ export default function AdminPage() {
   };
 
   const renderProducts = () => {
-    const uniqueCategories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
+    const uniqueCategories = ["all", ...Array.from(new Set(products.flatMap(p => p.category.split(',').map(c => c.trim()))))];
     
     return (
       <div className="space-y-6">
@@ -1467,6 +1467,8 @@ export default function AdminPage() {
     { id: "offers", label: "Offers", icon: <Tag size={18} />, count: offers.length, color: "text-fuchsia-500", bg: "bg-fuchsia-500", hidden: userRole === "editor" },
   ];
 
+  const PRESET_CATEGORIES = ["Gifts For Her", "Gifts For Him", "Wood", "Metal", "Acrylic", "Glass"];
+
   const filteredNavItems = navItems.filter(item => !item.hidden);
 
   return (
@@ -1699,41 +1701,54 @@ export default function AdminPage() {
                        <FormGroup label="Min. Quantity" icon={<Layers size={14}/>} isLight={isLight}>
                           <input required type="number" min="1" value={productForm.minQuantity} onChange={e => setProductForm({...productForm, minQuantity: e.target.value})} className="w-full bg-transparent outline-none py-2 text-sm font-medium" placeholder="1" />
                        </FormGroup>
-                        <FormGroup label="Category" icon={<Package size={14}/>} isLight={isLight}>
-                           <div className="flex flex-col gap-2 py-1 w-full">
-                              <select 
-                                 value={showCustomCategory ? "custom" : productForm.category} 
-                                 onChange={e => {
-                                    if (e.target.value === "custom") {
-                                       setShowCustomCategory(true);
-                                    } else {
-                                       setShowCustomCategory(false);
-                                       setProductForm({...productForm, category: e.target.value});
-                                    }
-                                 }} 
-                                 className={`w-full bg-transparent outline-none py-1 text-sm appearance-none font-bold ${isLight ? "" : "[&>option]:bg-zinc-900"}`}
-                               >
-                                  <option value="Gifts For Her">Gifts For Her 💗</option>
-                                  <option value="Gifts For Him">Gifts For Him 💙</option>
-                                  <option value="Wood">Wood</option>
-                                  <option value="Metal">Metal</option>
-                                  <option value="Acrylic">Acrylic</option>
-                                  <option value="Glass">Glass</option>
-                                  <option value="Custom">Other (Custom)</option>
-                                  {Array.from(new Set([...products.map(p => p.category)])).filter(c => !["Gifts For Her", "Gifts For Him", "Wood", "Metal", "Acrylic", "Glass", "Custom"].includes(c)).map(cat => (
-                                     <option key={cat} value={cat}>{cat}</option>
-                                  ))}
-                                  <option value="custom">+ New Category...</option>
-                               </select>
-                              {showCustomCategory && (
+                        <FormGroup label="Categories" icon={<Package size={14}/>} isLight={isLight}>
+                           <div className="flex flex-col gap-3 py-1 w-full max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                              <div className="flex flex-wrap gap-2">
+                                 {[...new Set([...PRESET_CATEGORIES, ...products.flatMap(p => p.category.split(',').map(c => c.trim()))])].map(cat => {
+                                    const selected = productForm.category.split(',').map(c => c.trim()).includes(cat);
+                                    return (
+                                       <button 
+                                          key={cat}
+                                          type="button"
+                                          onClick={() => {
+                                             const currentArr = productForm.category.split(',').map(c => c.trim()).filter(Boolean);
+                                             if (selected) {
+                                                setProductForm({...productForm, category: currentArr.filter(c => c !== cat).join(', ')});
+                                             } else {
+                                                setProductForm({...productForm, category: [...currentArr, cat].join(', ')});
+                                             }
+                                          }}
+                                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                                             selected 
+                                                ? "bg-orange-500 text-white border-transparent" 
+                                                : isLight ? "bg-white border-zinc-200 text-zinc-500 hover:border-orange-300" : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10"
+                                          }`}
+                                       >
+                                          {cat}
+                                       </button>
+                                    );
+                                 })}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
                                  <input 
-                                    autoFocus
-                                    placeholder="Enter category name"
-                                    className="w-full bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-orange-500"
-                                    value={productForm.category === "custom" ? "" : productForm.category}
-                                    onChange={(e) => setProductForm({...productForm, category: e.target.value})}
+                                    placeholder="Add Custom..."
+                                    className="flex-1 bg-black/10 dark:bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-medium outline-none"
+                                    onKeyDown={(e) => {
+                                       if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          const val = (e.currentTarget.value || "").trim();
+                                          if (val) {
+                                             const currentArr = productForm.category.split(',').map(c => c.trim()).filter(Boolean);
+                                             if (!currentArr.includes(val)) {
+                                                setProductForm({...productForm, category: [...currentArr, val].join(', ')});
+                                                e.currentTarget.value = "";
+                                             }
+                                          }
+                                       }
+                                    }}
                                  />
-                              )}
+                                 <p className="text-[9px] text-zinc-500 font-bold uppercase">Press Enter to add</p>
+                              </div>
                            </div>
                         </FormGroup>
                         <div className={`flex flex-col gap-2 p-3 rounded-2xl border ${isLight ? "bg-zinc-50 border-zinc-200" : "bg-white/5 border-white/10"}`}>
