@@ -508,7 +508,7 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
               className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Her" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
             >
               <div className={`w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] sm:border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl ${activeCategory === "Gifts For Her" ? "border-pink-500 shadow-pink-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
-                <Image src="/gifts-for-her_1773335313213.png" alt="Gifts For Her" width={200} height={200} className="w-full h-full object-cover" />
+                <Image src="/gifts-for-her-new.png" alt="Gifts For Her" width={200} height={200} className="w-full h-full object-cover" />
               </div>
               <h3 className="text-sm sm:text-lg font-black flex items-center gap-1.5 tracking-tight" style={{ color: "var(--text-primary)" }}>
                 Gifts For Her! <span className="text-base sm:text-lg">💗</span>
@@ -521,7 +521,7 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
               className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer group transition-opacity duration-300 ${activeCategory === "Gifts For Him" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
             >
               <div className={`w-28 h-28 sm:w-36 sm:h-36 rounded-full border-[3px] sm:border-4 overflow-hidden bg-white dark:bg-zinc-800 transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl ${activeCategory === "Gifts For Him" ? "border-blue-500 shadow-blue-500/30" : "border-zinc-200 dark:border-zinc-700"}`}>
-                <Image src="/gifts-for-him_1773335335915.png" alt="Gifts For Him" width={200} height={200} className="w-full h-full object-cover" />
+                <Image src="/gifts-for-him-new.png" alt="Gifts For Him" width={200} height={200} className="w-full h-full object-cover" />
               </div>
               <h3 className="text-sm sm:text-lg font-black flex items-center gap-1.5 tracking-tight" style={{ color: "var(--text-primary)" }}>
                 Gifts For Him! <span className="text-base sm:text-lg">💙</span>
