@@ -32,7 +32,12 @@ export default function CategoryHeader({ title, theme, subtitle }: CategoryHeade
       <div className="max-w-7xl mx-auto px-6 mb-8 flex items-center justify-between">
         <Link 
           href="/#products" 
-          className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 text-zinc-300 hover:text-white transition-all duration-300 group shadow-2xl ${btnClasses}`}
+          className={`inline-flex items-center gap-3 px-6 py-2.5 rounded-2xl backdrop-blur-xl border transition-all duration-300 group shadow-2xl ${btnClasses}`}
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-strong)",
+            color: "var(--text-primary)"
+          }}
         >
           <ArrowLeft size={18} className={`group-hover:-translate-x-1.5 transition-transform duration-300 ${iconClasses}`} />
           <span className="text-sm font-black tracking-widest uppercase">Back to Products</span>
@@ -55,7 +60,8 @@ export default function CategoryHeader({ title, theme, subtitle }: CategoryHeade
         <motion.h1 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-5xl md:text-7xl font-black mb-6 text-white tracking-tighter"
+          className="text-5xl md:text-7xl font-black mb-6 tracking-tighter"
+          style={{ color: "var(--text-primary)" }}
         >
           Gifts For <span className={`text-transparent bg-clip-text bg-gradient-to-r ${gradientFrom}`} style={{ filter: `drop-shadow(0 0 30px ${shadowColor})` }}>{title}</span>
         </motion.h1>
@@ -63,7 +69,8 @@ export default function CategoryHeader({ title, theme, subtitle }: CategoryHeade
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-zinc-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-medium"
+          className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-medium"
+          style={{ color: "var(--text-secondary)" }}
         >
           {subtitle}
         </motion.p>

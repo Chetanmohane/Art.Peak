@@ -38,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ...(serviceNames ? serviceNames.split(", ") : []),
     ].filter(Boolean);
 
-    return {
+    return { 
       title: "ArtPeak | Best Laser Engraving India | " + (productCategories || "Custom Gifts & Engraved Products"),
       description: "Looking for " + (productCategories || "custom gifts") + "? ArtPeak offers " + (productNames || "premium laser engraved products") + ". " + (productCategories ? "Top categories: " + productCategories + ". " : "") + "Expert services in " + (serviceNames || "Laser Engraving") + ". Best in India. Order now at ArtPeak.shop.",
       keywords: [...new Set(dynamicKeywords)].join(", "),

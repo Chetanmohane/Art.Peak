@@ -343,7 +343,7 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
   const categories = [
     "All",
     ...Array.from(new Set(products.map((p) => p.category))),
-  ];
+  ].filter(cat => cat !== "Gifts For Her" && cat !== "Gifts For Him");
 
   const filtered =
     activeCategory === "All"
