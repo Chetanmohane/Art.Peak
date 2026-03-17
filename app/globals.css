@@ -25,24 +25,24 @@ html.dark {
 }
 
 html.light {
-  /* Premium Light Palette (High-End Tech Aesthetic) */
+  /* Premium Light Palette (Clean, Product-Focused Aesthetic) */
   --bg-primary: #ffffff;
-  --bg-secondary: #fbfbfb;
-  --bg-tertiary: #f2f2f7;
-  --bg-card: rgba(255, 255, 255, 0.72);
-  --bg-nav: rgba(255, 255, 255, 0.82);
-  --bg-input: #ffffff;
+  --bg-secondary: #fdfdfd;
+  --bg-tertiary: #f8f9fa;
+  --bg-card: #ffffff;
+  --bg-nav: rgba(255, 255, 255, 0.85);
+  --bg-input: #f8f9fa;
   --bg-drawer: #ffffff;
-  --border: rgba(0, 0, 0, 0.04);
-  --border-strong: rgba(0, 0, 0, 0.08);
-  --text-primary: #111111;
-  --text-secondary: #48484a;
-  --text-muted: #8e8e93;
+  --border: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --text-primary: #050505;
+  --text-secondary: #2d2d2f;
+  --text-muted: #636366;
   --text-inverted: #ffffff;
   --gradient-from: #ffffff;
-  --gradient-via: #f5f5f7;
+  --gradient-via: #fafafa;
   --gradient-to: #ffffff;
-  --shadow-card: 0 12px 40px -10px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 20px 50px -15px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Light Mode Texture ── */
@@ -108,24 +108,40 @@ html.light .bg-zinc-800 {
   background-color: var(--bg-tertiary) !important;
 }
 
-html.light .bg-gray-900 {
-  background-color: var(--bg-card) !important;
+html.light .bg-zinc-700 {
+  background-color: var(--bg-tertiary) !important;
 }
 
-html.light .bg-gray-900\/70 {
-  background-color: var(--bg-card) !important;
+html.light .bg-zinc-100 {
+  background-color: var(--bg-tertiary) !important;
 }
 
-html.light .bg-gray-950 {
+html.light .bg-zinc-200 {
   background-color: var(--bg-secondary) !important;
 }
 
-html.light .bg-black\/40 {
-  background-color: rgba(234, 88, 12, 0.05) !important;
+html.light .bg-gray-800 {
+  background-color: var(--bg-tertiary) !important;
 }
 
-html.light .bg-black\/60 {
-  background-color: rgba(234, 88, 12, 0.08) !important;
+html.light .bg-gray-100 {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.light .text-zinc-300 {
+  color: var(--text-secondary) !important;
+}
+
+html.light .text-zinc-400 {
+  color: var(--text-secondary) !important;
+}
+
+html.light .text-zinc-500 {
+  color: var(--text-muted) !important;
+}
+
+html.light .text-zinc-200 {
+  color: var(--text-primary) !important;
 }
 
 html.light .bg-white\/5 {
@@ -136,12 +152,38 @@ html.light .bg-white\/10 {
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
+html.light .bg-white\/8 {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light .bg-black\/40 {
+  background-color: var(--bg-input) !important;
+}
+
+html.light .bg-black\/20 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+html.light .bg-zinc-800\/50 {
+  background-color: var(--bg-tertiary) !important;
+}
+
+html.light .border-white\/10 {
+  border-color: var(--border) !important;
+}
+
+html.light .border-white\/15,
+html.light .border-white\/8,
+html.light .border-white\/5 {
+  border-color: var(--border) !important;
+}
+
 html.light .bg-white\/5.backdrop-blur-md,
 html.light .bg-zinc-900\/40.backdrop-blur-xl {
-  background-color: rgba(255, 255, 255, 0.7) !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* ── Text ── */

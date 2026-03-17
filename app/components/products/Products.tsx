@@ -654,29 +654,41 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.94, y: 24 }}
                 transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] sm:w-full max-w-lg max-h-[92vh] overflow-y-auto bg-zinc-900 border border-white/10 p-6 rounded-3xl shadow-2xl z-[1010] hide-scrollbar"
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] sm:w-full max-w-lg max-h-[92vh] overflow-y-auto border p-6 rounded-3xl shadow-2xl z-[1010] hide-scrollbar"
+                style={{ 
+                  backgroundColor: "var(--bg-drawer)", 
+                  borderColor: "var(--border-strong)"
+                }}
               >
                 {/* Modal Header */}
                 <div className="flex justify-between items-center mb-5">
                   <div>
-                    <h3 className="text-xl font-black text-white">
+                    <h3 className="text-xl font-black" style={{ color: "var(--text-primary)" }}>
                       Customize Your Order
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-0.5">
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
                       Tell us exactly what you want engraved
                     </p>
                   </div>
                   <button
                     onClick={() => setCustomizingProduct(null)}
-                    className="text-zinc-400 hover:text-white transition p-1"
+                    className="transition p-1"
+                    style={{ color: "var(--text-muted)" }}
                   >
                     <X size={22} />
                   </button>
                 </div>
 
                 {/* Product Preview */}
-                <div className="flex items-center gap-4 mb-6 p-4 bg-white/5 rounded-2xl border border-white/8">
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl border"
+                  style={{ 
+                    backgroundColor: "var(--bg-tertiary)", 
+                    borderColor: "var(--border)"
+                  }}
+                >
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border"
+                    style={{ borderColor: "var(--border-strong)" }}
+                  >
                     <Image
                       src={customizingProduct.image}
                       alt={customizingProduct.name}
@@ -686,7 +698,7 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-white font-semibold text-sm leading-tight line-clamp-2">
+                    <h4 className="font-semibold text-sm leading-tight line-clamp-2" style={{ color: "var(--text-primary)" }}>
                       {customizingProduct.name}
                     </h4>
                     <div className="flex items-center gap-2 mt-1.5">
@@ -703,9 +715,9 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                 <div className="space-y-5">
                   {/* Custom Text */}
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-300 mb-2">
+                    <label className="block text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>
                       Custom Text{" "}
-                      <span className="text-zinc-500 font-normal">
+                      <span className="font-normal" style={{ color: "var(--text-muted)" }}>
                         (Name / Message / Quote)
                       </span>
                     </label>
@@ -713,14 +725,19 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                       value={customText}
                       onChange={(e) => setCustomText(e.target.value)}
                       placeholder="e.g. Rahul Sharma, Happy Birthday Mummy, Om Namah Shivay..."
-                      className="w-full bg-black/50 border border-white/10 focus:border-orange-500 rounded-xl p-4 text-white placeholder-zinc-600 outline-none transition resize-none h-24 text-sm"
+                      className="w-full border focus:border-orange-500 rounded-xl p-4 placeholder-zinc-500 outline-none transition resize-none h-24 text-sm"
+                      style={{ 
+                        backgroundColor: "var(--bg-input)", 
+                        borderColor: "var(--border-strong)",
+                        color: "var(--text-primary)"
+                      }}
                     />
                   </div>
 
                   {/* Size Selection */}
                   {customizingProduct.sizes && customizingProduct.sizes.length > 0 && (
                     <div className="mt-2">
-                       <label className="block text-sm font-semibold text-zinc-300 mb-3">
+                       <label className="block text-sm font-semibold mb-3" style={{ color: "var(--text-secondary)" }}>
                         Select Size <span className="text-red-500">*</span>
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -745,15 +762,19 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
 
                   {/* Image Upload */}
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-300 mb-2">
+                    <label className="block text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>
                       Upload Photo / Logo{" "}
-                      <span className="text-zinc-500 font-normal">
+                      <span className="font-normal" style={{ color: "var(--text-muted)" }}>
                         (Optional)
                       </span>
                     </label>
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-white/15 hover:border-orange-500/50 hover:bg-orange-500/5 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all group"
+                      className="border-2 border-dashed hover:border-orange-500/50 hover:bg-orange-500/5 rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all group"
+                      style={{ 
+                        borderColor: "var(--border-strong)",
+                        backgroundColor: "var(--bg-input)"
+                      }}
                     >
                       <input
                         type="file"
@@ -786,10 +807,10 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                           <div className="w-11 h-11 rounded-full bg-orange-500/10 flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform">
                             <Upload className="text-orange-500" size={18} />
                           </div>
-                          <p className="text-sm text-zinc-400 group-hover:text-white transition">
+                          <p className="text-sm transition" style={{ color: "var(--text-secondary)" }}>
                             Click to upload image
                           </p>
-                          <p className="text-xs text-zinc-600 mt-1">
+                          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                             JPG, PNG, WEBP supported
                           </p>
                         </>
@@ -799,15 +820,16 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
 
                   {/* Bulk Price Reference Table */}
                   {customizingProduct.bulkPricing && customizingProduct.bulkPricing.length > 0 && (
-                    <div className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+                    <div className="rounded-xl p-3 border" style={{ backgroundColor: "var(--bg-tertiary)", borderColor: "var(--border)" }}>
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2" style={{ color: "var(--text-muted)" }}>
                         <Tag size={10} className="text-orange-500"/> Volume Discounts
                       </p>
                       <div className="grid grid-cols-3 gap-2">
                         {[...(customizingProduct.bulkPricing || [])].sort((a,b) => a.qty - b.qty).map((tier, tidx) => (
-                          <div key={tidx} className={`p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${customQty >= tier.qty ? "bg-orange-600/10 border-orange-500/30 ring-1 ring-orange-500/20" : "bg-black/20 border-white/5"}`}>
-                            <span className={`text-[10px] font-bold ${customQty >= tier.qty ? "text-orange-400" : "text-zinc-500"}`}>{tier.qty}+ Pcs</span>
-                            <span className={`text-xs font-black ${customQty >= tier.qty ? "text-white" : "text-zinc-300"}`}>₹{tier.price}</span>
+                          <div key={tidx} className={`p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${customQty >= tier.qty ? "bg-orange-600/10 border-orange-500/30 ring-1 ring-orange-500/20" : "border-transparent"}`}
+                            style={customQty < tier.qty ? { backgroundColor: "var(--bg-input)" } : {}}>
+                            <span className={`text-[10px] font-bold ${customQty >= tier.qty ? "text-orange-400" : ""}`} style={customQty < tier.qty ? { color: "var(--text-muted)" } : {}}>{tier.qty}+ Pcs</span>
+                            <span className={`text-xs font-black ${customQty >= tier.qty ? "text-orange-500" : ""}`} style={customQty < tier.qty ? { color: "var(--text-secondary)" } : {}}>₹{tier.price}</span>
                           </div>
                         ))}
                       </div>
@@ -816,7 +838,7 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
 
                   {/* Quantity */}
                   <div>
-                    <label className="block text-sm font-semibold text-zinc-300 mb-3 flex items-center justify-between">
+                    <label className="block text-sm font-semibold mb-3 flex items-center justify-between" style={{ color: "var(--text-secondary)" }}>
                       <span>Quantity</span>
                       {(customizingProduct.minQuantity || 1) > 1 && (
                         <span className="text-[10px] font-black text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
@@ -825,12 +847,14 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                       )}
                     </label>
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center bg-black/40 border border-white/10 rounded-xl overflow-hidden">
+                      <div className="flex items-center border rounded-xl overflow-hidden" 
+                        style={{ backgroundColor: "var(--bg-input)", borderColor: "var(--border-strong)" }}>
                         <button
                           onClick={() =>
                             setCustomQty((prev) => Math.max(customizingProduct.minQuantity || 1, prev - 1))
                           }
-                          className="px-4 py-3 text-zinc-400 hover:text-white hover:bg-white/5 transition"
+                          className="px-4 py-3 transition"
+                          style={{ color: "var(--text-secondary)" }}
                         >
                           <Minus size={16} />
                         </button>
@@ -845,22 +869,25 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                               setCustomQty(Math.max(minVal, val));
                             }
                           }}
-                          className="w-14 text-center text-white font-bold bg-transparent outline-none border-none hide-number-spinners"
+                          className="w-14 text-center font-bold bg-transparent outline-none border-none hide-number-spinners"
+                          style={{ color: "var(--text-primary)" }}
                         />
                         <button
                           onClick={() => setCustomQty((prev) => prev + 1)}
-                          className="px-4 py-3 text-zinc-400 hover:text-white hover:bg-white/5 transition"
+                          className="px-4 py-3 transition"
+                          style={{ color: "var(--text-secondary)" }}
                         >
                           <Plus size={16} />
                         </button>
                       </div>
 
                       {/* Total breakdown */}
-                      <div className="flex-1 bg-zinc-800/50 border border-white/5 rounded-xl px-4 py-3 relative overflow-hidden group">
+                      <div className="flex-1 border rounded-xl px-4 py-3 relative overflow-hidden group"
+                        style={{ backgroundColor: "var(--bg-tertiary)", borderColor: "var(--border)" }}>
                         <div className="flex justify-between items-start mb-1">
-                          <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Price Details</p>
+                          <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--text-muted)" }}>Price Details</p>
                           {customizingProduct.bulkPricing?.find(t => customQty >= t.qty) && (
-                            <span className="text-[9px] animate-pulse bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-black tracking-tighter uppercase">
+                            <span className="text-[9px] animate-pulse bg-emerald-500/20 text-emerald-600 px-1.5 py-0.5 rounded font-black tracking-tighter uppercase">
                               Applied
                             </span>
                           )}
@@ -868,18 +895,19 @@ export default function Products({ initialProducts, forcedCategory }: { initialP
                         
                         <div className="space-y-1">
                           <div className="flex justify-between items-center text-xs">
-                            <span className="text-zinc-500">Unit Price:</span>
-                            <span className={`font-bold ${getBulkPrice(customizingProduct, customQty, selectedSize) < customizingProduct.price ? "text-emerald-400" : "text-white"}`}>
+                            <span style={{ color: "var(--text-muted)" }}>Unit Price:</span>
+                            <span className={`font-bold ${getBulkPrice(customizingProduct, customQty, selectedSize) < customizingProduct.price ? "text-emerald-600" : ""}`}
+                              style={getBulkPrice(customizingProduct, customQty, selectedSize) >= customizingProduct.price ? { color: "var(--text-primary)" } : {}}>
                               ₹{getBulkPrice(customizingProduct, customQty, selectedSize)}
                               {getBulkPrice(customizingProduct, customQty, selectedSize) < customizingProduct.price && 
-                                <span className="text-[10px] line-through text-zinc-600 ml-1.5 opacity-50">₹{customizingProduct.price}</span>
+                                <span className="text-[10px] line-through ml-1.5 opacity-50" style={{ color: "var(--text-muted)" }}>₹{customizingProduct.price}</span>
                               }
                             </span>
                           </div>
                           
-                          <div className="flex justify-between items-center pt-1 border-t border-white/5">
-                            <span className="text-zinc-400 font-bold">Total:</span>
-                            <span className="text-orange-400 font-black text-xl">
+                          <div className="flex justify-between items-center pt-1 border-t" style={{ borderColor: "var(--border)" }}>
+                            <span className="font-bold" style={{ color: "var(--text-secondary)" }}>Total:</span>
+                            <span className="text-orange-600 font-black text-xl">
                               ₹{getBulkPrice(customizingProduct, customQty, selectedSize) * customQty}
                             </span>
                           </div>
