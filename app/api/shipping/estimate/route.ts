@@ -99,7 +99,7 @@ export async function POST(req: Request) {
 
         // 2. Try direct API call using api_username as token (some iCarry accounts use this)
         const directPayload = {
-            api_token: ICARRY_API_USERNAME,
+            api_token: ICARRY_API_KEY || ICARRY_API_USERNAME, // Use actual API Key
             origin_pincode: parseInt(ICARRY_ORIGIN_PINCODE),
             destination_pincode: parseInt(pincode),
             origin_country_code: 'IN',
@@ -185,18 +185,31 @@ export async function POST(req: Request) {
         const pincodeNum = parseInt(pincode);
         let baseCost = 150;
 
-        // Accurate zone detection
-        if (pincodeNum >= 450000 && pincodeNum <= 489999) baseCost = 60;   // Madhya Pradesh (Local)
-        else if (pincodeNum >= 400000 && pincodeNum <= 431000) baseCost = 70;  // Maharashtra
-        else if (pincodeNum >= 380000 && pincodeNum <= 396999) baseCost = 85;  // Gujarat
-        else if (pincodeNum >= 110000 && pincodeNum <= 110099) baseCost = 110; // Delhi
-        else if (pincodeNum >= 300000 && pincodeNum <= 349999) baseCost = 90;  // Rajasthan
-        else if (pincodeNum >= 500000 && pincodeNum <= 539999) baseCost = 130; // Telangana/Andhra
-        else if (pincodeNum >= 560000 && pincodeNum <= 599999) baseCost = 140; // Karnataka
+        // Accurate zone detection for India
+        const pinPrefix = Math.floor(pincodeNum / 1000); // First 3 digits
+        
+        if (pinPrefix === 462) {
+            baseCost = 50; // Bhopal (Home City)
+        } else if (pincodeNum >= 450000 && pincodeNum <= 489999) {
+            baseCost = 70; // Madhya Pradesh & Chhattisgarh
+        } else if (pincodeNum >= 400000 && pincodeNum <= 449999) {
+            baseCost = 80; // rest of Maharashtra/Goa
+        } else if (pincodeNum >= 360000 && pincodeNum <= 399999) {
+            baseCost = 90; // Gujarat
+        } else if (pincodeNum >= 300000 && pincodeNum <= 349999) {
+            baseCost = 100; // Rajasthan
+        } else if ((pincodeNum >= 110000 && pincodeNum <= 299999)) {
+            baseCost = 110; // North (Delhi, UP, Haryana, etc.)
+        } else if (pincodeNum >= 500000 && pincodeNum <= 699999) {
+            baseCost = 140; // South (Karnataka, TN, Kerala, etc.)
+        } else if (pincodeNum >= 700000 && pincodeNum <= 999999) {
+            baseCost = 180; // East, North-East, and Islands
+        }
 
-        // Adjust for weight (every 500g extra adds 50% of base)
+        // Adjust for weight (every 500g extra adds a fixed amount or percentage)
+        // Weight factor: first 500g is included in baseCost
         const weightFactor = Math.ceil(totalWeight / 500);
-        const finalFallback = baseCost + (weightFactor - 1) * (baseCost * 0.5);
+        const finalFallback = baseCost + (weightFactor - 1) * (baseCost * 0.6); // 60% extra for each additional 500g
 
         return NextResponse.json({
             success: true,

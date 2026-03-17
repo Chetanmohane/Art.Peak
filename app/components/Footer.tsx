@@ -103,7 +103,7 @@ export default function Footer() {
             {/* Social */}
             <div className="flex gap-4 mt-6">
               <a
-                href="https://www.instagram.com/art.peak_/"
+                href="https://www.instagram.com/artpeak.shop/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="ArtPeak on Instagram"

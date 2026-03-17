@@ -41,6 +41,8 @@ export const metadata = {
     "Chetan Mohane ArtPeak",
     "customized home decor",
     "laser marking India",
+    "ArtPeak Instagram",
+    "ArtPeak.shop Instagram",
   ],
   authors: [{ name: "ArtPeak.Shop", url: SITE_URL }],
   creator: "ArtPeak.Shop",
@@ -137,7 +139,7 @@ export default function RootLayout({
       "closes": "18:00"
     },
     "priceRange": "₹₹",
-    "sameAs": ["https://www.instagram.com/art.peak_/"],
+    "sameAs": ["https://www.instagram.com/artpeak.shop/"],
     "knowsAbout": ["Laser Engraving", "Custom Gifts", "Wood Engraving", "Metal Engraving", "Acrylic Cutting", "Personalized Products"]
   };
 

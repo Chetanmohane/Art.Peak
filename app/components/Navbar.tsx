@@ -116,9 +116,17 @@ export default function Navbar() {
 
   const shippingCost = (() => {
     if (liveShippingCost !== null) return liveShippingCost;
-    if (!shippingDetails.state) return 0;
+    if (!shippingDetails.pincode && !shippingDetails.state) return 0;
+    
+    // Check if it's Bhopal by pincode prefix if available
+    if (shippingDetails.pincode && shippingDetails.pincode.startsWith("462")) return 50;
+    
+    if (!shippingDetails.state) return 100; // Default estimate
+    
     const s = shippingDetails.state.toLowerCase().trim();
-    return (s.includes("maharashtra") || s === "mh" || s === "maharastra") ? 50 : 100;
+    if (s.includes("bhopal") || s.includes("madhya pradesh") || s === "mp") return 60;
+    if (s.includes("maharashtra") || s === "mh" || s === "maharastra") return 80;
+    return 120; // General fallback
   })();
   
   const finalAmountToPay = checkoutStep === "cart" ? totalPrice : totalPrice + shippingCost;
