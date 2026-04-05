@@ -8,11 +8,13 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // Read the large file manually
-    const content = fs.readFileSync('db-check-output.txt', 'utf8');
-    const lines = content.split('\n');
+    console.log("🚀 Extracting ALL entries using Binary-Safe Reading...");
     
-    console.log(`🚀 Found ${lines.length} lines in the backup...`);
+    // Read the large file as raw binary to avoid UTF-8 truncation issues
+    const binaryContent = fs.readFileSync('db-check-output.txt', 'latin1');
+    const lines = binaryContent.split('\n');
+    
+    console.log(`🚀 Scanned ${lines.length} lines in the backup (Binary Mode)...`);
     
     let products = [];
     let current = null;
@@ -50,7 +52,7 @@ async function main() {
                     images: (p.images === '[]' || !p.images) ? JSON.stringify([p.image]) : p.images,
                     bulkPricing: (p.bulkPricing === 'Unknown' || !p.bulkPricing || p.bulkPricing === '[]') ? '[]' : p.bulkPricing,
                     sizes: (p.sizes === 'Unknown' || !p.sizes || p.sizes === '[]') ? '[]' : p.sizes,
-                    minQuantity: (p.name.includes("Keychain") || p.name.includes("Pen")) ? 1 : 1,
+                    minQuantity: 1,
                     weight: 150,
                     length: 10,
                     breadth: 10,
