@@ -8,9 +8,15 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // Read the ENTIRE 32MB file as a raw buffer (The True State)
-    const buf = fs.readFileSync('db-check-output.txt');
-    console.log(`🚀 Buffer Scanned: ${buf.length} bytes`);
+    // Low-level read to be 100% sure we get ALL 32MB
+    const fd = fs.openSync('db-check-output.txt', 'r');
+    const stats = fs.fstatSync(fd);
+    console.log(`🚀 File Size on disk: ${stats.size} bytes`);
+    
+    const buf = Buffer.alloc(stats.size);
+    fs.readSync(fd, buf, 0, stats.size, 0);
+    fs.closeSync(fd);
+    console.log(`🚀 Actually Read: ${buf.length} bytes`);
     
     // Search for "Name: " globally in the buffer
     const namePattern = Buffer.from("Name: ");
@@ -21,14 +27,14 @@ async function main() {
     
     let productStarts = [];
     let pos = 0;
-    while (true) {
+    while (pos < buf.length) {
         let idx = buf.indexOf(namePattern, pos);
         if (idx === -1) break;
         productStarts.push(idx);
         pos = idx + 6;
     }
     
-    console.log(`🚀 Found ${productStarts.length} product markers via binary scan.`);
+    console.log(`🚀 Found ${productStarts.length} product markers in the binary buffer.`);
     
     let products = [];
     for (let i = 0; i < productStarts.length; i++) {
@@ -54,7 +60,7 @@ async function main() {
         }
     }
 
-    console.log(`✨ Identified ${products.length} product records in the backup.`);
+    console.log(`✨ Identified ${products.length} unique records for restoration.`);
     
     let count = 0;
     for (let p of products) {
