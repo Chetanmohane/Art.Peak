@@ -8,51 +8,27 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // THE ULTIMATE BINARY-SAFE RAW SCAN
-    const content = fs.readFileSync('db-check-output.txt', 'latin1');
+    console.log("🚀 Restoring from PARALLEL-EXTRACTION... (The True State)");
     
-    // We split by "Name: " but we do so case-insensitively and through the whole 32MB single line if needed
-    const sep = /Name: /ig;
-    const sections = content.split(sep);
+    const names = fs.readFileSync('names.txt', 'latin1').split('\n').map(l => l.includes("Name: ") ? l.substring(l.indexOf("Name: ") + 6).trim() : l.trim()).filter(Boolean);
+    const prices = fs.readFileSync('prices.txt', 'latin1').split('\n').map(l => l.includes("Price: ") ? parseInt(l.substring(l.indexOf("Price: ") + 7).trim()) || 0 : parseInt(l.trim()) || 0).filter(l => !isNaN(l));
+    const categories = fs.readFileSync('categories.txt', 'latin1').split('\n').map(l => l.includes("Category: ") ? l.substring(l.indexOf("Category: ") + 10).trim() : l.trim()).filter(Boolean);
+    const images = fs.readFileSync('images.txt', 'latin1').split('\n').map(l => l.includes("Image: ") ? l.substring(l.indexOf("Image: ") + 7).trim() : l.trim()).filter(Boolean);
     
-    console.log(`🚀 Found ${sections.length - 1} products in the backup via GLOBAL split...`);
+    console.log(`📊 Backup Counts: Names=${names.length}, Prices=${prices.length}, Categories=${categories.length}, Images=${images.length}`);
     
-    let products = [];
-    for (let i = 1; i < sections.length; i++) {
-        const section = sections[i];
-        
-        // Extract field values by looking for the labels in this section
-        const getField = (label) => {
-            const l = label.toLowerCase();
-            const s = section.toLowerCase();
-            const startIdx = s.indexOf(l);
-            if (startIdx === -1) return '';
-            const endIdx = s.indexOf('\n', startIdx);
-            return section.substring(startIdx + label.length, endIdx === -1 ? section.length : endIdx).trim();
-        };
-        
-        const name = section.split('\n')[0].trim();
-        const price = parseInt(getField('Price: ')) || 0;
-        const category = getField('Category: ');
-        const image = getField('Image: ');
-        
-        if (name && image) {
-            products.push({ name, price, category, image });
-        }
-    }
-
-    console.log(`✨ Identified ${products.length} products to restore.`);
-    
+    const minLen = Math.min(names.length, prices.length, categories.length, images.length);
     let count = 0;
-    for (let p of products) {
+    
+    for (let i = 0; i < minLen; i++) {
         try {
             await prisma.product.create({
                 data: {
-                    name: p.name,
-                    price: p.price,
-                    category: p.category,
-                    image: p.image || "/placeholder.png",
-                    images: JSON.stringify([p.image || "/placeholder.png"]),
+                    name: names[i],
+                    price: prices[i],
+                    category: categories[i],
+                    image: images[i] || "/placeholder.png",
+                    images: JSON.stringify([images[i] || "/placeholder.png"]),
                     bulkPricing: "[]",
                     sizes: "[]",
                     minQuantity: 1,
@@ -64,10 +40,10 @@ async function main() {
                     sortOrder: count + 1
                 }
             });
-            console.log(`✅ Restored ${count+1}/${products.length}: ${p.name}`);
+            console.log(`✅ Restored ${count+1}/${minLen}: ${names[i]}`);
             count++;
         } catch (e) {
-            console.error(`❌ Failed to restore ${p.name}: ${e.message}`);
+            console.error(`❌ Failed to restore ${names[i]}: ${e.message}`);
         }
     }
     
