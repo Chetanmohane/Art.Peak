@@ -9,12 +9,14 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // Use absolute paths to be 100% sure we find the files
-    const baseDir = path.join(__dirname, '..');
+    // Absolute paths for 100% reliability
+    const baseDir = path.resolve(__dirname, '..');
     const backupFile = path.resolve(baseDir, 'manageable-db.txt');
     const productsDir = path.resolve(baseDir, 'public/images/products');
     
     console.log(`📂 Reading backup from: ${backupFile}`);
+    const content = fs.readFileSync(backupFile, 'utf8');
+    console.log(`📊 Content Length: ${content.length} characters`);
     
     const imageFiles = fs.readdirSync(productsDir);
     
@@ -35,16 +37,15 @@ async function main() {
         return [];
     };
 
-    const content = fs.readFileSync(backupFile, 'utf8');
-    // Using simple string split to be safe
-    const sections = content.split('Name: ');
+    // Use a very broad split to handle any case or trailing characters
+    const sections = content.split(/Name:\s*/i);
     
-    console.log(`🚀 Found ${sections.length - 1} products in the backup...`);
+    console.log(`🚀 Found ${sections.length - 1} product sections...`);
     
     let products = [];
     for (let i = 1; i < sections.length; i++) {
         const section = sections[i];
-        const lines = section.split('\n');
+        const lines = section.split(/\r?\n/);
         
         let name = lines[0].trim();
         let price = 0, category = '', image = '';
@@ -71,7 +72,7 @@ async function main() {
         }
     }
 
-    console.log(`✨ Identified ${products.length} unique records to restore.`);
+    console.log(`✨ Identified ${products.length} unique products to restore.`);
     
     let count = 0;
     for (let p of products) {
