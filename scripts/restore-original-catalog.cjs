@@ -11,36 +11,50 @@ async function main() {
     // Read the large file manually
     const content = fs.readFileSync('db-check-output.txt', 'utf8');
     
-    console.log("🚀 Restoring from ALL 26 archived entries in the backup...");
+    // Split on ANY line and look for "ID: " to find new product starts!
+    const sections = content.split('\nID: ');
     
-    // Find all occurrences of name and image using a broad regex
-    const nameRegex = /Name: (.*)/g;
-    const priceRegex = /Price: (.*)/g;
-    const categoryRegex = /Category: (.*)/g;
-    const imageRegex = /Image: (.*)/g;
+    console.log(`🚀 Found ${sections.length} potential product sections in the backup...`);
     
-    const names = [], prices = [], categories = [], images = [];
-    
-    let match;
-    while ((match = nameRegex.exec(content)) !== null) names.push(match[1].trim());
-    while ((match = priceRegex.exec(content)) !== null) prices.push(parseInt(match[1].trim()) || 0);
-    while ((match = categoryRegex.exec(content)) !== null) categories.push(match[1].trim());
-    while ((match = imageRegex.exec(content)) !== null) images.push(match[1].trim());
-    
-    const minLen = Math.min(names.length, images.length);
     let count = 0;
-    
-    for (let i = 0; i < minLen; i++) {
+    for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
         try {
+            const lines = section.split('\n');
+            let name = '', price = 0, category = '', image = '', images = '[]', bulkPricing = '[]', sizes = '[]';
+            
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('Name: ')) name = trimmed.substring(6).trim();
+                else if (trimmed.startsWith('Price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
+                else if (trimmed.startsWith('Category: ')) category = trimmed.substring(10).trim();
+                else if (trimmed.startsWith('Image: ')) image = trimmed.substring(7).trim();
+                else if (trimmed.startsWith('Images: ')) images = trimmed.substring(8).trim();
+                else if (trimmed.startsWith('BulkPricing: ')) bulkPricing = trimmed.substring(13).trim();
+                else if (trimmed.startsWith('Sizes: ')) sizes = trimmed.substring(7).trim();
+            });
+            
+            // If it's the very first product, we might have skipped "ID: " in the first line
+            if (i === 0 && !name) {
+                 const firstLines = section.split('\n');
+                 firstLines.forEach(line => {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('Name: ')) name = trimmed.substring(6).trim();
+                    else if (trimmed.startsWith('Image: ')) image = trimmed.substring(7).trim();
+                 });
+            }
+
+            if (!name || (!image && !section.includes('Image: '))) continue;
+            
             await prisma.product.create({
                 data: {
-                    name: names[i],
-                    price: prices[i] || 0,
-                    category: categories[i] || "",
-                    image: images[i] || "/placeholder.png",
-                    images: JSON.stringify([images[i] || "/placeholder.png"]),
-                    bulkPricing: "[]",
-                    sizes: "[]",
+                    name,
+                    price,
+                    category,
+                    image: image || "/placeholder.png",
+                    images: images === '[]' ? JSON.stringify([image]) : images,
+                    bulkPricing: bulkPricing === 'Unknown' ? '[]' : bulkPricing,
+                    sizes: sizes === 'Unknown' ? '[]' : sizes,
                     minQuantity: 1,
                     weight: 150,
                     length: 10,
@@ -49,10 +63,10 @@ async function main() {
                     inStock: true
                 }
             });
-            console.log(`✅ Restored ${i+1}/${minLen}: ${names[i]}`);
+            console.log(`✅ Restored ${count+1}: ${name}`);
             count++;
         } catch (e) {
-            console.error(`❌ Failed to restore ${names[i]}: ${e.message}`);
+            console.error(`❌ Failed to restore section ${i}: ${e.message}`);
         }
     }
     
