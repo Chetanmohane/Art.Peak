@@ -8,35 +8,36 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // Read the complete-db.txt created via sed (very reliable)
-    const content = fs.readFileSync('complete-db.txt', 'utf8');
+    // THE ULTIMATE BINARY-SAFE RAW SCAN
+    const content = fs.readFileSync('db-check-output.txt', 'latin1');
     
-    // Split on "Name: " as the definitive product separator
-    const sections = content.split(/Name: /i);
+    // We split by "Name: " but we do so case-insensitively and through the whole 32MB single line if needed
+    const sep = /Name: /ig;
+    const sections = content.split(sep);
     
-    console.log(`🚀 Found ${sections.length - 1} products in the backup via Name Split...`);
+    console.log(`🚀 Found ${sections.length - 1} products in the backup via GLOBAL split...`);
     
     let products = [];
-    // The first section is just the header, we skip it
     for (let i = 1; i < sections.length; i++) {
         const section = sections[i];
-        const lines = section.split(/\r?\n/);
         
-        let name = lines[0].trim();
-        let price = 0, category = '', image = '', images = '[]';
+        // Extract field values by looking for the labels in this section
+        const getField = (label) => {
+            const l = label.toLowerCase();
+            const s = section.toLowerCase();
+            const startIdx = s.indexOf(l);
+            if (startIdx === -1) return '';
+            const endIdx = s.indexOf('\n', startIdx);
+            return section.substring(startIdx + label.length, endIdx === -1 ? section.length : endIdx).trim();
+        };
         
-        lines.forEach(line => {
-            const trimmed = line.trim();
-            const lowered = trimmed.toLowerCase();
-            
-            if (lowered.startsWith('price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
-            else if (lowered.startsWith('category: ')) category = trimmed.substring(10).trim();
-            else if (lowered.startsWith('image: ')) image = trimmed.substring(7).trim();
-            else if (lowered.startsWith('images: ')) images = trimmed.substring(8).trim();
-        });
+        const name = section.split('\n')[0].trim();
+        const price = parseInt(getField('Price: ')) || 0;
+        const category = getField('Category: ');
+        const image = getField('Image: ');
         
         if (name && image) {
-            products.push({ name, price, category, image, images });
+            products.push({ name, price, category, image });
         }
     }
 
@@ -51,7 +52,7 @@ async function main() {
                     price: p.price,
                     category: p.category,
                     image: p.image || "/placeholder.png",
-                    images: (p.images === '[]' || !p.images) ? JSON.stringify([p.image || "/placeholder.png"]) : p.images,
+                    images: JSON.stringify([p.image || "/placeholder.png"]),
                     bulkPricing: "[]",
                     sizes: "[]",
                     minQuantity: 1,
