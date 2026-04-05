@@ -8,64 +8,33 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    console.log("🚀 Extracting EVERYTHING using Deep Buffer Scanning...");
+    // Read the complete-db.txt created via sed (very reliable)
+    const content = fs.readFileSync('complete-db.txt', 'utf8');
+    const lines = content.split('\n');
     
-    // Read the ENTIRE 32MB file as a raw buffer
-    const buf = fs.readFileSync('db-check-output.txt');
-    console.log(`🚀 Buffer Size: ${buf.length} bytes`);
-    
-    // We'll search for field labels as hex patterns to be 100% binary-safe
-    const patterns = {
-        name: Buffer.from("Name: "),
-        price: Buffer.from("Price: "),
-        category: Buffer.from("Category: "),
-        image: Buffer.from("Image: "),
-        end: Buffer.from("----------------------------------------")
-    };
+    console.log(`🚀 Scanned ${lines.length} lines in the backup...`);
     
     let products = [];
-    let pos = 0;
+    let current = null;
     
-    while (pos < buf.length) {
-        // Find next "Name: "
-        let nameIdx = buf.indexOf(patterns.name, pos);
-        if (nameIdx === -1) break;
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        const lowered = trimmed.toLowerCase();
         
-        // Find end of this product section
-        let nextNameIdx = buf.indexOf(patterns.name, nameIdx + 6);
-        let endIdx = (nextNameIdx === -1) ? buf.length : nextNameIdx;
-        
-        // Extract section buffer
-        const section = buf.slice(nameIdx, endIdx);
-        
-        // Extract fields from section
-        const getName = () => {
-            let start = 6;
-            let end = section.indexOf(0x0a, start);
-            return section.slice(start, end === -1 ? section.length : end).toString('utf8').trim();
-        };
-        
-        const getField = (pattern, offset) => {
-            let idx = section.indexOf(pattern);
-            if (idx === -1) return '';
-            let start = idx + offset;
-            let end = section.indexOf(0x0a, start);
-            return section.slice(start, end === -1 ? section.length : end).toString('utf8').trim();
-        };
-        
-        const name = getName();
-        const price = parseInt(getField(patterns.price, 7)) || 0;
-        const category = getField(patterns.category, 10);
-        const image = getField(patterns.image, 7);
-        
-        if (name && image) {
-            products.push({ name, price, category, image });
+        if (lowered.startsWith('name: ')) {
+            if (current && current.name && (current.image || current.images)) products.push(current);
+            current = { name: trimmed.substring(6).trim(), price: 0, category: '', image: '', images: '[]' };
+        } else if (current) {
+            if (lowered.startsWith('price: ')) current.price = parseInt(trimmed.substring(7).trim()) || 0;
+            else if (lowered.startsWith('category: ')) current.category = trimmed.substring(10).trim();
+            else if (lowered.startsWith('image: ')) current.image = trimmed.substring(7).trim();
+            else if (lowered.startsWith('images: ')) current.images = trimmed.substring(8).trim();
         }
-        
-        pos = endIdx;
-    }
+    });
+    // Push last one
+    if (current && current.name && (current.image || current.images)) products.push(current);
 
-    console.log(`✨ Identified ${products.length} product records in the backup.`);
+    console.log(`✨ Identified ${products.length} products to restore.`);
     
     let count = 0;
     for (let p of products) {
@@ -76,7 +45,7 @@ async function main() {
                     price: p.price,
                     category: p.category,
                     image: p.image || "/placeholder.png",
-                    images: JSON.stringify([p.image || "/placeholder.png"]),
+                    images: p.images === '[]' ? JSON.stringify([p.image || "/placeholder.png"]) : p.images,
                     bulkPricing: "[]",
                     sizes: "[]",
                     minQuantity: 1,
