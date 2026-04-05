@@ -11,8 +11,8 @@ async function main() {
     // Read the large file manually
     const content = fs.readFileSync('db-check-output.txt', 'utf8');
     
-    // Split on ANY region of "Name: "!
-    const sections = content.split('Name: ');
+    // Split on ANY region of "Name: " (CASE INSENSITIVE)!
+    const sections = content.split(/Name: /i);
     
     console.log(`🚀 Found ${sections.length - 1} potential product definitions in the backup...`);
     
@@ -26,15 +26,19 @@ async function main() {
             
             lines.forEach(line => {
                 const trimmed = line.trim();
-                if (trimmed.startsWith('Price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
-                else if (trimmed.startsWith('Category: ')) category = trimmed.substring(10).trim();
-                else if (trimmed.startsWith('Image: ')) image = trimmed.substring(7).trim();
-                else if (trimmed.startsWith('Images: ')) images = trimmed.substring(8).trim();
-                else if (trimmed.startsWith('BulkPricing: ')) bulkPricing = trimmed.substring(13).trim();
-                else if (trimmed.startsWith('Sizes: ')) sizes = trimmed.substring(7).trim();
+                const lowered = trimmed.toLowerCase();
+                if (lowered.startsWith('price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
+                else if (lowered.startsWith('category: ')) category = trimmed.substring(10).trim();
+                else if (lowered.startsWith('image: ')) image = trimmed.substring(7).trim();
+                else if (lowered.startsWith('images: ')) images = trimmed.substring(8).trim();
+                else if (lowered.startsWith('bulkpricing: ')) bulkPricing = trimmed.substring(13).trim();
+                else if (lowered.startsWith('sizes: ')) sizes = trimmed.substring(7).trim();
             });
             
             if (!name) continue;
+
+            // Handle the name possibly having been lowercase during the split
+            // But Name: was the separator, so name is just the rest of the line.
 
             await prisma.product.create({
                 data: {
