@@ -11,25 +11,22 @@ async function main() {
     // Read the large file manually
     const content = fs.readFileSync('db-check-output.txt', 'utf8');
     
-    // Split on ANY region of dashes (30 or more)!
-    const sep = "-".repeat(40);
-    const sections = content.split(sep);
+    // Split on ANY region of "Name: "!
+    const sections = content.split('Name: ');
     
-    console.log(`🚀 Found ${sections.length} potential product regions in the backup...`);
+    console.log(`🚀 Found ${sections.length - 1} potential product definitions in the backup...`);
     
     let count = 0;
-    for (const section of sections) {
-        if (!section.includes('Name:')) continue;
-        
+    for (let i = 1; i < sections.length; i++) {
+        const section = sections[i];
         try {
             const lines = section.split('\n');
-            let name = '', price = 0, category = '', image = '', images = '[]', bulkPricing = '[]', sizes = '[]';
+            let name = lines[0].trim();
+            let price = 0, category = '', image = '', images = '[]', bulkPricing = '[]', sizes = '[]';
             
             lines.forEach(line => {
                 const trimmed = line.trim();
-                // We use includes since prefixes might be followed by ":" or something else
-                if (trimmed.startsWith('Name: ')) name = trimmed.substring(6).trim();
-                else if (trimmed.startsWith('Price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
+                if (trimmed.startsWith('Price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
                 else if (trimmed.startsWith('Category: ')) category = trimmed.substring(10).trim();
                 else if (trimmed.startsWith('Image: ')) image = trimmed.substring(7).trim();
                 else if (trimmed.startsWith('Images: ')) images = trimmed.substring(8).trim();
@@ -56,10 +53,10 @@ async function main() {
                     inStock: true
                 }
             });
-            console.log(`✅ Restored ${count+1}: ${name}`);
+            console.log(`✅ Restored ${count+1}/${sections.length-1}: ${name}`);
             count++;
         } catch (e) {
-            console.error(`❌ Failed to restore section: ${e.message}`);
+            console.error(`❌ Failed to restore section ${i}: ${e.message}`);
         }
     }
     
