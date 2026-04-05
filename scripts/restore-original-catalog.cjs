@@ -8,50 +8,29 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    console.log("🚀 Extracting ALL entries using Binary-Safe Reading...");
+    console.log("🚀 Restoring from GREP-EXTRACTION... (The True State)");
     
-    // Read the large file as raw binary to avoid UTF-8 truncation issues
-    const binaryContent = fs.readFileSync('db-check-output.txt', 'latin1');
-    const lines = binaryContent.split('\n');
+    const names = fs.readFileSync('names.txt', 'utf8').split('\n').map(l => l.substring(6).trim()).filter(Boolean);
+    const prices = fs.readFileSync('prices.txt', 'utf8').split('\n').map(l => parseInt(l.substring(7).trim()) || 0).filter(l => !isNaN(l));
+    const categories = fs.readFileSync('categories.txt', 'utf8').split('\n').map(l => l.substring(10).trim()).filter(Boolean);
+    const images = fs.readFileSync('images.txt', 'utf8').split('\n').map(l => l.substring(7).trim()).filter(Boolean);
     
-    console.log(`🚀 Scanned ${lines.length} lines in the backup (Binary Mode)...`);
+    console.log(`📊 Backup Counts: Names=${names.length}, Prices=${prices.length}, Categories=${categories.length}, Images=${images.length}`);
     
-    let products = [];
-    let current = null;
-    
-    lines.forEach(line => {
-        const trimmed = line.trim();
-        const lowered = trimmed.toLowerCase();
-        
-        if (lowered.startsWith('name: ')) {
-            if (current && current.name && current.image) products.push(current);
-            current = { name: trimmed.substring(6).trim(), price: 0, category: '', image: '', images: '[]', bulkPricing: '[]', sizes: '[]' };
-        } else if (current) {
-            if (lowered.startsWith('price: ')) current.price = parseInt(trimmed.substring(7).trim()) || 0;
-            else if (lowered.startsWith('category: ')) current.category = trimmed.substring(10).trim();
-            else if (lowered.startsWith('image: ')) current.image = trimmed.substring(7).trim();
-            else if (lowered.startsWith('images: ')) current.images = trimmed.substring(8).trim();
-            else if (lowered.startsWith('bulkpricing: ')) current.bulkPricing = trimmed.substring(13).trim();
-            else if (lowered.startsWith('sizes: ')) current.sizes = trimmed.substring(7).trim();
-        }
-    });
-    // Push last one
-    if (current && current.name && current.image) products.push(current);
-
-    console.log(`✨ Identified ${products.length} products to restore.`);
-    
+    const minLen = Math.min(names.length, prices.length, categories.length, images.length);
     let count = 0;
-    for (let p of products) {
+    
+    for (let i = 0; i < minLen; i++) {
         try {
             await prisma.product.create({
                 data: {
-                    name: p.name,
-                    price: p.price,
-                    category: p.category,
-                    image: p.image || "/placeholder.png",
-                    images: (p.images === '[]' || !p.images) ? JSON.stringify([p.image]) : p.images,
-                    bulkPricing: (p.bulkPricing === 'Unknown' || !p.bulkPricing || p.bulkPricing === '[]') ? '[]' : p.bulkPricing,
-                    sizes: (p.sizes === 'Unknown' || !p.sizes || p.sizes === '[]') ? '[]' : p.sizes,
+                    name: names[i],
+                    price: prices[i],
+                    category: categories[i],
+                    image: images[i] || "/placeholder.png",
+                    images: JSON.stringify([images[i] || "/placeholder.png"]),
+                    bulkPricing: "[]",
+                    sizes: "[]",
                     minQuantity: 1,
                     weight: 150,
                     length: 10,
@@ -61,10 +40,10 @@ async function main() {
                     sortOrder: count + 1
                 }
             });
-            console.log(`✅ Restored ${count+1}/${products.length}: ${p.name}`);
+            console.log(`✅ Restored ${count+1}/${minLen}: ${names[i]}`);
             count++;
         } catch (e) {
-            console.error(`❌ Failed to restore ${p.name}: ${e.message}`);
+            console.error(`❌ Failed to restore ${names[i]}: ${e.message}`);
         }
     }
     
