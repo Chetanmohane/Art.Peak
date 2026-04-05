@@ -8,27 +8,64 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    console.log("🚀 Restoring from PARALLEL-EXTRACTION... (The True State)");
+    // Read the ENTIRE 32MB file as a raw buffer (The True State)
+    const buf = fs.readFileSync('db-check-output.txt');
+    console.log(`🚀 Buffer Scanned: ${buf.length} bytes`);
     
-    const names = fs.readFileSync('names.txt', 'latin1').split('\n').map(l => l.includes("Name: ") ? l.substring(l.indexOf("Name: ") + 6).trim() : l.trim()).filter(Boolean);
-    const prices = fs.readFileSync('prices.txt', 'latin1').split('\n').map(l => l.includes("Price: ") ? parseInt(l.substring(l.indexOf("Price: ") + 7).trim()) || 0 : parseInt(l.trim()) || 0).filter(l => !isNaN(l));
-    const categories = fs.readFileSync('categories.txt', 'latin1').split('\n').map(l => l.includes("Category: ") ? l.substring(l.indexOf("Category: ") + 10).trim() : l.trim()).filter(Boolean);
-    const images = fs.readFileSync('images.txt', 'latin1').split('\n').map(l => l.includes("Image: ") ? l.substring(l.indexOf("Image: ") + 7).trim() : l.trim()).filter(Boolean);
+    // Search for "Name: " globally in the buffer
+    const namePattern = Buffer.from("Name: ");
+    const pricePattern = Buffer.from("Price: ");
+    const categoryPattern = Buffer.from("Category: ");
+    const imagePattern = Buffer.from("Image: ");
+    const newline = 0x0a;
     
-    console.log(`📊 Backup Counts: Names=${names.length}, Prices=${prices.length}, Categories=${categories.length}, Images=${images.length}`);
+    let productStarts = [];
+    let pos = 0;
+    while (true) {
+        let idx = buf.indexOf(namePattern, pos);
+        if (idx === -1) break;
+        productStarts.push(idx);
+        pos = idx + 6;
+    }
     
-    const minLen = Math.min(names.length, prices.length, categories.length, images.length);
+    console.log(`🚀 Found ${productStarts.length} product markers via binary scan.`);
+    
+    let products = [];
+    for (let i = 0; i < productStarts.length; i++) {
+        const start = productStarts[i];
+        const end = (i + 1 < productStarts.length) ? productStarts[i + 1] : buf.length;
+        const section = buf.subarray(start, end);
+        
+        const getField = (pattern, labelLen) => {
+            const fieldIdx = section.indexOf(pattern);
+            if (fieldIdx === -1) return '';
+            const valStart = fieldIdx + labelLen;
+            const valEnd = section.indexOf(newline, valStart);
+            return section.subarray(valStart, valEnd === -1 ? section.length : valEnd).toString('utf8').trim();
+        };
+
+        const name = getField(namePattern, 6);
+        const price = parseInt(getField(pricePattern, 7)) || 0;
+        const category = getField(categoryPattern, 10);
+        const image = getField(imagePattern, 7);
+        
+        if (name && image) {
+            products.push({ name, price, category, image });
+        }
+    }
+
+    console.log(`✨ Identified ${products.length} product records in the backup.`);
+    
     let count = 0;
-    
-    for (let i = 0; i < minLen; i++) {
+    for (let p of products) {
         try {
             await prisma.product.create({
                 data: {
-                    name: names[i],
-                    price: prices[i],
-                    category: categories[i],
-                    image: images[i] || "/placeholder.png",
-                    images: JSON.stringify([images[i] || "/placeholder.png"]),
+                    name: p.name,
+                    price: p.price,
+                    category: p.category,
+                    image: p.image || "/placeholder.png",
+                    images: JSON.stringify([p.image || "/placeholder.png"]),
                     bulkPricing: "[]",
                     sizes: "[]",
                     minQuantity: 1,
@@ -40,10 +77,10 @@ async function main() {
                     sortOrder: count + 1
                 }
             });
-            console.log(`✅ Restored ${count+1}/${minLen}: ${names[i]}`);
+            console.log(`✅ Restored ${count+1}/${products.length}: ${p.name}`);
             count++;
         } catch (e) {
-            console.error(`❌ Failed to restore ${names[i]}: ${e.message}`);
+            console.error(`❌ Failed to restore ${p.name}: ${e.message}`);
         }
     }
     
