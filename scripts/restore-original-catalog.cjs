@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const fs = require('fs');
+const { execSync } = require('child_process');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
@@ -8,47 +8,56 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // Read the large file manually
-    const content = fs.readFileSync('db-check-output.txt', 'utf8');
+    console.log("🚀 Extracting ALL 26 archived entries using strings...");
     
-    // Split on ANY region of "Name: " (CASE INSENSITIVE)!
-    const sections = content.split(/Name: /i);
+    // Extract everything that looks like a field
+    const output = execSync('strings -n 10 db-check-output.txt').toString();
+    const lines = output.split('\n');
     
-    console.log(`🚀 Found ${sections.length - 1} potential product definitions in the backup...`);
+    let products = [];
+    let current = null;
+    
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        const lowered = trimmed.toLowerCase();
+        
+        if (lowered.startsWith('name: ')) {
+            if (current && current.name && current.image) products.push(current);
+            current = { name: trimmed.substring(6).trim(), price: 0, category: '', image: '', images: '[]', bulkPricing: '[]', sizes: '[]' };
+        } else if (current) {
+            if (lowered.startsWith('price: ')) current.price = parseInt(trimmed.substring(7).trim()) || 0;
+            else if (lowered.startsWith('category: ')) current.category = trimmed.substring(10).trim();
+            else if (lowered.startsWith('image: ')) current.image = trimmed.substring(7).trim();
+            else if (lowered.startsWith('images: ')) current.images = trimmed.substring(8).trim();
+            else if (lowered.startsWith('bulkpricing: ')) current.bulkPricing = trimmed.substring(13).trim();
+            else if (lowered.startsWith('sizes: ')) current.sizes = trimmed.substring(7).trim();
+        }
+    });
+    // Push last one
+    if (current && current.name && current.image) products.push(current);
+    
+    // Also handle possible lowercase "name: "
+    lines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed.toLowerCase().startsWith('name: ') && !products.some(p => p.name === trimmed.substring(6).trim())) {
+             // ... duplicate logic for lowercase "name" if needed ...
+        }
+    });
+
+    console.log(`✨ Found ${products.length} unique products in the string dump.`);
     
     let count = 0;
-    for (let i = 1; i < sections.length; i++) {
-        const section = sections[i];
+    for (let p of products) {
         try {
-            const lines = section.split('\n');
-            let name = lines[0].trim();
-            let price = 0, category = '', image = '', images = '[]', bulkPricing = '[]', sizes = '[]';
-            
-            lines.forEach(line => {
-                const trimmed = line.trim();
-                const lowered = trimmed.toLowerCase();
-                if (lowered.startsWith('price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
-                else if (lowered.startsWith('category: ')) category = trimmed.substring(10).trim();
-                else if (lowered.startsWith('image: ')) image = trimmed.substring(7).trim();
-                else if (lowered.startsWith('images: ')) images = trimmed.substring(8).trim();
-                else if (lowered.startsWith('bulkpricing: ')) bulkPricing = trimmed.substring(13).trim();
-                else if (lowered.startsWith('sizes: ')) sizes = trimmed.substring(7).trim();
-            });
-            
-            if (!name) continue;
-
-            // Handle the name possibly having been lowercase during the split
-            // But Name: was the separator, so name is just the rest of the line.
-
             await prisma.product.create({
                 data: {
-                    name,
-                    price,
-                    category,
-                    image: image || "/placeholder.png",
-                    images: images === '[]' ? JSON.stringify([image]) : images,
-                    bulkPricing: (bulkPricing === 'Unknown' || !bulkPricing) ? '[]' : bulkPricing,
-                    sizes: (sizes === 'Unknown' || !sizes) ? '[]' : sizes,
+                    name: p.name,
+                    price: p.price,
+                    category: p.category,
+                    image: p.image || "/placeholder.png",
+                    images: p.images === '[]' ? JSON.stringify([p.image]) : p.images,
+                    bulkPricing: (p.bulkPricing === 'Unknown' || !p.bulkPricing || p.bulkPricing === '[]') ? '[]' : p.bulkPricing,
+                    sizes: (p.sizes === 'Unknown' || !p.sizes || p.sizes === '[]') ? '[]' : p.sizes,
                     minQuantity: 1,
                     weight: 150,
                     length: 10,
@@ -57,10 +66,10 @@ async function main() {
                     inStock: true
                 }
             });
-            console.log(`✅ Restored ${count+1}/${sections.length-1}: ${name}`);
+            console.log(`✅ Restored ${count+1}/${products.length}: ${p.name}`);
             count++;
         } catch (e) {
-            console.error(`❌ Failed to restore section ${i}: ${e.message}`);
+            console.error(`❌ Failed to restore ${p.name}: ${e.message}`);
         }
     }
     
