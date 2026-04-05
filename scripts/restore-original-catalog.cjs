@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
@@ -8,59 +9,64 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // Low-level read to be 100% sure we get ALL 32MB
-    const fd = fs.openSync('db-check-output.txt', 'r');
-    const stats = fs.fstatSync(fd);
-    console.log(`🚀 File Size on disk: ${stats.size} bytes`);
+    // 1. Load the original mapping logic for high-fidelity images
+    const imageFiles = fs.readdirSync(path.join(process.cwd(), 'public/images/products'));
     
-    const buf = Buffer.alloc(stats.size);
-    fs.readSync(fd, buf, 0, stats.size, 0);
-    fs.closeSync(fd);
-    console.log(`🚀 Actually Read: ${buf.length} bytes`);
+    const getMapping = (name) => {
+        const n = name.toLowerCase();
+        if (n.includes('wallet')) return imageFiles.filter(f => f.startsWith('W'));
+        if (n.includes('lockey') || n.includes('locket')) return imageFiles.filter(f => f.startsWith('L'));
+        if (n.includes('keychain')) {
+            if (n.includes('photo')) return imageFiles.filter(f => f.startsWith('K-') && f.includes('photo'));
+            return imageFiles.filter(f => f.startsWith('K'));
+        }
+        if (n.includes('pen')) return imageFiles.filter(f => f.startsWith('P'));
+        if (n.includes('bottle')) return imageFiles.filter(f => f.startsWith('B'));
+        if (n.includes('logo')) return imageFiles.filter(f => f.startsWith('A-logo'));
+        if (n.includes('mandir')) return ["mandir.jpg"];
+        if (n.includes('desk') || n.includes('nameplate')) return ["desktop-nameplate.jpg"];
+        if (n.includes('frame')) return imageFiles.filter(f => f.startsWith('F'));
+        return [];
+    };
+
+    // 2. Parse all 26 products from the manageable-db.txt backup
+    const content = fs.readFileSync('manageable-db.txt', 'utf8');
+    const sections = content.split(/Name: /i);
     
-    // Search for "Name: " globally in the buffer
-    const namePattern = Buffer.from("Name: ");
-    const pricePattern = Buffer.from("Price: ");
-    const categoryPattern = Buffer.from("Category: ");
-    const imagePattern = Buffer.from("Image: ");
-    const newline = 0x0a;
-    
-    let productStarts = [];
-    let pos = 0;
-    while (pos < buf.length) {
-        let idx = buf.indexOf(namePattern, pos);
-        if (idx === -1) break;
-        productStarts.push(idx);
-        pos = idx + 6;
-    }
-    
-    console.log(`🚀 Found ${productStarts.length} product markers in the binary buffer.`);
+    console.log(`🚀 Found ${sections.length - 1} original definitions in manageable-db.txt...`);
     
     let products = [];
-    for (let i = 0; i < productStarts.length; i++) {
-        const start = productStarts[i];
-        const end = (i + 1 < productStarts.length) ? productStarts[i + 1] : buf.length;
-        const section = buf.subarray(start, end);
+    for (let i = 1; i < sections.length; i++) {
+        const section = sections[i];
+        const lines = section.split('\n');
         
-        const getField = (pattern, labelLen) => {
-            const fieldIdx = section.indexOf(pattern);
-            if (fieldIdx === -1) return '';
-            const valStart = fieldIdx + labelLen;
-            const valEnd = section.indexOf(newline, valStart);
-            return section.subarray(valStart, valEnd === -1 ? section.length : valEnd).toString('utf8').trim();
-        };
+        let name = lines[0].trim();
+        let price = 0, category = '', image = '', images = '[]';
+        
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            const lowered = trimmed.toLowerCase();
+            if (lowered.startsWith('price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
+            else if (lowered.startsWith('category: ')) category = trimmed.substring(10).trim();
+            else if (lowered.startsWith('image: ')) image = trimmed.substring(7).trim();
+        });
+        
+        // Enhance image for the 16 that might have truncated base64
+        const gallery = getMapping(name);
+        let finalImage = image;
+        let finalGallery = [image];
+        
+        if (gallery.length > 0) {
+            finalImage = `/images/products/${gallery[0]}`;
+            finalGallery = gallery.map(f => `/images/products/${f}`);
+        }
 
-        const name = getField(namePattern, 6);
-        const price = parseInt(getField(pricePattern, 7)) || 0;
-        const category = getField(categoryPattern, 10);
-        const image = getField(imagePattern, 7);
-        
-        if (name && image) {
-            products.push({ name, price, category, image });
+        if (name) {
+            products.push({ name, price, category, image: finalImage, images: JSON.stringify(finalGallery) });
         }
     }
 
-    console.log(`✨ Identified ${products.length} unique records for restoration.`);
+    console.log(`✨ Identified ${products.length} unique records to restore.`);
     
     let count = 0;
     for (let p of products) {
@@ -71,7 +77,7 @@ async function main() {
                     price: p.price,
                     category: p.category,
                     image: p.image || "/placeholder.png",
-                    images: JSON.stringify([p.image || "/placeholder.png"]),
+                    images: p.images,
                     bulkPricing: "[]",
                     sizes: "[]",
                     minQuantity: 1,
