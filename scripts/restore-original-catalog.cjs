@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { execSync } = require('child_process');
+const fs = require('fs');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
@@ -8,36 +8,65 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    console.log("🚀 Extracting ALL entries using strings (Big Buffer)...");
+    console.log("🚀 Extracting ALL 26 entries using Buffer Scanning...");
     
-    // Extract everything that looks like a field with 100MB buffer
-    const output = execSync('strings -n 10 db-check-output.txt', { maxBuffer: 100 * 1024 * 1024 }).toString();
-    const lines = output.split('\n');
+    const buffer = fs.readFileSync('db-check-output.txt');
+    const content = buffer.toString('utf8'); // Full 32MB string
     
-    let products = [];
-    let current = null;
+    // Split on ANY region of "Name: " (CASE INSENSITIVE)!
+    const sep = "Name: ";
+    const lsep = "name: ";
     
-    lines.forEach(line => {
-        const trimmed = line.trim();
-        const lowered = trimmed.toLowerCase();
+    // We'll use a manual split that handles both cases and doesn't stop at nulls
+    const products = [];
+    let pos = 0;
+    
+    while (true) {
+        let nameIdx = content.indexOf(sep, pos);
+        let lnameIdx = content.indexOf(lsep, pos);
         
-        // Match Name: , name: , or ID: as start signals
-        if (lowered.startsWith('name: ')) {
-            if (current && current.name && current.image) products.push(current);
-            current = { name: trimmed.substring(6).trim(), price: 0, category: '', image: '', images: '[]', bulkPricing: '[]', sizes: '[]' };
-        } else if (current) {
-            if (lowered.startsWith('price: ')) current.price = parseInt(trimmed.substring(7).trim()) || 0;
-            else if (lowered.startsWith('category: ')) current.category = trimmed.substring(10).trim();
-            else if (lowered.startsWith('image: ')) current.image = trimmed.substring(7).trim();
-            else if (lowered.startsWith('images: ')) current.images = trimmed.substring(8).trim();
-            else if (lowered.startsWith('bulkpricing: ')) current.bulkPricing = trimmed.substring(13).trim();
-            else if (lowered.startsWith('sizes: ')) current.sizes = trimmed.substring(7).trim();
+        let startIdx = -1;
+        if (nameIdx === -1 && lnameIdx === -1) break;
+        if (nameIdx === -1) startIdx = lnameIdx;
+        else if (lnameIdx === -1) startIdx = nameIdx;
+        else startIdx = Math.min(nameIdx, lnameIdx);
+        
+        startIdx += 6; // Skip "Name: "
+        
+        // Find end of section (next "Name: " or "ID: ")
+        let nextNameIdx = content.indexOf(sep, startIdx);
+        let nextLNameIdx = content.indexOf(lsep, startIdx);
+        let endIdx = content.length;
+        
+        if (nextNameIdx !== -1 && nextLNameIdx !== -1) endIdx = Math.min(nextNameIdx, nextLNameIdx);
+        else if (nextNameIdx !== -1) endIdx = nextNameIdx;
+        else if (nextLNameIdx !== -1) endIdx = nextLNameIdx;
+        
+        const section = content.substring(startIdx, endIdx);
+        const lines = section.split('\n');
+        
+        let name = lines[0].trim();
+        let price = 0, category = '', image = '', images = '[]', bulkPricing = '[]', sizes = '[]';
+        
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            const lowered = trimmed.toLowerCase();
+            if (lowered.startsWith('price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
+            else if (lowered.startsWith('category: ')) category = trimmed.substring(10).trim();
+            else if (lowered.startsWith('image: ')) image = trimmed.substring(7).trim();
+            else if (lowered.startsWith('images: ')) images = trimmed.substring(8).trim();
+            else if (lowered.startsWith('bulkpricing: ')) bulkPricing = trimmed.substring(13).trim();
+            else if (lowered.startsWith('sizes: ')) sizes = trimmed.substring(7).trim();
+        });
+        
+        if (name && image) {
+            products.push({ name, price, category, image, images, bulkPricing, sizes });
         }
-    });
-    // Push last one
-    if (current && current.name && current.image) products.push(current);
+        
+        pos = endIdx;
+    }
 
-    console.log(`✨ Parsed ${products.length} product records from strings dump.`);
+    console.log(`✨ Found ${products.length} products in the full backup.`);
     
     let count = 0;
     for (let p of products) {
