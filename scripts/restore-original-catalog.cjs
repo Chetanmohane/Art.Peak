@@ -8,10 +8,10 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    console.log("🚀 Extracting ALL 26 archived entries using strings...");
+    console.log("🚀 Extracting ALL entries using strings (Big Buffer)...");
     
-    // Extract everything that looks like a field
-    const output = execSync('strings -n 10 db-check-output.txt').toString();
+    // Extract everything that looks like a field with 100MB buffer
+    const output = execSync('strings -n 10 db-check-output.txt', { maxBuffer: 100 * 1024 * 1024 }).toString();
     const lines = output.split('\n');
     
     let products = [];
@@ -21,6 +21,7 @@ async function main() {
         const trimmed = line.trim();
         const lowered = trimmed.toLowerCase();
         
+        // Match Name: , name: , or ID: as start signals
         if (lowered.startsWith('name: ')) {
             if (current && current.name && current.image) products.push(current);
             current = { name: trimmed.substring(6).trim(), price: 0, category: '', image: '', images: '[]', bulkPricing: '[]', sizes: '[]' };
@@ -35,16 +36,8 @@ async function main() {
     });
     // Push last one
     if (current && current.name && current.image) products.push(current);
-    
-    // Also handle possible lowercase "name: "
-    lines.forEach(line => {
-        const trimmed = line.trim();
-        if (trimmed.toLowerCase().startsWith('name: ') && !products.some(p => p.name === trimmed.substring(6).trim())) {
-             // ... duplicate logic for lowercase "name" if needed ...
-        }
-    });
 
-    console.log(`✨ Found ${products.length} unique products in the string dump.`);
+    console.log(`✨ Parsed ${products.length} product records from strings dump.`);
     
     let count = 0;
     for (let p of products) {
@@ -55,7 +48,7 @@ async function main() {
                     price: p.price,
                     category: p.category,
                     image: p.image || "/placeholder.png",
-                    images: p.images === '[]' ? JSON.stringify([p.image]) : p.images,
+                    images: (p.images === '[]' || !p.images) ? JSON.stringify([p.image]) : p.images,
                     bulkPricing: (p.bulkPricing === 'Unknown' || !p.bulkPricing || p.bulkPricing === '[]') ? '[]' : p.bulkPricing,
                     sizes: (p.sizes === 'Unknown' || !p.sizes || p.sizes === '[]') ? '[]' : p.sizes,
                     minQuantity: 1,
