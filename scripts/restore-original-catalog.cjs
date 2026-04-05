@@ -11,8 +11,9 @@ async function main() {
     // Read the large file manually
     const content = fs.readFileSync('db-check-output.txt', 'utf8');
     
-    // Split on ANY line that is just dashes!
-    const sections = content.split(/[-]{10,}/m);
+    // Split on ANY region of dashes (30 or more)!
+    const sep = "-".repeat(40);
+    const sections = content.split(sep);
     
     console.log(`🚀 Found ${sections.length} potential product regions in the backup...`);
     
@@ -26,6 +27,7 @@ async function main() {
             
             lines.forEach(line => {
                 const trimmed = line.trim();
+                // We use includes since prefixes might be followed by ":" or something else
                 if (trimmed.startsWith('Name: ')) name = trimmed.substring(6).trim();
                 else if (trimmed.startsWith('Price: ')) price = parseInt(trimmed.substring(7).trim()) || 0;
                 else if (trimmed.startsWith('Category: ')) category = trimmed.substring(10).trim();
