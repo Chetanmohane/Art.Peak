@@ -7,7 +7,6 @@ dotenv.config({ path: resolve(process.cwd(), '.env') });
 const prisma = new PrismaClient();
 const BASE = '/images/products';
 
-// THE ABSOLUTE COMPLETE CATALOG (V29) - EVERY PREFIXED PRODUCT
 const productsSource = [
   // ── KEYCHAINS (K1-K10) ──
   { name: "Customised Name Keychain", price: 149, category: "Keychain", image: `${BASE}/K1.webp`, images: [`${BASE}/K1.webp`, `${BASE}/K2.webp`] },
@@ -48,7 +47,7 @@ const productsSource = [
   { name: "Sports Hydra Bottle", price: 549, category: "Bottle", image: `${BASE}/B3.webp`, images: [`${BASE}/B3.webp`, `${BASE}/B4.webp`] },
   { name: "Stainless Steel Sipper", price: 349, category: "Bottle", image: `${BASE}/B4.webp`, images: [`${BASE}/B4.webp`, `${BASE}/CB1.webp`] },
 
-  // ── HOME DECOR / SPIRITUAL (E1-E4 & F*) ──
+  // ── HOME DECOR / SPIRITUAL ──
   { name: "Wooden Mandir / Temple Showpiece", price: 1499, category: "Home Decor", image: `${BASE}/E1.webp`, images: [`${BASE}/E1.webp`, `${BASE}/E2.webp`] },
   { name: "Om Photo Frame (Engraved)", price: 349, category: "Home Decor", image: `${BASE}/E2.webp`, images: [`${BASE}/E2.webp`, `${BASE}/E3.webp`] },
   { name: "Wooden Photo Lamp (Customized)", price: 1199, category: "Home Decor", image: `${BASE}/E3.webp`, images: [`${BASE}/E3.webp`, `${BASE}/E4.webp`] },
@@ -60,7 +59,7 @@ const productsSource = [
 ];
 
 async function main() {
-  console.log("🚀 FINAL-EXHAUSTIVE-RESEED: Adding ALL Prefix-Mapped Products (38 Products)...");
+  console.log("🚀 FINAL-EXHAUSTIVE-RESEED-FIX: Adding 38 Products...");
   await prisma.product.deleteMany({});
   
   let count = 0;
@@ -71,7 +70,7 @@ async function main() {
         price: p.price,
         category: p.category,
         image: p.image,
-        images: p.images,
+        images: JSON.stringify(p.images), // FIX: MUST BE STRING
         bulkPricing: "[]",
         sizes: "[]",
         minQuantity: 1,
@@ -87,7 +86,7 @@ async function main() {
     count++;
   }
   
-  console.log(`\n✨ Done! Successfully restored ${count} total products with matching images.`);
+  console.log(`\n✨ Done! Successfully restored ${count} products.`);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
