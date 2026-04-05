@@ -11,14 +11,15 @@ async function main() {
     // Read the large file manually
     const content = fs.readFileSync('db-check-output.txt', 'utf8');
     
-    // Split on ANY line and look for "ID: " to find new product starts!
-    const sections = content.split('\nID: ');
+    // Split on ANY line that is just dashes!
+    const sections = content.split(/[-]{10,}/m);
     
-    console.log(`🚀 Found ${sections.length} potential product sections in the backup...`);
+    console.log(`🚀 Found ${sections.length} potential product regions in the backup...`);
     
     let count = 0;
-    for (let i = 0; i < sections.length; i++) {
-        const section = sections[i];
+    for (const section of sections) {
+        if (!section.includes('Name:')) continue;
+        
         try {
             const lines = section.split('\n');
             let name = '', price = 0, category = '', image = '', images = '[]', bulkPricing = '[]', sizes = '[]';
@@ -34,18 +35,8 @@ async function main() {
                 else if (trimmed.startsWith('Sizes: ')) sizes = trimmed.substring(7).trim();
             });
             
-            // If it's the very first product, we might have skipped "ID: " in the first line
-            if (i === 0 && !name) {
-                 const firstLines = section.split('\n');
-                 firstLines.forEach(line => {
-                    const trimmed = line.trim();
-                    if (trimmed.startsWith('Name: ')) name = trimmed.substring(6).trim();
-                    else if (trimmed.startsWith('Image: ')) image = trimmed.substring(7).trim();
-                 });
-            }
+            if (!name) continue;
 
-            if (!name || (!image && !section.includes('Image: '))) continue;
-            
             await prisma.product.create({
                 data: {
                     name,
@@ -53,8 +44,8 @@ async function main() {
                     category,
                     image: image || "/placeholder.png",
                     images: images === '[]' ? JSON.stringify([image]) : images,
-                    bulkPricing: bulkPricing === 'Unknown' ? '[]' : bulkPricing,
-                    sizes: sizes === 'Unknown' ? '[]' : sizes,
+                    bulkPricing: (bulkPricing === 'Unknown' || !bulkPricing) ? '[]' : bulkPricing,
+                    sizes: (sizes === 'Unknown' || !sizes) ? '[]' : sizes,
                     minQuantity: 1,
                     weight: 150,
                     length: 10,
@@ -66,7 +57,7 @@ async function main() {
             console.log(`✅ Restored ${count+1}: ${name}`);
             count++;
         } catch (e) {
-            console.error(`❌ Failed to restore section ${i}: ${e.message}`);
+            console.error(`❌ Failed to restore section: ${e.message}`);
         }
     }
     
