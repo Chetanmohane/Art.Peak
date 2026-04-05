@@ -9,8 +9,14 @@ async function main() {
     console.log("🧹 Clearing the jumbled database...");
     await prisma.product.deleteMany({});
     
-    // 1. Load the original mapping logic for high-fidelity images
-    const imageFiles = fs.readdirSync(path.join(process.cwd(), 'public/images/products'));
+    // Use absolute paths to be 100% sure we find the files
+    const baseDir = path.join(__dirname, '..');
+    const backupFile = path.resolve(baseDir, 'manageable-db.txt');
+    const productsDir = path.resolve(baseDir, 'public/images/products');
+    
+    console.log(`📂 Reading backup from: ${backupFile}`);
+    
+    const imageFiles = fs.readdirSync(productsDir);
     
     const getMapping = (name) => {
         const n = name.toLowerCase();
@@ -29,11 +35,11 @@ async function main() {
         return [];
     };
 
-    // 2. Parse all 26 products from the manageable-db.txt backup
-    const content = fs.readFileSync('manageable-db.txt', 'utf8');
-    const sections = content.split(/Name: /i);
+    const content = fs.readFileSync(backupFile, 'utf8');
+    // Using simple string split to be safe
+    const sections = content.split('Name: ');
     
-    console.log(`🚀 Found ${sections.length - 1} original definitions in manageable-db.txt...`);
+    console.log(`🚀 Found ${sections.length - 1} products in the backup...`);
     
     let products = [];
     for (let i = 1; i < sections.length; i++) {
@@ -41,7 +47,7 @@ async function main() {
         const lines = section.split('\n');
         
         let name = lines[0].trim();
-        let price = 0, category = '', image = '', images = '[]';
+        let price = 0, category = '', image = '';
         
         lines.forEach(line => {
             const trimmed = line.trim();
@@ -51,7 +57,6 @@ async function main() {
             else if (lowered.startsWith('image: ')) image = trimmed.substring(7).trim();
         });
         
-        // Enhance image for the 16 that might have truncated base64
         const gallery = getMapping(name);
         let finalImage = image;
         let finalGallery = [image];
