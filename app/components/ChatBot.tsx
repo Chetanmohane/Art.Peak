@@ -69,14 +69,14 @@ export default function ChatBot() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] font-sans">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] font-sans">
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: 100, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="mb-4 w-[350px] sm:w-[400px] h-[500px] rounded-2xl overflow-hidden flex flex-col shadow-2xl border"
+            exit={{ opacity: 0, y: 100, scale: 0.9 }}
+            className="mb-4 w-[calc(100vw-32px)] sm:w-[400px] h-[75vh] sm:h-[600px] rounded-2xl overflow-hidden flex flex-col shadow-2xl border"
             style={{
               backgroundColor: "var(--bg-card)",
               borderColor: "var(--border-strong)",
