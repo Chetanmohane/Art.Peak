@@ -1,4 +1,5 @@
 import Navbar from "./components/Navbar";
+import ChatBot from "./components/ChatBot"; // Add this import
 import "./globals.css";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -221,6 +222,7 @@ export default function RootLayout({
             <CartProvider>
               <Navbar />
               {children}
+              <ChatBot />
             </CartProvider>
           </ThemeProvider>
         </AuthContext>
